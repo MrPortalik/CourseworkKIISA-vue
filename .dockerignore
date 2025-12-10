@@ -1,0 +1,11 @@
+/node_modules
+/vendor
+.git
+.gitignore
+README.md
+docker-compose.yml
+.env
+*.log
+storage/logs/*
+public/storage
+public/hot
