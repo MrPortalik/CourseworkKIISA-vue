@@ -6,25 +6,40 @@
         <SideMenuComponent/>
     
         <section class="articleIndex">
-                <div class="page-header">
-                <h1>Статьи</h1>
+            <div class="page-header">
+              <h1>Статьи</h1>
+              
+              <nav>
                 <Link 
                 v-if="$page.props.auth?.user"
                 :href="route('articles.create')"
                 class="create-button"
                 >
-                Предложить статью
+                  Предложить статью
                 </Link>
+
+                <Link 
+                v-if="$page.props.auth?.user"
+                :href="route('articles.drafts')"
+                class="drafts-button"
+                >
+                  Ваши черновики
+                </Link>
+              </nav>
             </div>
             
             <div v-if="articles.data.length" class="articles-grid">
-            <article 
-                v-for="article in articles.data" 
-                :key="article.id" 
-                class="article-card"
-            >
-                <Link :href="route('articles.show', article.slug)" class="card-link">
+              <article 
+                  v-for="article in articles.data" 
+                  :key="article.id" 
+                  class="article-card"
+              >
+
+              <Link :href="route('articles.show', article.slug)" class="card-link">
                 <h2 class="card-title">{{ article.title }}</h2>
+
+                <img src="" alt="Обложка статьи" class="banner">
+                
                 <div class="card-meta">
                     <span class="author">{{ article.user?.name }}</span>
                     <span class="date">{{ formatDate(article.created_at) }}</span>
@@ -32,8 +47,8 @@
                 <div v-if="!article.is_published" class="card-draft">
                         Черновик
                 </div>
-                </Link>
-            </article>
+              </Link>
+              </article>
             </div>
             
             <div v-else class="empty-state">
@@ -41,20 +56,20 @@
             </div>
             
             <!-- Пагинация -->
-            <div v-if="articles.data.length && articles.links.length > 3" class="pagination">
-            <Link 
-                v-for="(link, index) in articles.links"
-                :key="index"
-                :href="link.url || '#'"
-                class="page-link"
-                :class="{
-                'active': link.active,
-                'disabled': !link.url
-                }"
-                v-html="link.label"
-                :preserve-scroll="true"
-            />
-            </div>
+            <nav v-if="articles.data.length && articles.links.length > 3" class="pagination">
+              <Link 
+                  v-for="(link, index) in articles.links"
+                  :key="index"
+                  :href="link.url || '#'"
+                  class="page-link"
+                  :class="{
+                  'active': link.active,
+                  'disabled': !link.url
+                  }"
+                  v-html="link.label"
+                  :preserve-scroll="true"
+              />
+            </nav>
         </section>
     </div>
     </div>
@@ -220,7 +235,7 @@ const formatDate = (dateString) => {
   opacity: 0.6;
 }
 
-/* Адаптивность */
+/* Адаптив */
 @media (max-width: 768px) {
   .page-header {
     flex-direction: column;

@@ -9,7 +9,13 @@ use Inertia\Inertia;
 
 class ArticleController extends Controller
 {
-        public function test()
+    public function validateUser(Request $request, Article $article) {
+        if ($request->user()->id!==$article->user_id && $request->user()->role!=='admin') {
+            abort(403);
+        }
+    }
+
+    public function test()
     {
         return response()->json([
             'status' => 'controller works',
@@ -30,18 +36,39 @@ class ArticleController extends Controller
         ]);
     }
 
-    public function show(Article $article)
+    public function drafts(Request $request)
     {
-    if (!$article->is_published && !auth()->check()) {
-        abort(404);
+        $articles = Article::with('user')
+            ->unpublished()
+            ->currentauthor($request->user())
+            ->latest()
+            ->paginate(12);
+            
+        return Inertia::render('Articles/Index', [
+            'articles' => $articles,
+        ]);
     }
-    
-    $article->load('user');
-    
-    // Простой ответ для теста
-    return Inertia::render('Articles/Show', [
-        'article' => $article->toArray(),
-    ]);
+
+    public function show(Article $article)
+    {   
+        $article->load('user');
+        
+        // Простой ответ для теста
+        return Inertia::render('Articles/Show', [
+            'article' => $article->toArray(),
+        ]);
+    }
+
+    public function profile(Request $request)
+    {
+        $articles = Article::with('user')
+            ->currentauthor($request->user())
+            ->latest()
+            ->paginate(12);
+            
+        return Inertia::render('Dashboard', [
+            'articles' => $articles,
+        ]);
     }
 
     public function create()
@@ -75,9 +102,9 @@ class ArticleController extends Controller
         return redirect()->route('articles.show', $article->slug);
     }
 
-    public function edit(Article $article)
+    public function edit(Article $article, Request $request) 
     {
-        $this->authorize('update', $article);
+        $this->validateUser($request, $article);
         
         return Inertia::render('Articles/Edit', [
             'article' => $article,
@@ -86,7 +113,7 @@ class ArticleController extends Controller
 
     public function update(Request $request, Article $article)
     {
-        $this->authorize('update', $article);
+        $this->validateUser($request, $article);
         
         $request->validate([
             'title' => 'required|string|max:255',
@@ -118,7 +145,7 @@ class ArticleController extends Controller
 
     public function destroy(Article $article)
     {
-        $this->authorize('delete', $article);
+        $this->validateUser($request, $article);
         
         $article->delete();
         

@@ -24,11 +24,13 @@ Route::get('/', function () {
     ]);
 })->name('/');
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
+Route::get('/dashboard', [ArticleController::class, 'profile']
+    // function () {
+    // return Inertia::render('Dashboard');
     // ProfileController::index();
     // Route::get('/users/{user}/profile', [UserController::class, 'profile']) ->name('users.profile')
-})->middleware(['auth', 'verified'])->name('dashboard');
+    // }
+)->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -50,6 +52,7 @@ Route::get('/aboutus', function () {
 // })->name('articles');
 
 Route::get('/articles', [ArticleController::class, 'index'])->name('articles.index');
+Route::get('/articles/drafts', [ArticleController::class, 'drafts'])->name('articles.drafts')->middleware('auth');
 Route::get('/articles/create', [ArticleController::class, 'create'])->name('articles.create')->middleware('auth');
 Route::post('/articles', [ArticleController::class, 'store'])->name('articles.store')->middleware('auth');
 Route::get('/articles/{article:slug}', [ArticleController::class, 'show'])->name('articles.show');
