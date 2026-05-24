@@ -1,5 +1,5 @@
 <script setup>
-    import HeaderComponent from '@/Layouts/HeaderComponent.vue'; 
+    import HeaderComponent from '@/Layouts/HeaderComponent.vue';
 </script>
 
 <template>
@@ -18,9 +18,9 @@
             <p class="userName">{{ $page.props.auth.user.name }}</p>
             <p class="userTag">{{ $page.props.auth.user.email }}</p>
             <p class="txt">Информация о пользователе<br>
-                О себе: “Lorem ipsum dolor sit amet consectetur adipiscing elit. 
-                Lorem ipsum dolor sit amet consectetur adipiscing elitб lorem ipsum dolor 
-                sit amet consectetur adipiscing elit. Lorem ipsum dolor sit amet consectetur 
+                О себе: “Lorem ipsum dolor sit amet consectetur adipiscing elit.
+                Lorem ipsum dolor sit amet consectetur adipiscing elitб lorem ipsum dolor
+                sit amet consectetur adipiscing elit. Lorem ipsum dolor sit amet consectetur
                 adipiscing elit. Lorem ipsum dolor.”</p>
             <p>Работы:</p>
 
@@ -84,7 +84,7 @@
         margin-top: 57px;
     }
 
-    .cards { 
+    .cards {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 20px;

@@ -1,9 +1,10 @@
 <script setup>
-    import HeaderComponent from '@/Layouts/HeaderComponent.vue'; 
+    import HeaderComponent from '@/Layouts/HeaderComponent.vue';
+    import {Link} from "@inertiajs/vue3";
 
     const props = defineProps({
         articles: Object,
-    })
+    });
 
     const formatDate = (dateString) => {
     if (!dateString) return ''
@@ -28,16 +29,16 @@
             <!-- <p class="userName">{{ $page.props.user.name }}</p>
             <p class="userTag">{{ $page.props.user.email }}</p> -->
             <p class="txt">Информация о пользователе<br>
-                О себе: “Lorem ipsum dolor sit amet consectetur adipiscing elit. 
-                Lorem ipsum dolor sit amet consectetur adipiscing elitб lorem ipsum dolor 
-                sit amet consectetur adipiscing elit. Lorem ipsum dolor sit amet consectetur 
+                О себе: “Lorem ipsum dolor sit amet consectetur adipiscing elit.
+                Lorem ipsum dolor sit amet consectetur adipiscing elitб lorem ipsum dolor
+                sit amet consectetur adipiscing elit. Lorem ipsum dolor sit amet consectetur
                 adipiscing elit. Lorem ipsum dolor.” </p>
             <p>Работы:</p>
 
-            <div v-if="articles.data.length" class="articles-grid">
-              <article 
-                  v-for="article in articles.data" 
-                  :key="article.id" 
+            <div> <!--v-if="articles.length" class="articles-grid"-->
+              <article
+                  v-for="article in articles"
+                  :key="article.id"
                   class="article-card"
               >
                 <Link :href="route('articles.show', article.slug)" class="card-link">
@@ -46,19 +47,19 @@
                       <span class="author">{{ article.user?.name }}</span>
                       <span class="date">{{ formatDate(article.created_at) }}</span>
                   </div>
-                  <div v-if="!article.is_published" class="card-draft">
-                          *Не опубликовано
+                  <div v-if="!article.is_publishable" class="card-draft">
+                          *Верификация статьи
                   </div>
                 </Link>
               </article>
             </div>
-            
-            <div v-else class="empty-state">
-            <p>У пользователя нет созданных работ</p>
+
+            <div class="empty-state">
+                <h3>У пользователя нет созданных работ</h3>
             </div>
 
-            <nav v-if="articles.data.length && articles.links.length > 3" class="pagination">
-                <Link 
+            <nav v-if="articles.length > 3" class="pagination">
+                <Link
                     v-for="(link, index) in articles.links"
                     :key="index"
                     :href="link.url || '#'"
@@ -123,7 +124,7 @@
         margin-top: 57px;
     }
 
-    .cards { 
+    .cards {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 20px;
@@ -135,5 +136,11 @@
         height: 270px;
         background-color: #D9D9D9;
         border-radius: 10px;
+    }
+
+    .empty-state h3 {
+        font-size: 45px;
+        text-align: center;
+        margin-top: 15%;
     }
 </style>

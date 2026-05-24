@@ -1,260 +1,180 @@
-<template>
-  <div class="article-edit">
-    <Head title="Редактирование статьи" />
-    
-    <div class="page-header">
-      <h1>Редактирование статьи</h1>
-      <Link :href="route('articles.show', article.slug)" class="back-button">
-        Назад к статье
-      </Link>
-    </div>
-    
-    <form @submit.prevent="submit" class="article-form">
-      <div class="form-group">
-        <label for="title" class="form-label">Заголовок</label>
-        <input
-          type="text"
-          id="title"
-          v-model="form.title"
-          class="form-input"
-          :class="{ 'error': form.errors.title }"
-          required
-        />
-        <div v-if="form.errors.title" class="form-error">
-          {{ form.errors.title }}
-        </div>
-      </div>
-      
-      <div class="form-group">
-        <label for="content" class="form-label">Содержание</label>
-        <textarea
-          id="content"
-          v-model="form.content"
-          class="form-textarea"
-          :class="{ 'error': form.errors.content }"
-          rows="15"
-          required
-        ></textarea>
-        <div v-if="form.errors.content" class="form-error">
-          {{ form.errors.content }}
-        </div>
-      </div>
-      
-      <div class="form-group">
-        <label class="checkbox-label">
-          <input type="checkbox" v-model="form.is_published" />
-          <span>Опубликовано</span>
-        </label>
-      </div>
-      
-      <div class="form-actions">
-        <button 
-          type="submit" 
-          class="submit-button" 
-          :disabled="form.processing"
-        >
-          <span v-if="form.processing">Сохранение...</span>
-          <span v-else>Сохранить изменения</span>
-        </button>
-        <button 
-          type="button" 
-          @click="deleteArticle" 
-          class="delete-button"
-        >
-          Удалить статью
-        </button>
-      </div>
-    </form>
-  </div>
-</template>
-
 <script setup>
-import { Head, Link, useForm, router } from '@inertiajs/vue3'
+import { Head, Link, useForm, router, usePage } from '@inertiajs/vue3'
+import { computed, ref } from 'vue'
+import HeaderComponent from '@/Layouts/HeaderComponent.vue'
+import { uploadArticleContentImage } from '@/lib/articleContentImage'
 
 const props = defineProps({
-  article: Object,
+    article: Object,
+    categories: Array,
+    tags: Array,
 })
+
+const page = usePage()
+const isAdmin = computed(() => page.props.auth.user?.role === 'admin')
+const isOwn = computed(() => page.props.auth.user?.id === props.article.user_id)
+
+const bannerPreview = ref(props.article.banner || null)
+const heroPreview = ref(props.article.hero_banner || null)
+const contentImageInput = ref(null)
+const uploadingImage = ref(false)
 
 const form = useForm({
-  title: props.article.title,
-  content: props.article.content,
-  is_published: props.article.is_published,
+    title: props.article.title,
+    content: props.article.content,
+    is_published: props.article.is_published,
+    is_publishable: props.article.is_publishable,
+    is_hit: props.article.is_hit ?? false,
+    is_editors_choice: props.article.is_editors_choice ?? false,
+    is_new: props.article.is_new ?? false,
+    category_id: props.article.category_id ?? '',
+    tag_ids: props.article.tags?.map((t) => t.id) ?? [],
+    banner: null,
+    hero_banner: null,
 })
 
-const submit = () => {
-  form.put(route('articles.update', props.article.slug))
+const onBannerChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    form.banner = file
+    bannerPreview.value = URL.createObjectURL(file)
 }
 
+const onHeroChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    form.hero_banner = file
+    heroPreview.value = URL.createObjectURL(file)
+}
+
+const onContentImageSelected = async (event) => {
+    const file = event.target.files[0]
+    if (!file) return
+    uploadingImage.value = true
+    try {
+        const url = await uploadArticleContentImage(file)
+        form.content += `\n<img src="${url}" class="content-image-float" alt="" />`
+    } finally {
+        uploadingImage.value = false
+        event.target.value = ''
+    }
+}
+
+const submit = () => form
+    .transform((data) => ({
+        ...data,
+        category_id: data.category_id || null,
+        _method: 'PUT',
+    }))
+    .post(route('articles.update', props.article.slug), { forceFormData: true })
+
 const deleteArticle = () => {
-  if (confirm('Вы уверены, что хотите удалить эту статью?')) {
-    router.delete(route('articles.destroy', props.article.slug))
-  }
+    if (confirm('Удалить статью?')) router.delete(route('articles.destroy', props.article.slug))
 }
 </script>
 
+<template>
+    <Head title="Редактирование" />
+    <HeaderComponent />
+
+    <div class="article-edit content-area">
+        <div class="page-header">
+            <h1>Редактирование</h1>
+            <Link :href="route('articles.show', article.slug)" class="back-button">Назад</Link>
+        </div>
+
+        <form class="article-form" @submit.prevent="submit">
+            <div class="form-group">
+                <label class="form-label">Заголовок</label>
+                <input v-model="form.title" type="text" class="form-input" required />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Обложка (книжная)</label>
+                <input type="file" accept="image/*" @change="onBannerChange" />
+                <img v-if="bannerPreview" :src="bannerPreview" class="preview-book" alt="" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Баннер над заголовком</label>
+                <input type="file" accept="image/*" @change="onHeroChange" />
+                <img v-if="heroPreview" :src="heroPreview" class="preview-hero" alt="" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Категория</label>
+                <select v-model="form.category_id" class="form-input">
+                    <option value="">Без категории</option>
+                    <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Теги</label>
+                <label v-for="t in tags" :key="t.id" class="tag-label">
+                    <input v-model="form.tag_ids" type="checkbox" :value="t.id" />
+                    {{ t.name }}
+                </label>
+            </div>
+
+            <div class="form-group">
+                <textarea v-model="form.content" class="form-textarea" rows="15" required />
+                <input ref="contentImageInput" type="file" accept="image/*" class="hidden" @change.stop="onContentImageSelected" />
+                <button type="button" class="toolbar-btn" @click.prevent="contentImageInput?.click()">Вставить изображение</button>
+            </div>
+
+            <div class="form-group publish-options">
+                <label v-if="!isAdmin || isOwn" class="checkbox-label">
+                    <input v-model="form.is_publishable" type="checkbox" />
+                    <span>Предложить к публикации</span>
+                </label>
+                <template v-if="isAdmin">
+                    <label class="checkbox-label">
+                        <input v-model="form.is_published" type="checkbox" />
+                        <span>Опубликовать <em class="admin-only">(Только для администрации)</em></span>
+                    </label>
+                    <div class="admin-flags">
+                        <label class="checkbox-label"><input v-model="form.is_hit" type="checkbox" /> Хит</label>
+                        <label class="checkbox-label"><input v-model="form.is_editors_choice" type="checkbox" /> Выбор редакции</label>
+                    </div>
+                </template>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="submit-button" :disabled="form.processing">Сохранить</button>
+                <button type="button" class="delete-button" @click="deleteArticle">Удалить</button>
+            </div>
+        </form>
+    </div>
+</template>
+
 <style scoped>
-.article-edit {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
+.article-edit { max-width: 800px; margin: 0 auto; padding: 2rem; }
+.article-form { background: #fff; padding: 2rem; border: 1px solid #e2e8f0; border-radius: 8px; }
+.form-group { margin-bottom: 1.25rem; }
+.form-label { display: block; font-weight: 600; margin-bottom: 0.5rem; }
+.form-input, .form-textarea { width: 100%; padding: 0.75rem; border: 1px solid #cbd5e0; border-radius: 6px; }
+.preview-book { aspect-ratio: 9/16; max-width: 160px; object-fit: cover; margin-top: 0.5rem; }
+.preview-hero { width: 100%; max-height: 180px; object-fit: cover; margin-top: 0.5rem; border-radius: 6px; }
+.publish-options { display: flex; flex-direction: column; gap: 0.65rem; }
+.admin-flags { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.25rem; }
+.checkbox-label { display: flex; gap: 0.5rem; align-items: flex-start; font-weight: 600; }
+.checkbox-label em.admin-only { font-style: normal; font-weight: 500; color: #718096; }
+[data-theme="dark"] .checkbox-label em.admin-only { color: #aaa; }
+.form-actions { display: flex; gap: 1rem; margin-top: 1.5rem; }
+.submit-button { background: #4299e1; color: #fff; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; }
+.delete-button { background: #fed7d7; color: #c53030; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; }
+.hidden { display: none; }
+.back-button { color: #3182ce; }
+.tag-label { display: inline-flex; gap: 0.35rem; margin-right: 1rem; }
+[data-theme="dark"] .article-form {
+    background: #141414;
+    border-color: #333;
 }
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-}
-
-.page-header h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #1a202c;
-  margin: 0;
-}
-
-.back-button {
-  color: #3182ce;
-  text-decoration: none;
-  font-weight: 500;
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  transition: background-color 0.2s;
-}
-
-.back-button:hover {
-  background-color: #f7fafc;
-}
-
-.article-form {
-  background: white;
-  padding: 2rem;
-  border-radius: 0.5rem;
-  border: 1px solid #e2e8f0;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
-  color: #2d3748;
-}
-
-.form-input,
-.form-textarea {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #cbd5e0;
-  border-radius: 0.375rem;
-  font-size: 1rem;
-  font-family: inherit;
-  transition: border-color 0.2s;
-}
-
-.form-input:focus,
-.form-textarea:focus {
-  outline: none;
-  border-color: #3182ce;
-  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
-}
-
-.form-input.error,
-.form-textarea.error {
-  border-color: #f56565;
-}
-
-.form-textarea {
-  resize: vertical;
-  min-height: 300px;
-  line-height: 1.6;
-}
-
-.form-error {
-  margin-top: 0.5rem;
-  color: #f56565;
-  font-size: 0.875rem;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  cursor: pointer;
-  font-weight: 500;
-  color: #4a5568;
-}
-
-.checkbox-label input {
-  width: 1.25rem;
-  height: 1.25rem;
-  border-radius: 0.25rem;
-  border: 1px solid #cbd5e0;
-}
-
-.form-actions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #e2e8f0;
-}
-
-.submit-button {
-  background-color: #4299e1;
-  color: white;
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 0.375rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.submit-button:hover:not(:disabled) {
-  background-color: #3182ce;
-}
-
-.submit-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.delete-button {
-  background-color: #fed7d7;
-  color: #c53030;
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 0.375rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.delete-button:hover {
-  background-color: #feb2b2;
-}
-
-@media (max-width: 768px) {
-  .article-edit {
-    padding: 1rem;
-  }
-  
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-  
-  .article-form {
-    padding: 1.5rem;
-  }
-  
-  .form-actions {
-    flex-direction: column;
-  }
+[data-theme="dark"] .form-label { color: #f0f0f0; }
+.article-edit.content-area {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
 }
 </style>

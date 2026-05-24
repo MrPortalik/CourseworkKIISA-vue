@@ -1,52 +1,41 @@
 <script setup>
-    import HeaderComponent from '@/Layouts/HeaderComponent.vue';
+import { Head, Link } from '@inertiajs/vue3'
+import PageWithSidebar from '@/Layouts/PageWithSidebar.vue'
 </script>
 
 <template>
-    <HeaderComponent/>
-
-    <section class="aboutUs">
+    <Head title="О нас" />
+    <PageWithSidebar>
         <h1>О нас</h1>
-
-        <p>Мы творческое объединение “Я не придумал название, обсужу со своими потом” 
-            и с 2024 года мы стараемся над тем, чтобы сюжет нашей вселенной был интересным и полным, 
-            а также имел низкий порог вхождения. <br>
-        КИИСА это один из проектов, составляющих глобальный сюжет. Часто в статьях вы сможете наткнуться 
-        на упоминания персонажей или явлений, упоминаемых в других проектах (Геалис, Общий лор и др.), 
-        а также увидеть упоминания явлений или персонажей КИИСА в подобных проектах. <br>
-        КИИСА не является закрытым проектом, на портале будут публиковаться как официальные статьи от издателя, так и утверждённые издателем статьи пользователей портала. Обновлением, добавлением и удалением статей занимается администрация.
-        Если у вас остались какие либо вопросы вы можете посетить вкладку FAQ.
+        <p class="intro">
+            Мы творческое объединение и с 2024 года работаем над сюжетом вселенной с низким порогом вхождения.
+            КИИСА — один из проектов глобального сюжета. На портале публикуются официальные и утверждённые
+            пользовательские статьи; модерацией занимается администрация.
         </p>
 
-        <button class="actionBtn">FAQ</button>
-    </section>
-    
+        <Link :href="route('faq.index')" class="faq-link actionBtn">FAQ</Link>
+    </PageWithSidebar>
 </template>
 
-<style>
+<style scoped>
+h1 { margin-bottom: 0.5rem; }
+.intro {
+    max-width: 800px;
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: #718096;
+}
 .actionBtn {
-        display: flex;
-        flex-direction: row;
-        justify-content: center;
-        align-items: center;
-        padding: 16px 60px;
-        gap: 10px;
-        background: #0DB7FF;
-        border-radius: 20px;
-        font-weight: 700;
-        font-size: 24px;
-        margin-top: 57px;
-    }
-
-.aboutUs p {
-    font-size: 36px;
+    display: inline-flex;
+    margin-top: 0.5rem;
+    padding: 16px 60px;
+    background: #0db7ff;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: white;
+    text-decoration: none;
 }
-
-.aboutUs h1, .aboutUs p, .aboutUs button {
-    margin-top: 35px;
-}
-
-.aboutUs {
-    margin-bottom: 30px;
-}
+[data-theme="dark"] .intro { color: #aaa; }
 </style>

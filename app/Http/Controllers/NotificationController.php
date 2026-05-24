@@ -1,0 +1,42 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+
+class NotificationController extends Controller
+{
+    public function index(Request $request)
+    {
+        $notifications = $request->user()
+            ->notifications()
+            ->latest()
+            ->paginate(20);
+
+        $authors = $request->user()
+            ->subscribedAuthors()
+            ->withCount(['articles as published_articles_count' => fn ($q) => $q->published()])
+            ->get();
+
+        return Inertia::render('Notifications/Index', [
+            'notifications' => $notifications,
+            'authors' => $authors,
+        ]);
+    }
+
+    public function markAsRead(Request $request, string $id)
+    {
+        $notification = $request->user()->notifications()->where('id', $id)->firstOrFail();
+        $notification->markAsRead();
+
+        return back();
+    }
+
+    public function markAllAsRead(Request $request)
+    {
+        $request->user()->unreadNotifications->markAsRead();
+
+        return back();
+    }
+}

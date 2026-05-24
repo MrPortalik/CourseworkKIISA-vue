@@ -1,247 +1,168 @@
-<template>
-  <div class="article-create">
-    <Head title="Создание статьи" />
-    
-    <div class="page-header">
-      <h1>Создание статьи</h1>
-      <Link :href="route('articles.index')" class="back-button">
-        Назад к статьям
-      </Link>
-    </div>
-    
-    <form @submit.prevent="submit" class="article-form">
-      <div class="form-group">
-        <label for="title" class="form-label">Заголовок</label>
-        <input
-          type="text"
-          id="title"
-          v-model="form.title"
-          class="form-input"
-          :class="{ 'error': form.errors.title }"
-          placeholder="Введите заголовок статьи"
-          required
-        />
-        <div v-if="form.errors.title" class="form-error">
-          {{ form.errors.title }}
-        </div>
-      </div>
-      
-      <div class="form-group">
-        <label for="content" class="form-label">Содержание</label>
-        <textarea
-          id="content"
-          v-model="form.content"
-          class="form-textarea"
-          :class="{ 'error': form.errors.content }"
-          rows="15"
-          placeholder="Напишите содержание статьи..."
-          required
-        ></textarea>
-        <div v-if="form.errors.content" class="form-error">
-          {{ form.errors.content }}
-        </div>
-      </div>
-      
-      <div class="form-group">
-        <label class="checkbox-label">
-          <input type="checkbox" v-model="form.is_published" />
-          <span>Опубликовать сразу</span>
-        </label>
-      </div>
-      
-      <div class="form-actions">
-        <button 
-          type="submit" 
-          class="submit-button" 
-          :disabled="form.processing"
-        >
-          <span v-if="form.processing">Создание...</span>
-          <span v-else>Создать статью</span>
-        </button>
-        <Link :href="route('articles.index')" class="cancel-button">
-          Отмена
-        </Link>
-      </div>
-    </form>
-  </div>
-</template>
-
 <script setup>
-import { Head, Link, useForm } from '@inertiajs/vue3'
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3'
+import { computed, ref } from 'vue'
+import HeaderComponent from '@/Layouts/HeaderComponent.vue'
+import { uploadArticleContentImage } from '@/lib/articleContentImage'
 
-const form = useForm({
-  title: '',
-  content: '',
-  is_published: false,
+const props = defineProps({
+    categories: Array,
+    tags: Array,
 })
 
-const submit = () => {
-  form.post(route('articles.store'))
+const page = usePage()
+const isAdmin = computed(() => page.props.auth?.user?.role === 'admin')
+
+const bannerPreview = ref(null)
+const heroPreview = ref(null)
+const contentImageInput = ref(null)
+const uploadingImage = ref(false)
+
+const form = useForm({
+    title: '',
+    content: '',
+    is_publishable: false,
+    is_published: false,
+    category_id: '',
+    tag_ids: [],
+    banner: null,
+    hero_banner: null,
+})
+
+const onBannerChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    form.banner = file
+    bannerPreview.value = URL.createObjectURL(file)
 }
+
+const onHeroChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    form.hero_banner = file
+    heroPreview.value = URL.createObjectURL(file)
+}
+
+const insertContentImage = () => contentImageInput.value?.click()
+
+const onContentImageSelected = async (event) => {
+    const file = event.target.files[0]
+    if (!file) return
+    uploadingImage.value = true
+    try {
+        const url = await uploadArticleContentImage(file)
+        form.content += (form.content ? '\n' : '') + `<img src="${url}" class="content-image-float" alt="" />`
+    } finally {
+        uploadingImage.value = false
+        event.target.value = ''
+    }
+}
+
+const submit = () => form
+    .transform((data) => ({
+        ...data,
+        category_id: data.category_id || null,
+    }))
+    .post(route('articles.store'), { forceFormData: true })
 </script>
 
+<template>
+    <Head title="Создание статьи" />
+    <HeaderComponent />
+
+    <div class="article-create content-area">
+        <div class="page-header">
+            <h1>Создание статьи</h1>
+            <Link :href="route('articles.index')" class="back-button">Назад</Link>
+        </div>
+
+        <form class="article-form" @submit.prevent="submit">
+            <div class="form-group">
+                <label class="form-label">Заголовок</label>
+                <input v-model="form.title" type="text" class="form-input" required placeholder="Например: Объект 42" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Обложка (книжная ориентация)</label>
+                <input type="file" accept="image/*" @change="onBannerChange" />
+                <img v-if="bannerPreview" :src="bannerPreview" alt="" class="preview-book" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Баннер над заголовком (горизонтальный, необязательно)</label>
+                <input type="file" accept="image/*" @change="onHeroChange" />
+                <img v-if="heroPreview" :src="heroPreview" alt="" class="preview-hero" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Категория</label>
+                <select v-model="form.category_id" class="form-input">
+                    <option value="">Без категории</option>
+                    <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Теги</label>
+                <label v-for="t in tags" :key="t.id" class="tag-label">
+                    <input v-model="form.tag_ids" type="checkbox" :value="t.id" />
+                    {{ t.name }}
+                </label>
+            </div>
+
+            <div class="form-group">
+                <div class="content-toolbar">
+                    <label class="form-label">Содержание</label>
+                    <button type="button" class="toolbar-btn" :disabled="uploadingImage" @click.prevent="insertContentImage">
+                        Вставить изображение справа
+                    </button>
+                    <input ref="contentImageInput" type="file" accept="image/*" class="hidden" @change.stop="onContentImageSelected" />
+                </div>
+                <textarea v-model="form.content" class="form-textarea" rows="15" required />
+            </div>
+
+            <div class="form-group publish-options">
+                <label class="checkbox-label">
+                    <input v-model="form.is_publishable" type="checkbox" />
+                    <span>Предложить к публикации</span>
+                </label>
+                <label v-if="isAdmin" class="checkbox-label">
+                    <input v-model="form.is_published" type="checkbox" />
+                    <span>Опубликовать <em class="admin-only">(Только для администрации)</em></span>
+                </label>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="submit-button" :disabled="form.processing">Создать</button>
+                <Link :href="route('articles.index')" class="cancel-button">Отмена</Link>
+            </div>
+        </form>
+    </div>
+</template>
+
 <style scoped>
-.article-create {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
+.article-create.content-area { max-width: 800px; margin: 0 auto; padding: 2rem 1rem; width: 100%; }
+.page-header { display: flex; justify-content: space-between; margin-bottom: 2rem; }
+.article-form { background: #fff; padding: 2rem; border: 1px solid #e2e8f0; border-radius: 8px; }
+.form-group { margin-bottom: 1.25rem; }
+.form-label { display: block; font-weight: 600; margin-bottom: 0.5rem; }
+.form-input, .form-textarea { width: 100%; padding: 0.75rem; border: 1px solid #cbd5e0; border-radius: 6px; }
+.preview-book { aspect-ratio: 9/16; max-width: 180px; object-fit: cover; margin-top: 0.75rem; border-radius: 4px; }
+.preview-hero { width: 100%; max-height: 200px; object-fit: cover; margin-top: 0.75rem; border-radius: 6px; }
+.tag-label { display: inline-flex; gap: 0.35rem; margin-right: 1rem; }
+.publish-options { display: flex; flex-direction: column; gap: 0.65rem; }
+.checkbox-label { display: flex; gap: 0.5rem; align-items: flex-start; font-weight: 600; }
+.checkbox-label em.admin-only { font-style: normal; font-weight: 500; color: #718096; }
+[data-theme="dark"] .checkbox-label em.admin-only { color: #aaa; }
+.form-actions { display: flex; gap: 1rem; margin-top: 1.5rem; }
+.submit-button { background: #4299e1; color: #fff; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; }
+.cancel-button { padding: 0.75rem 1.5rem; text-decoration: none; color: #4a5568; }
+.hidden { display: none; }
+.toolbar-btn { margin-left: auto; }
+.content-toolbar { display: flex; align-items: center; gap: 0.5rem; }
+.back-button { color: #4299e1; }
+[data-theme="dark"] .article-form {
+    background: #141414;
+    border-color: #333;
 }
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-}
-
-.page-header h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #1a202c;
-  margin: 0;
-}
-
-.back-button {
-  color: #4299e1;
-  text-decoration: none;
-  font-weight: 500;
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  transition: background-color 0.2s;
-}
-
-.back-button:hover {
-  background-color: #f7fafc;
-}
-
-.article-form {
-  background: white;
-  padding: 2rem;
-  border-radius: 0.5rem;
-  border: 1px solid #e2e8f0;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
-  color: #2d3748;
-}
-
-.form-input,
-.form-textarea {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #cbd5e0;
-  border-radius: 0.375rem;
-  font-size: 1rem;
-  font-family: inherit;
-  transition: border-color 0.2s;
-}
-
-.form-input:focus,
-.form-textarea:focus {
-  outline: none;
-  border-color: #4299e1;
-  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
-}
-
-.form-input.error,
-.form-textarea.error {
-  border-color: #f56565;
-}
-
-.form-textarea {
-  resize: vertical;
-  min-height: 300px;
-  line-height: 1.6;
-}
-
-.form-error {
-  margin-top: 0.5rem;
-  color: #f56565;
-  font-size: 0.875rem;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  cursor: pointer;
-  font-weight: 500;
-  color: #4a5568;
-}
-
-.checkbox-label input {
-  width: 1.25rem;
-  height: 1.25rem;
-  border-radius: 0.25rem;
-  border: 1px solid #cbd5e0;
-}
-
-.form-actions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #e2e8f0;
-}
-
-.submit-button {
-  background-color: #4299e1;
-  color: white;
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 0.375rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.submit-button:hover:not(:disabled) {
-  background-color: #3182ce;
-}
-
-.submit-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.cancel-button {
-  background-color: #f7fafc;
-  color: #4a5568;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.375rem;
-  text-decoration: none;
-  font-weight: 500;
-  transition: background-color 0.2s;
-}
-
-.cancel-button:hover {
-  background-color: #e2e8f0;
-}
-
-@media (max-width: 768px) {
-  .article-create {
-    padding: 1rem;
-  }
-  
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-  
-  .article-form {
-    padding: 1.5rem;
-  }
-  
-  .form-actions {
-    flex-direction: column;
-  }
-}
+[data-theme="dark"] .form-label { color: #f0f0f0; }
 </style>

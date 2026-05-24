@@ -16,9 +16,11 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->text('content');
+            $table->string('banner')->nullable();
             $table->string('slug')->unique();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->boolean('is_published')->default(true);
+            $table->boolean('is_published')->default(false);
+            $table->boolean('is_publishable')->default(false);
             $table->timestamps();
         });
     }
@@ -28,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-    Schema::dropIfExists('products');
+    Schema::dropIfExists('articles');
     }
 };

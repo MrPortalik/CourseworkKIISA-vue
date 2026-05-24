@@ -1,213 +1,168 @@
 <script setup>
-import HeaderComponent from '@/Layouts/HeaderComponent.vue';
-import SideMenuComponent from '@/Layouts/SideMenuComponent.vue';
+import PageWithSidebar from '@/Layouts/PageWithSidebar.vue'
+import StarRating from '@/Components/StarRating.vue'
+import CommentThread from '@/Components/CommentThread.vue'
 import { Head, Link, router, usePage } from '@inertiajs/vue3'
 import { computed } from 'vue'
 
 const props = defineProps({
     article: Object,
+    comments: Array,
+    userRating: Number,
+    userCommentVotes: Object,
+    canRate: { type: Boolean, default: true },
 })
 
-// Получаем доступ к данным страницы
 const page = usePage()
 
-const formatDate = (dateString) => {
-    if (!dateString) return ''
-    const date = new Date(dateString)
-    return date.toLocaleDateString('ru-RU', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    })
-}
+const formatDate = (d) =>
+    d ? new Date(d).toLocaleDateString('ru-RU', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''
 
-const getParagraphs = (content) => {
-    if (!content) return []
-    return content
-        .split('\n')
-        .map(p => p.trim())
-        .filter(p => p.length > 0)
-}
-
-// Удаление статьи
-const deleteArticle = () => {
-    if (confirm('Вы уверены, что хотите удалить эту статью?')) {
-        router.delete(route('articles.destroy', props.article.slug))
-    }
-}
-
-// Проверка, является ли текущий пользователь автором статьи (используем computed)
-const isAuthor = computed(() => {
-    // Проверяем есть ли пользователь и совпадает ли ID
-    const currentUser = page.props.auth?.user
-    return currentUser && currentUser.id === props.article.user_id
+const canEdit = computed(() => {
+    const u = page.props.auth?.user
+    return u && (u.id === props.article.user_id || u.role === 'admin')
 })
+
+const deleteArticle = () => {
+    if (confirm('Удалить статью?')) router.delete(route('articles.destroy', props.article.slug))
+}
 </script>
 
 <template>
-    <Head>
-        <title>{{ article.title }}</title>
-    </Head>
-    
-    <HeaderComponent/>
-    <div class="divider">
-        <SideMenuComponent/>
+    <Head><title>{{ article.title }}</title></Head>
 
-        <section class="article">
-            <h1>{{ article.title }}</h1> 
-            
-            <!-- Информация о статье -->
-            <div class="article-meta">
-                <span class="author">Автор: {{ article.user?.name }}</span>
-                <span class="date">Опубликовано: {{ formatDate(article.created_at) }}</span>
-                
-                <!-- Бейдж черновика -->
-                <span v-if="!article.is_published" class="draft-badge">
-                    Черновик
-                </span>
-                
-                <!-- Кнопки редактирования (только для автора) -->
-                <div v-if="isAuthor" class="article-actions">
-                    <Link 
-                        :href="route('articles.edit', article.slug)"
-                        class="edit-btn"
-                    >
-                        Редактировать
+    <PageWithSidebar>
+        <article class="article-show">
+            <img v-if="article.hero_banner" :src="article.hero_banner" alt="" class="hero-banner" />
+
+            <header class="article-header">
+                <h1>{{ article.title }}</h1>
+                <div class="byline">
+                    <Link :href="route('authors.show', article.user_id)" class="author-link">
+                        {{ article.user?.name }}
                     </Link>
-                    <button 
-                        @click="deleteArticle"
-                        class="delete-btn"
-                    >
-                        Удалить
-                    </button>
+                    <span class="dot">·</span>
+                    <time class="article-date">{{ formatDate(article.created_at) }}</time>
                 </div>
+            </header>
+
+            <div v-if="canEdit" class="article-actions">
+                <Link :href="route('articles.edit', article.slug)" class="edit-btn">Редактировать</Link>
+                <button type="button" class="delete-btn" @click="deleteArticle">Удалить</button>
             </div>
-            
-            <div class="article-content">
-                <!-- Разбиваем контент на параграфы -->
-                <p 
-                    v-for="(paragraph, index) in getParagraphs(article.content)" 
-                    :key="index"
-                    class="content-paragraph">
-                    {{ paragraph }}
-                </p>
-            </div>
-            
-            <!-- Навигация -->
-            <div class="article-navigation">
-                <Link :href="route('articles.index')" class="back-link">
-                    ← Назад к статьям
-                </Link>
-            </div>
-        </section> 
-    </div>
+
+            <img v-if="article.banner" :src="article.banner" alt="" class="book-cover" />
+
+            <div class="article-content" v-html="article.content" />
+
+            <hr class="article-divider" />
+
+            <StarRating
+                :article-slug="article.slug"
+                :user-rating="userRating"
+                :average-rating="article.average_rating"
+                :ratings-count="article.ratings_count"
+                :can-rate="canRate"
+            />
+
+            <Link :href="route('articles.index')" class="back-link">← Назад к статьям</Link>
+
+            <CommentThread
+                :comments="comments"
+                :article-slug="article.slug"
+                :user-comment-votes="userCommentVotes"
+            />
+        </article>
+    </PageWithSidebar>
 </template>
 
-<style>
-    .article {
-        margin-top: 50px;
-        margin-left: 50px;
-        margin-right: 150px;
-        width: 1418px;
-        max-width: 100% !important;
-        justify-self: end;
-    }
-
-    .article h1 {
-        margin-bottom: 25px;
-        font-size: 2.5rem;
-        color: #333;
-    }
-
-    .article-meta {
-        margin-bottom: 30px;
-        padding-bottom: 20px;
-        border-bottom: 1px solid #eee;
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        flex-wrap: wrap;
-    }
-
-    .author, .date {
-        color: #666;
-        font-size: 14px;
-    }
-
-    .draft-badge {
-        background: #ffeb3b;
-        color: #333;
-        padding: 4px 12px;
-        border-radius: 4px;
-        font-size: 12px;
-        font-weight: 500;
-        text-transform: uppercase;
-    }
-
-    .article-actions {
-        margin-left: auto;
-        display: flex;
-        gap: 10px;
-    }
-
-    .edit-btn {
-        background: #4a90e2;
-        color: white;
-        padding: 8px 16px;
-        border-radius: 4px;
-        text-decoration: none;
-        font-size: 14px;
-        border: none;
-        cursor: pointer;
-    }
-
-    .edit-btn:hover {
-        background: #357ae8;
-    }
-
-    .delete-btn {
-        background: #f44336;
-        color: white;
-        padding: 8px 16px;
-        border-radius: 4px;
-        font-size: 14px;
-        border: none;
-        cursor: pointer;
-    }
-
-    .delete-btn:hover {
-        background: #d32f2f;
-    }
-
-    .article-content {
-        line-height: 1.8;
-        font-size: 1.1rem;
-        margin-bottom: 40px;
-    }
-
-    .article p {
-        margin-bottom: 20px;
-        text-indent: 4%;
-    }
-
-    .article-navigation {
-        padding-top: 20px;
-        border-top: 1px solid #eee;
-    }
-
-    .back-link {
-        color: #4a90e2;
-        text-decoration: none;
-        font-weight: 500;
-    }
-
-    .back-link:hover {
-        text-decoration: underline;
-    }
-
-    .divider {
-        margin: 0;
-        padding: 0;
-        display: flex;
-    }
+<style scoped>
+.article-show {
+    width: 100%;
+    max-width: none;
+}
+.hero-banner {
+    width: 100%;
+    max-height: 280px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 1.25rem;
+}
+.article-header { margin-bottom: 1.25rem; }
+.article-header h1 {
+    margin: 0 0 0.75rem;
+    font-size: clamp(2.25rem, 5vw, 3.25rem);
+    line-height: 1.15;
+    color: var(--page-text, #1a202c);
+}
+.byline {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 1.2rem;
+    color: var(--page-text, #4a5568);
+}
+.author-link {
+    font-weight: 600;
+    font-size: 1.25rem;
+    color: inherit;
+    text-decoration: none;
+}
+.author-link:hover {
+    text-decoration: underline;
+    opacity: 0.85;
+}
+.article-date { font-size: 1.1rem; }
+.dot { opacity: 0.45; }
+.book-cover {
+    aspect-ratio: 9/16;
+    max-width: 200px;
+    object-fit: cover;
+    float: right;
+    margin: 0 0 1rem 1.25rem;
+    border-radius: 6px;
+}
+.article-content {
+    line-height: 1.8;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    font-size: 1.05rem;
+}
+.article-content :deep(.content-image-float) {
+    float: right;
+    max-width: 42%;
+    margin: 0 0 1rem 1.5rem;
+    border-radius: 6px;
+}
+.article-divider {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin: 2rem 0;
+}
+.article-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+}
+.edit-btn, .delete-btn {
+    padding: 8px 14px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    color: #fff;
+    font-size: 0.875rem;
+}
+.edit-btn { background: #4a90e2; }
+.delete-btn { background: #f44336; }
+.back-link {
+    display: inline-block;
+    margin: 1.5rem 0 2rem;
+    font-weight: 500;
+    color: #4299e1;
+    text-decoration: none;
+}
+.back-link:hover { color: #3182ce; }
+[data-theme="dark"] .article-divider { border-color: #404040; }
 </style>

@@ -11,9 +11,9 @@ import HeaderComponent from '@/Layouts/HeaderComponent.vue';
 </template>
 
 <style>
-    
+
     .landing {
-        background-image: url('@/Assets/Background.png');
+        background-image: url('/Assets/landingBackground.png');
         position: relative;
         height: 960px;
         background-size: cover;
