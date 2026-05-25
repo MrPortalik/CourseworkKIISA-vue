@@ -45,7 +45,7 @@ const submit = () => {
 
 const voteComment = (commentId, vote) => {
     if (!page.props.auth?.user) return
-    router.post(route('comments.vote', commentId), { vote })
+    router.post(route('comments.vote', commentId), { vote }, { preserveScroll: true })
 }
 
 const startReply = (id) => {

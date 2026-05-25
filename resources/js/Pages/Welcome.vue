@@ -14,10 +14,17 @@ import HeaderComponent from '@/Layouts/HeaderComponent.vue';
 
     .landing {
         background-image: url('/Assets/landingBackground.png');
+        background-color: #0f0f10;
         position: relative;
         height: 960px;
         background-size: cover;
         background-repeat: no-repeat;
+        background-position: center;
+    }
+
+    [data-theme="light"] .landing,
+    [data-theme="dark"] .landing {
+        background-image: url('/Assets/landingBackground.png');
     }
 
     .landing h1 {

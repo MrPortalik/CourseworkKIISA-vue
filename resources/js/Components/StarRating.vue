@@ -13,11 +13,12 @@ const page = usePage()
 
 const rate = (stars) => {
     if (!page.props.auth?.user || !props.canRate) return
+    const opts = { preserveScroll: true }
     if (props.userRating === stars) {
-        router.delete(route('articles.unrate', props.articleSlug))
+        router.delete(route('articles.unrate', props.articleSlug), opts)
         return
     }
-    router.post(route('articles.rate', props.articleSlug), { rating: stars })
+    router.post(route('articles.rate', props.articleSlug), { rating: stars }, opts)
 }
 </script>
 

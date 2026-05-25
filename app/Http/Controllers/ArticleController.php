@@ -8,14 +8,21 @@ use App\Models\Comment;
 use App\Models\CommentVote;
 use App\Models\Tag;
 use App\Services\ArticleSearchService;
+use App\Support\ArticlesListingPaginator;
 use App\Support\ObjectNumberParser;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class ArticleController extends Controller
 {
+    private const LISTING_FIRST_PAGE = 21;
+
+    private const LISTING_OTHER_PAGE = 63;
+
     public function validateUser(Request $request, Article $article): void
     {
         if ($request->user()->id !== $article->user_id && ! $request->user()->isAdmin()) {
@@ -92,7 +99,7 @@ class ArticleController extends Controller
             }
         }
 
-        $article->load(['user', 'category', 'tags']);
+        $article->load(['user', 'category', 'categories', 'tags', 'coauthors']);
         $article->loadAvg('votes as average_rating', 'vote');
         $article->loadCount('votes as ratings_count');
 
@@ -150,22 +157,7 @@ class ArticleController extends Controller
     {
         $this->normalizeArticleRequest($request);
 
-        $rules = [
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'is_publishable' => 'boolean',
-            'category_id' => 'nullable|exists:categories,id',
-            'tag_ids' => 'nullable|array',
-            'tag_ids.*' => 'exists:tags,id',
-            'banner' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
-            'hero_banner' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:8192',
-        ];
-
-        if ($request->user()->isAdmin()) {
-            $rules['is_published'] = 'boolean';
-        }
-
-        $request->validate($rules);
+        $request->validate($this->articleValidationRules($request));
 
         $slug = $this->makeUniqueSlug($request->title);
         $isAdmin = $request->user()->isAdmin();
@@ -190,6 +182,7 @@ class ArticleController extends Controller
         Article::syncObjectNumberFromTitle($article);
         $article->save();
         $this->syncPublicationTimestamp($article, false);
+        $this->syncArticleCategories($article, $request);
         $article->tags()->sync($request->input('tag_ids', []));
 
         if ($isAdmin && $article->is_published) {
@@ -202,12 +195,21 @@ class ArticleController extends Controller
     public function edit(Article $article, Request $request)
     {
         $this->validateUser($request, $article);
-        $article->load('tags');
+        $article->load(['tags', 'categories', 'coauthors', 'coauthorRecords.user']);
+
+        $pendingCoauthors = $article->coauthorRecords
+            ->where('status', \App\Models\ArticleCoauthor::STATUS_PENDING)
+            ->map(fn ($r) => $r->user->only(['id', 'name']))
+            ->values();
+
+        $acceptedCoauthors = $article->coauthors->map(fn ($u) => $u->only(['id', 'name']))->values();
 
         return Inertia::render('Articles/Edit', [
             'article' => $article,
             'categories' => Category::orderBy('name')->get(),
             'tags' => Tag::orderBy('name')->get(),
+            'pendingCoauthors' => $pendingCoauthors,
+            'acceptedCoauthors' => $acceptedCoauthors,
         ]);
     }
 
@@ -216,25 +218,7 @@ class ArticleController extends Controller
         $this->validateUser($request, $article);
         $this->normalizeArticleRequest($request);
 
-        $rules = [
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'is_publishable' => 'boolean',
-            'category_id' => 'nullable|exists:categories,id',
-            'tag_ids' => 'nullable|array',
-            'tag_ids.*' => 'exists:tags,id',
-            'banner' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
-            'hero_banner' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:8192',
-        ];
-
-        if ($request->user()->isAdmin()) {
-            $rules['is_published'] = 'boolean';
-            $rules['is_hit'] = 'boolean';
-            $rules['is_editors_choice'] = 'boolean';
-            $rules['is_new'] = 'boolean';
-        }
-
-        $request->validate($rules);
+        $request->validate($this->articleValidationRules($request, $article));
 
         if ($article->title !== $request->title) {
             $article->slug = $this->makeUniqueSlug($request->title, $article->id);
@@ -270,6 +254,7 @@ class ArticleController extends Controller
         Article::syncObjectNumberFromTitle($article);
         $article->save();
         $this->syncPublicationTimestamp($article, $wasPublished);
+        $this->syncArticleCategories($article, $request);
         $article->tags()->sync($request->input('tag_ids', []));
 
         if ($request->user()->isAdmin() && ! $wasPublished && $article->is_published) {
@@ -305,7 +290,20 @@ class ArticleController extends Controller
 
     private function buildArticlesListing(Request $request, ?callable $extraQuery = null): array
     {
-        $baseQuery = Article::with(['user', 'category', 'tags'])->published();
+        $currentPage = max(1, (int) $request->input('page', 1));
+        $canShowSliders = ! $extraQuery
+            && ! $request->filled('category')
+            && ! $request->filled('q')
+            && ! $request->filled('section')
+            && ! $request->boolean('search');
+
+        $categorySliders = [];
+
+        if ($canShowSliders && $currentPage === 1) {
+            $categorySliders = $this->buildCategorySlidersData();
+        }
+
+        $baseQuery = Article::with(['user', 'category', 'categories', 'tags'])->published();
 
         if ($extraQuery) {
             $extraQuery($baseQuery);
@@ -357,28 +355,11 @@ class ArticleController extends Controller
             $orderedIds = $ranked['exact']->pluck('id')->concat($ranked['related']->pluck('id'));
             $payload['articles'] = $this->paginateIds($orderedIds, $request);
         } else {
-            $payload['articles'] = $baseQuery->paginate(12)->withQueryString();
+            $payload['articles'] = $this->paginateArticlesListing($baseQuery, $request);
         }
 
-        $currentPage = max(1, (int) $request->input('page', 1));
-
-        if (
-            $currentPage === 1
-            && ! $extraQuery
-            && ! $request->filled('category')
-            && ! $request->filled('q')
-            && ! $request->filled('section')
-            && ! $request->boolean('search')
-        ) {
-            $payload['categorySliders'] = Category::orderBy('name')
-                ->with(['articles' => fn ($q) => $q->published()->with('user')->latest()->limit(15)])
-                ->get()
-                ->filter(fn ($cat) => $cat->articles->isNotEmpty())
-                ->map(fn ($cat) => [
-                    'category' => $cat->only(['id', 'name', 'description']),
-                    'articles' => $cat->articles,
-                ])
-                ->values();
+        if ($categorySliders !== []) {
+            $payload['categorySliders'] = $categorySliders;
         }
 
         return $payload;
@@ -387,12 +368,15 @@ class ArticleController extends Controller
     private function applyListingFilters($query, Request $request): void
     {
         if ($request->filled('category')) {
-            $query->where('category_id', $request->category);
+            $query->where(function ($q) use ($request) {
+                $q->where('category_id', $request->category)
+                    ->orWhereHas('categories', fn ($c) => $c->where('categories.id', $request->category));
+            });
         }
 
         $categoryIds = $this->normalizeIdList($request->input('categories', []));
         if ($categoryIds !== []) {
-            $query->whereIn('category_id', $categoryIds);
+            $query->whereHas('categories', fn ($c) => $c->whereIn('categories.id', $categoryIds));
         }
 
         $tagIds = $this->normalizeIdList($request->input('tags', []));
@@ -424,12 +408,63 @@ class ArticleController extends Controller
         return $q->pluck('id');
     }
 
+    private function listingLastPage(int $total): int
+    {
+        if ($total <= self::LISTING_FIRST_PAGE) {
+            return 1;
+        }
+
+        return 1 + (int) ceil(($total - self::LISTING_FIRST_PAGE) / self::LISTING_OTHER_PAGE);
+    }
+
+    /**
+     * @return array{0: int, 1: int} offset and per-page size
+     */
+    private function listingOffsetAndPerPage(int $page, int $total): array
+    {
+        if ($page <= 1) {
+            return [0, min(self::LISTING_FIRST_PAGE, max($total, 0))];
+        }
+
+        $offset = self::LISTING_FIRST_PAGE + ($page - 2) * self::LISTING_OTHER_PAGE;
+
+        return [$offset, min(self::LISTING_OTHER_PAGE, max($total - $offset, 0))];
+    }
+
+    private function paginateArticlesListing($query, Request $request, string $pageName = 'page'): ArticlesListingPaginator
+    {
+        $total = (clone $query)->toBase()->getCountForPagination();
+        $lastPage = $this->listingLastPage($total);
+        $page = min(max(1, (int) $request->input($pageName, 1)), max(1, $lastPage));
+
+        [$offset, $take] = $this->listingOffsetAndPerPage($page, $total);
+        $nominalPerPage = $page <= 1 ? self::LISTING_FIRST_PAGE : self::LISTING_OTHER_PAGE;
+
+        $items = (clone $query)->skip($offset)->take($take)->get();
+
+        return (new ArticlesListingPaginator(
+            $items,
+            $total,
+            max(1, $nominalPerPage),
+            $page,
+            $lastPage,
+            [
+                'path' => Paginator::resolveCurrentPath(),
+                'pageName' => $pageName,
+            ],
+        ))->withQueryString();
+    }
+
     private function paginateIds($ids, Request $request, string $pageName = 'page')
     {
         $ids = collect($ids)->values();
-        $page = max(1, (int) $request->input($pageName, 1));
-        $perPage = 12;
-        $slice = $ids->slice(($page - 1) * $perPage, $perPage)->values();
+        $total = $ids->count();
+        $lastPage = $this->listingLastPage($total);
+        $page = min(max(1, (int) $request->input($pageName, 1)), max(1, $lastPage));
+
+        [$offset, $take] = $this->listingOffsetAndPerPage($page, $total);
+        $nominalPerPage = $page <= 1 ? self::LISTING_FIRST_PAGE : self::LISTING_OTHER_PAGE;
+        $slice = $ids->slice($offset, $take)->values();
 
         $articles = Article::with(['user', 'category', 'tags'])
             ->whereIn('id', $slice)
@@ -437,14 +472,17 @@ class ArticleController extends Controller
             ->sortBy(fn ($a) => $slice->search($a->id))
             ->values();
 
-        return [
-            'data' => $articles,
-            'current_page' => $page,
-            'last_page' => max(1, (int) ceil($ids->count() / $perPage)),
-            'per_page' => $perPage,
-            'total' => $ids->count(),
-            'links' => [],
-        ];
+        return (new ArticlesListingPaginator(
+            $articles,
+            $total,
+            max(1, $nominalPerPage),
+            $page,
+            $lastPage,
+            [
+                'path' => Paginator::resolveCurrentPath(),
+                'pageName' => $pageName,
+            ],
+        ))->withQueryString();
     }
 
     private function collectCommentIds($comments): array
@@ -503,10 +541,83 @@ class ArticleController extends Controller
         }
     }
 
+    private function articleValidationRules(Request $request, ?Article $article = null): array
+    {
+        $rules = [
+            'title' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('articles', 'title')->ignore($article?->id),
+            ],
+            'content' => 'required|string',
+            'is_publishable' => 'boolean',
+            'category_id' => 'nullable|exists:categories,id',
+            'category_ids' => 'nullable|array',
+            'category_ids.*' => 'exists:categories,id',
+            'tag_ids' => 'nullable|array',
+            'tag_ids.*' => 'exists:tags,id',
+            'banner' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'hero_banner' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:8192',
+        ];
+
+        if ($request->user()->isAdmin()) {
+            $rules['is_published'] = 'boolean';
+            if ($article) {
+                $rules['is_hit'] = 'boolean';
+                $rules['is_editors_choice'] = 'boolean';
+                $rules['is_new'] = 'boolean';
+            }
+        }
+
+        return $rules;
+    }
+
+    private function syncArticleCategories(Article $article, Request $request): void
+    {
+        $categoryIds = $this->normalizeIdList($request->input('category_ids', []));
+        if ($categoryIds === [] && $request->filled('category_id')) {
+            $categoryIds = [(int) $request->category_id];
+        }
+
+        $article->categories()->sync($categoryIds);
+        $article->category_id = $categoryIds[0] ?? null;
+        $article->saveQuietly();
+    }
+
+    private function buildCategorySlidersData(): array
+    {
+        return Category::orderBy('name')
+            ->get()
+            ->map(function (Category $cat) {
+                $articles = Article::query()
+                    ->published()
+                    ->with('user')
+                    ->where(function ($q) use ($cat) {
+                        $q->where('category_id', $cat->id)
+                            ->orWhereHas('categories', fn ($c) => $c->where('categories.id', $cat->id));
+                    })
+                    ->latest()
+                    ->limit(15)
+                    ->get();
+
+                return [
+                    'category' => $cat->only(['id', 'name', 'description']),
+                    'articles' => $articles,
+                ];
+            })
+            ->filter(fn ($row) => $row['articles']->isNotEmpty())
+            ->values()
+            ->all();
+    }
+
     private function normalizeArticleRequest(Request $request): void
     {
+        $categoryIds = $this->normalizeIdList($request->input('category_ids', []));
+
         $request->merge([
-            'category_id' => $request->filled('category_id') ? $request->category_id : null,
+            'category_ids' => $categoryIds,
+            'category_id' => $categoryIds[0] ?? ($request->filled('category_id') ? $request->category_id : null),
             'tag_ids' => $request->input('tag_ids', []),
         ]);
     }

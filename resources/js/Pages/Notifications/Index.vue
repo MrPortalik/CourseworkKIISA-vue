@@ -11,13 +11,36 @@ const props = defineProps({
 
 const tab = ref('notifications')
 
+const inertiaOpts = { preserveScroll: true }
+
 const markAllRead = () => {
-    router.post(route('notifications.read-all'))
+    router.post(route('notifications.read-all'), {}, inertiaOpts)
 }
 
 const markRead = (id) => {
-    router.post(route('notifications.read', id))
+    router.post(route('notifications.read', id), {}, inertiaOpts)
 }
+
+const openArticle = (notification) => {
+    if (!notification.read_at) {
+        markRead(notification.id)
+    }
+}
+
+const respondCoauthor = (notification, action) => {
+    const coauthorId = notification.data.coauthor_id
+    if (!coauthorId) return
+    router.post(route(`coauthors.${action}`, coauthorId), {}, {
+        ...inertiaOpts,
+        onSuccess: () => {
+            if (!notification.read_at) {
+                markRead(notification.id)
+            }
+        },
+    })
+}
+
+const isCoauthorInvite = (n) => n.data?.type === 'coauthor_invitation'
 </script>
 
 <template>
@@ -50,7 +73,7 @@ const markRead = (id) => {
         <template v-if="tab === 'notifications'">
             <div class="toolbar">
                 <button v-if="notifications.data.length" class="mark-all" @click="markAllRead">
-                    Прочитать все
+                    Прочитать&nbsp;все
                 </button>
             </div>
 
@@ -61,26 +84,62 @@ const markRead = (id) => {
                     class="notification-item"
                     :class="{ unread: !notification.read_at }"
                 >
-                    <p>{{ notification.data.message }}</p>
-                    <div class="notification-actions">
+                    <template v-if="isCoauthorInvite(notification)">
+                        <p class="notification-text">{{ notification.data.message }}</p>
+                        <div class="notification-actions">
+                            <Link
+                                v-if="notification.data.article_slug"
+                                :href="route('articles.show', notification.data.article_slug)"
+                                class="link"
+                                @click="openArticle(notification)"
+                            >
+                                Открыть статью
+                            </Link>
+                            <button
+                                type="button"
+                                class="accept-btn"
+                                @click="respondCoauthor(notification, 'accept')"
+                            >
+                                Да
+                            </button>
+                            <button
+                                type="button"
+                                class="decline-btn"
+                                @click="respondCoauthor(notification, 'decline')"
+                            >
+                                Нет
+                            </button>
+                        </div>
+                    </template>
+                    <template v-else-if="notification.data.article_slug">
                         <Link
-                            v-if="notification.data.article_slug"
                             :href="route('articles.show', notification.data.article_slug)"
-                            class="link"
+                            class="notification-link"
+                            @click="openArticle(notification)"
                         >
-                            Открыть статью
+                            {{ notification.data.message }}
                         </Link>
-                        <Link
-                            v-else-if="notification.data.author_id"
-                            :href="route('authors.show', notification.data.author_id)"
-                            class="link"
-                        >
-                            Открыть профиль
-                        </Link>
-                        <button v-if="!notification.read_at" class="read-btn" @click="markRead(notification.id)">
-                            Прочитано
-                        </button>
-                    </div>
+                        <div class="notification-actions">
+                            <button v-if="!notification.read_at" class="read-btn" @click="markRead(notification.id)">
+                                Прочитано
+                            </button>
+                        </div>
+                    </template>
+                    <template v-else>
+                        <p class="notification-text">{{ notification.data.message }}</p>
+                        <div class="notification-actions">
+                            <Link
+                                v-if="notification.data.author_id"
+                                :href="route('authors.show', notification.data.author_id)"
+                                class="link"
+                            >
+                                Открыть профиль
+                            </Link>
+                            <button v-if="!notification.read_at" class="read-btn" @click="markRead(notification.id)">
+                                Прочитано
+                            </button>
+                        </div>
+                    </template>
                 </li>
             </ul>
             <p v-else class="empty">Уведомлений пока нет</p>
@@ -144,18 +203,26 @@ const markRead = (id) => {
     color: #4a5568;
 }
 
-
 .tab-btn.active {
     background-color: var(--theme_black);
     color: white;
 }
 
+.toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1.25rem;
+}
+
 .mark-all {
     background: #edf2f7;
     border: none;
-    padding: 0.5rem 1rem;
+    padding: 0.65rem 1.35rem;
+    margin-right: 0.25rem;
     border-radius: 0.375rem;
     cursor: pointer;
+    font-weight: 600;
+    letter-spacing: 0.02em;
 }
 
 .notifications-list,
@@ -176,6 +243,64 @@ const markRead = (id) => {
 
 .notification-item.unread {
     border-left: 4px solid #4299e1;
+}
+
+.notification-link {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    font-size: 1rem;
+    line-height: 1.45;
+    margin-bottom: 0.5rem;
+}
+
+.notification-link:hover {
+    color: #3182ce;
+}
+
+.notification-text {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+    line-height: 1.45;
+}
+
+.notification-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    align-items: center;
+}
+
+.link {
+    color: #4299e1;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.read-btn,
+.accept-btn,
+.decline-btn {
+    border: none;
+    padding: 0.4rem 0.85rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.read-btn {
+    background: #edf2f7;
+    color: #4a5568;
+}
+
+.accept-btn {
+    background: #48bb78;
+    color: #fff;
+}
+
+.decline-btn {
+    background: #fed7d7;
+    color: #c53030;
 }
 
 .author-item {
@@ -254,7 +379,12 @@ const markRead = (id) => {
     color: #f0f0f0;
 }
 
-[data-theme="dark"] .mark-all {
+[data-theme="dark"] .notification-link:hover {
+    color: #90cdf4;
+}
+
+[data-theme="dark"] .mark-all,
+[data-theme="dark"] .read-btn {
     background: #141414;
     color: #f0f0f0;
     border: 1px solid #404040;
@@ -263,5 +393,11 @@ const markRead = (id) => {
 [data-theme="dark"] .meta,
 [data-theme="dark"] .empty {
     color: #aaa;
+}
+
+[data-theme="dark"] .profile-link {
+    border-radius: 20px;
+    font-weight: 600;
+    padding: 0.5rem 1.25rem;
 }
 </style>

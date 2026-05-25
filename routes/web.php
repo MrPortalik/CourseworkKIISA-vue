@@ -47,6 +47,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/articles/create', [ArticleController::class, 'create'])->name('articles.create');
     Route::post('/articles', [ArticleController::class, 'store'])->name('articles.store');
     Route::post('/articles/content-images', [ArticleController::class, 'uploadContentImage'])->name('articles.content-images.store');
+    Route::get('/users/search', [\App\Http\Controllers\CoauthorController::class, 'searchUsers'])->name('users.search');
+    Route::post('/articles/{article:slug}/coauthors', [\App\Http\Controllers\CoauthorController::class, 'invite'])->name('articles.coauthors.invite');
+    Route::post('/coauthors/{coauthor}/accept', [\App\Http\Controllers\CoauthorController::class, 'accept'])->name('coauthors.accept');
+    Route::post('/coauthors/{coauthor}/decline', [\App\Http\Controllers\CoauthorController::class, 'decline'])->name('coauthors.decline');
     Route::get('/articles/{article:slug}/edit', [ArticleController::class, 'edit'])->name('articles.edit');
     Route::put('/articles/{article:slug}', [ArticleController::class, 'update'])->name('articles.update');
     Route::delete('/articles/{article:slug}', [ArticleController::class, 'destroy'])->name('articles.destroy');
@@ -91,8 +95,10 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
     Route::get('/admin/tags', [AdminTaxonomyController::class, 'tags'])->name('admin.taxonomy');
     Route::post('/admin/categories', [AdminTaxonomyController::class, 'storeCategory'])->name('admin.categories.store');
     Route::put('/admin/categories/{category}', [AdminTaxonomyController::class, 'updateCategory'])->name('admin.categories.update');
+    Route::delete('/admin/categories/{category}', [AdminTaxonomyController::class, 'destroyCategory'])->name('admin.categories.destroy');
     Route::post('/admin/tags', [AdminTaxonomyController::class, 'storeTag'])->name('admin.tags.store');
     Route::put('/admin/tags/{tag}', [AdminTaxonomyController::class, 'updateTag'])->name('admin.tags.update');
+    Route::delete('/admin/tags/{tag}', [AdminTaxonomyController::class, 'destroyTag'])->name('admin.tags.destroy');
 });
 
 require __DIR__.'/auth.php';

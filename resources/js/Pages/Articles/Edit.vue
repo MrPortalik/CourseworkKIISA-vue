@@ -2,12 +2,16 @@
 import { Head, Link, useForm, router, usePage } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 import HeaderComponent from '@/Layouts/HeaderComponent.vue'
+import ArticleTaxonomyPickers from '@/Components/ArticleTaxonomyPickers.vue'
+import CoauthorInvitePanel from '@/Components/CoauthorInvitePanel.vue'
 import { uploadArticleContentImage } from '@/lib/articleContentImage'
 
 const props = defineProps({
     article: Object,
     categories: Array,
     tags: Array,
+    pendingCoauthors: { type: Array, default: () => [] },
+    acceptedCoauthors: { type: Array, default: () => [] },
 })
 
 const page = usePage()
@@ -27,7 +31,9 @@ const form = useForm({
     is_hit: props.article.is_hit ?? false,
     is_editors_choice: props.article.is_editors_choice ?? false,
     is_new: props.article.is_new ?? false,
-    category_id: props.article.category_id ?? '',
+    category_ids: props.article.categories?.length
+        ? props.article.categories.map((c) => c.id)
+        : (props.article.category_id ? [props.article.category_id] : []),
     tag_ids: props.article.tags?.map((t) => t.id) ?? [],
     banner: null,
     hero_banner: null,
@@ -63,7 +69,7 @@ const onContentImageSelected = async (event) => {
 const submit = () => form
     .transform((data) => ({
         ...data,
-        category_id: data.category_id || null,
+        category_ids: data.category_ids?.length ? data.category_ids : [],
         _method: 'PUT',
     }))
     .post(route('articles.update', props.article.slug), { forceFormData: true })
@@ -101,20 +107,20 @@ const deleteArticle = () => {
                 <img v-if="heroPreview" :src="heroPreview" class="preview-hero" alt="" />
             </div>
 
-            <div class="form-group">
-                <label class="form-label">Категория</label>
-                <select v-model="form.category_id" class="form-input">
-                    <option value="">Без категории</option>
-                    <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
-                </select>
-            </div>
+            <ArticleTaxonomyPickers
+                :categories="categories"
+                :tags="tags"
+                v-model:category-ids="form.category_ids"
+                v-model:tag-ids="form.tag_ids"
+            />
 
             <div class="form-group">
-                <label class="form-label">Теги</label>
-                <label v-for="t in tags" :key="t.id" class="tag-label">
-                    <input v-model="form.tag_ids" type="checkbox" :value="t.id" />
-                    {{ t.name }}
-                </label>
+                <label class="form-label">Со-авторы</label>
+                <CoauthorInvitePanel
+                    :article-slug="article.slug"
+                    :pending-coauthors="pendingCoauthors"
+                    :accepted-coauthors="acceptedCoauthors"
+                />
             </div>
 
             <div class="form-group">

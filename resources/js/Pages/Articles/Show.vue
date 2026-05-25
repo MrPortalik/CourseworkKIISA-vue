@@ -38,9 +38,19 @@ const deleteArticle = () => {
             <header class="article-header">
                 <h1>{{ article.title }}</h1>
                 <div class="byline">
-                    <Link :href="route('authors.show', article.user_id)" class="author-link">
-                        {{ article.user?.name }}
-                    </Link>
+                    <span class="authors-line">
+                        <Link :href="route('authors.show', article.user_id)" class="author-link">
+                            {{ article.user?.name }}
+                        </Link>
+                        <template v-if="article.coauthors?.length">
+                            <span class="dot">·</span>
+                            <span class="coauthors-prefix">со-авторы:</span>
+                            <template v-for="(co, idx) in article.coauthors" :key="co.id">
+                                <span v-if="idx > 0" class="comma">, </span>
+                                <Link :href="route('authors.show', co.id)" class="author-link">{{ co.name }}</Link>
+                            </template>
+                        </template>
+                    </span>
                     <span class="dot">·</span>
                     <time class="article-date">{{ formatDate(article.created_at) }}</time>
                 </div>
@@ -95,8 +105,18 @@ const deleteArticle = () => {
     line-height: 1.15;
     color: var(--page-text, #1a202c);
 }
+.authors-line {
+    display: inline;
+}
+.coauthors-prefix {
+    margin-left: 0.15rem;
+    color: #718096;
+    font-size: 0.95em;
+}
+.comma { }
 .byline {
     display: flex;
+    flex-wrap: wrap;
     align-items: baseline;
     flex-wrap: wrap;
     gap: 0.5rem;

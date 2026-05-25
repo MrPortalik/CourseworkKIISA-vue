@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Article;
+use App\Models\ArticleCoauthor;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -12,16 +13,28 @@ class AuthorController extends Controller
 {
     public function show(Request $request, User $user)
     {
-        $query = Article::with(['user', 'category', 'tags'])->where('user_id', $user->id);
-
         $canSeeDrafts = $request->user()
             && ($request->user()->id === $user->id || $request->user()->isAdmin());
+
+        $query = Article::with(['user', 'category', 'tags'])
+            ->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                    ->orWhereHas('coauthorRecords', function ($r) use ($user) {
+                        $r->where('user_id', $user->id)
+                            ->where('status', ArticleCoauthor::STATUS_ACCEPTED);
+                    });
+            });
 
         if (! $canSeeDrafts) {
             $query->published();
         }
 
         $articles = $query->latest()->paginate(12);
+        $articles->through(function (Article $article) use ($user) {
+            $article->is_coauthor = (int) $article->user_id !== (int) $user->id;
+
+            return $article;
+        });
 
         $isSubscribed = false;
         if ($request->user() && $request->user()->id !== $user->id) {

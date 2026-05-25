@@ -6,6 +6,7 @@ defineProps({
     showAuthor: { type: Boolean, default: true },
 })
 
+
 const formatDate = (dateString) => {
     if (!dateString) return ''
     return new Date(dateString).toLocaleDateString('ru-RU')
@@ -37,6 +38,7 @@ const formatDate = (dateString) => {
                 <span class="date">{{ formatDate(article.created_at) }}</span>
             </div>
 
+            <div v-if="article.is_coauthor" class="card-coauthor">Со-автор</div>
             <div v-if="!article.is_published && !article.is_publishable" class="card-draft card-draft--plain">Черновик</div>
             <div v-else-if="article.is_publishable && !article.is_published" class="card-draft card-draft--publishable">Публикуется</div>
         </Link>
@@ -133,6 +135,18 @@ const formatDate = (dateString) => {
     font-size: 0.6rem;
     font-weight: 600;
     text-transform: uppercase;
+}
+.card-coauthor {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    background: #0db7ff;
+    color: #fff;
 }
 .card-draft--plain { background: #fed7d7; color: #c53030; }
 .card-draft--publishable { background: #fef9c3; color: #a16207; border: 1px solid #fde047; }

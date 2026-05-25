@@ -17,8 +17,10 @@ const formatDate = (d) => (d ? new Date(d).toLocaleDateString('ru-RU') : '')
     <section class="admin-panel content-area">
         <div class="admin-top">
             <h1>Админ-панель</h1>
-            <Link :href="route('admin.categories')" class="taxonomy-link">Категории</Link>
-            <Link :href="route('admin.taxonomy')" class="taxonomy-link secondary">Теги</Link>
+            <nav class="admin-nav">
+                <Link :href="route('admin.categories')" class="admin-tab">Категории</Link>
+                <Link :href="route('admin.taxonomy')" class="admin-tab">Теги</Link>
+            </nav>
         </div>
 
         <div class="section">
@@ -68,11 +70,40 @@ const formatDate = (d) => (d ? new Date(d).toLocaleDateString('ru-RU') : '')
 
 <style scoped>
 .admin-panel { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem 3rem; }
-.admin-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-.admin-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; }
-.taxonomy-link { background: var(--theme_black); color: #fff; padding: 0.6rem 1.2rem; border-radius: 8px; text-decoration: none; font-weight: 600; }
-.taxonomy-link.secondary { background: #4a5568; }
+.admin-panel h1 {
+    margin: 0 0 0.75rem;
+}
+.admin-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+}
+.admin-nav {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+.admin-tab {
+    background: #edf2f7;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    font-weight: 600;
+    color: #4a5568;
+    transition: background 0.2s, color 0.2s;
+}
+.admin-tab:hover {
+    background: #e2e8f0;
+    color: #2d3748;
+}
 .section { margin-bottom: 2.5rem; }
+.section h2 {
+    margin: 0 0 0.75rem;
+}
 .articles-list { display: flex; flex-direction: column; gap: 1rem; }
 .admin-card { display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; }
 .cover-preview { width: 72px; aspect-ratio: 9/16; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
@@ -108,5 +139,13 @@ const formatDate = (d) => (d ? new Date(d).toLocaleDateString('ru-RU') : '')
     border: 1px solid #333;
     color: #aaa;
 }
-[data-theme="dark"] .taxonomy-link.secondary { background: #3a3a3a; }
+[data-theme="dark"] .admin-tab {
+    background: #141414;
+    color: #ccc;
+    border: 1px solid #404040;
+}
+[data-theme="dark"] .admin-tab:hover {
+    background: #1e1e1e;
+    color: #f0f0f0;
+}
 </style>

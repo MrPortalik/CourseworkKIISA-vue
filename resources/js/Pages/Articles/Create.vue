@@ -2,6 +2,7 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 import HeaderComponent from '@/Layouts/HeaderComponent.vue'
+import ArticleTaxonomyPickers from '@/Components/ArticleTaxonomyPickers.vue'
 import { uploadArticleContentImage } from '@/lib/articleContentImage'
 
 const props = defineProps({
@@ -22,7 +23,7 @@ const form = useForm({
     content: '',
     is_publishable: false,
     is_published: false,
-    category_id: '',
+    category_ids: [],
     tag_ids: [],
     banner: null,
     hero_banner: null,
@@ -60,7 +61,7 @@ const onContentImageSelected = async (event) => {
 const submit = () => form
     .transform((data) => ({
         ...data,
-        category_id: data.category_id || null,
+        category_ids: data.category_ids?.length ? data.category_ids : [],
     }))
     .post(route('articles.store'), { forceFormData: true })
 </script>
@@ -93,21 +94,12 @@ const submit = () => form
                 <img v-if="heroPreview" :src="heroPreview" alt="" class="preview-hero" />
             </div>
 
-            <div class="form-group">
-                <label class="form-label">Категория</label>
-                <select v-model="form.category_id" class="form-input">
-                    <option value="">Без категории</option>
-                    <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Теги</label>
-                <label v-for="t in tags" :key="t.id" class="tag-label">
-                    <input v-model="form.tag_ids" type="checkbox" :value="t.id" />
-                    {{ t.name }}
-                </label>
-            </div>
+            <ArticleTaxonomyPickers
+                :categories="categories"
+                :tags="tags"
+                v-model:category-ids="form.category_ids"
+                v-model:tag-ids="form.tag_ids"
+            />
 
             <div class="form-group">
                 <div class="content-toolbar">

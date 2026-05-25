@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Article;
 use App\Models\Category;
 use App\Models\Tag;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -48,6 +50,15 @@ class AdminTaxonomyController extends Controller
         return back();
     }
 
+    public function destroyCategory(Category $category)
+    {
+        Article::query()->where('category_id', $category->id)->update(['category_id' => null]);
+        DB::table('article_category')->where('category_id', $category->id)->delete();
+        $category->delete();
+
+        return back();
+    }
+
     public function storeTag(Request $request)
     {
         $request->validate([
@@ -72,6 +83,14 @@ class AdminTaxonomyController extends Controller
             'name' => $request->name,
             'slug' => Str::slug($request->name),
         ]);
+
+        return back();
+    }
+
+    public function destroyTag(Tag $tag)
+    {
+        $tag->articles()->detach();
+        $tag->delete();
 
         return back();
     }

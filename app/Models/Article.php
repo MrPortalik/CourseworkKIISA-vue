@@ -51,6 +51,24 @@ class Article extends Model
         return $this->belongsTo(Category::class);
     }
 
+    public function categories(): BelongsToMany
+    {
+        return $this->belongsToMany(Category::class, 'article_category');
+    }
+
+    public function coauthorRecords(): HasMany
+    {
+        return $this->hasMany(ArticleCoauthor::class);
+    }
+
+    public function coauthors(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'article_coauthors')
+            ->withPivot(['status', 'invited_by'])
+            ->withTimestamps()
+            ->wherePivot('status', ArticleCoauthor::STATUS_ACCEPTED);
+    }
+
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(Tag::class);

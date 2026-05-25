@@ -47,9 +47,14 @@ const saveBio = () => {
     saveProfile()
 }
 
+const subscribeOpts = { preserveScroll: true, only: ['articles', 'isSubscribed'] }
+
 const toggleSubscribe = () => {
-    if (props.isSubscribed) router.delete(route('authors.unsubscribe', props.author.id))
-    else router.post(route('authors.subscribe', props.author.id))
+    if (props.isSubscribed) {
+        router.delete(route('authors.unsubscribe', props.author.id), subscribeOpts)
+    } else {
+        router.post(route('authors.subscribe', props.author.id), {}, subscribeOpts)
+    }
 }
 </script>
 
@@ -91,7 +96,7 @@ const toggleSubscribe = () => {
                 :class="{ subscribed: isSubscribed }"
                 @click="toggleSubscribe"
             >
-                {{ isSubscribed ? 'Отписаться' : 'Подписаться' }}
+                <span class="actionBtn-text">{{ isSubscribed ? 'Отписаться' : 'Подписаться' }}</span>
             </button>
         </div>
 
@@ -168,6 +173,13 @@ const toggleSubscribe = () => {
     font-size: 0.9rem;
 }
 .user { display: flex; max-width: 1620px; margin: 0 auto; padding: 0 1rem; gap: 2rem; }
+.left {
+    flex: 0 0 auto;
+    width: min(356px, 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
 .profile { margin-top: 35px; text-align: center; position: relative; display: inline-block; }
 .avatar-round { width: 356px; height: 356px; border-radius: 50%; object-fit: cover; display: block; }
 .avatar-edit-btn {
@@ -177,18 +189,14 @@ const toggleSubscribe = () => {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    border: 2px solid #fff;
-    background: #fff;
+    border: 2px solid var(--header-bg, #050505);
+    background: var(--header-bg, #050505);
+    color: #fff;
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-}
-[data-theme="dark"] .avatar-edit-btn {
-    background: var(--header-bg, #050505);
-    border-color: var(--header-bg, #050505);
-    color: #fff;
 }
 .avatar-edit-btn:disabled { opacity: 0.6; cursor: wait; }
 .right { margin-top: 76px; flex: 1; min-width: 0; }
@@ -211,8 +219,9 @@ const toggleSubscribe = () => {
 .bio-text { white-space: pre-wrap; }
 .bio-edit textarea { width: 100%; padding: 0.75rem; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 1rem; }
 .bio-actions { display: flex; gap: 0.75rem; margin-top: 0.75rem; }
-.save-bio { background: #0db7ff; color: #fff; border: none; padding: 0.6rem 1.25rem; border-radius: 8px; cursor: pointer; }
-.cancel-bio { background: #edf2f7; border: none; padding: 0.6rem 1.25rem; border-radius: 8px; cursor: pointer; }
+.save-bio { background: #0db7ff; color: #fff; border: none; padding: 0.6rem 1.25rem; border-radius: 8px; cursor: pointer; font-weight: 600; }
+.cancel-bio { background: #edf2f7; color: #2d3748; border: none; padding: 0.6rem 1.25rem; border-radius: 8px; cursor: pointer; font-weight: 600; }
+[data-theme="dark"] .cancel-bio { background: #2a2a2a; color: #f0f0f0; }
 .txt { max-width: 100%; margin-bottom: 20px; font-size: 1.1rem; line-height: 1.6; }
 .works-label { font-weight: 600; margin-bottom: 1rem; }
 .actionBtn {
@@ -221,12 +230,23 @@ const toggleSubscribe = () => {
     border-radius: 20px;
     border: 2px solid #ffffff;
     width: min(356px, 100%);
+    min-width: min(356px, 100%);
     height: 60px;
     font-weight: 550;
     font-size: 1.25rem;
     margin-top: 57px;
     cursor: pointer;
     transition: background 0.2s, color 0.2s, border-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+.actionBtn-text {
+    display: block;
+    min-width: 10.75rem;
+    text-align: center;
 }
 .actionBtn.subscribed {
     background: #0db7ff;
@@ -245,9 +265,18 @@ const toggleSubscribe = () => {
 }
 .cards {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 20px;
     margin-bottom: 4rem;
+}
+@media (max-width: 1200px) {
+    .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 900px) {
+    .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+    .cards { grid-template-columns: 1fr; }
 }
 .empty-state h3 { color: #718096; text-align: center; margin-top: 2rem; }
 .pagination { display: flex; gap: 0.5rem; flex-wrap: wrap; }

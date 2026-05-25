@@ -107,6 +107,16 @@ header .header-link:hover {
     text-decoration: underline;
 }
 
+.sideMenu p.nickname,
+.sideMenu .sidebar-user-link {
+    color: #ffffff;
+}
+
+.sideMenu p.nickname {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
 p {
     font-family: "Roboto", sans-serif;
     font-weight: normal;
@@ -190,5 +200,56 @@ p {
 
 [data-theme="dark"] .article-form {
     border-color: #333;
+}
+
+/* Белые акцентные кнопки в тёмной теме (как «Подписаться») */
+[data-theme="dark"] .save-bio,
+[data-theme="dark"] .apply-filters,
+[data-theme="dark"] .btn-add,
+[data-theme="dark"] .btn-submit,
+[data-theme="dark"] .profile-link,
+[data-theme="dark"] .subscriptions-page .btn,
+[data-theme="dark"] .actionBtn:not(.subscribed) {
+    background: #ffffff;
+    color: #0a0a0a;
+    border: 2px solid #ffffff;
+}
+
+[data-theme="dark"] .save-bio:hover,
+[data-theme="dark"] .apply-filters:hover,
+[data-theme="dark"] .btn-add:hover,
+[data-theme="dark"] .btn-submit:hover,
+[data-theme="dark"] .profile-link:hover,
+[data-theme="dark"] .subscriptions-page .btn:hover,
+[data-theme="dark"] .actionBtn:not(.subscribed):hover {
+    background: #f0f0f0;
+    border-color: #f0f0f0;
+    color: #0a0a0a;
+}
+
+/* Сохраняем голубые кнопки действий над статьями */
+[data-theme="dark"] .article-create .submit-button,
+[data-theme="dark"] .article-edit .submit-button,
+[data-theme="dark"] .article-show .edit-btn,
+[data-theme="dark"] .article-actions .edit-btn,
+[data-theme="dark"] .admin-card .btn--primary,
+[data-theme="dark"] .invite-btn {
+    background: #4299e1;
+    color: #ffffff;
+    border: none;
+}
+
+[data-theme="dark"] .invite-btn {
+    background: #0db7ff;
+}
+
+[data-theme="dark"] .article-create .submit-button:hover,
+[data-theme="dark"] .article-edit .submit-button:hover,
+[data-theme="dark"] .article-show .edit-btn:hover,
+[data-theme="dark"] .article-actions .edit-btn:hover,
+[data-theme="dark"] .admin-card .btn--primary:hover,
+[data-theme="dark"] .invite-btn:hover {
+    background: #3182ce;
+    color: #ffffff;
 }
 
