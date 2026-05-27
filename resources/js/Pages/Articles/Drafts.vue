@@ -2,7 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3'
 import SideMenuComponent from '@/Layouts/SideMenuComponent.vue'
 import HeaderComponent from '@/Layouts/HeaderComponent.vue'
-import ArticleCard from '@/Components/ArticleCard.vue'
+import ArticleCard from '@/Components/Articles/ArticleCard.vue'
 
 defineProps({
     articles: Object,
@@ -74,19 +74,6 @@ const formatDate = (dateString) => {
 .actions {
     display: flex;
     gap: 1rem;
-}
-
-.action-button {
-    background-color: var(--theme_black);
-    color: white;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.5rem;
-    text-decoration: none;
-    font-weight: 600;
-}
-
-.action-button.secondary {
-    background-color: #718096;
 }
 
 .articles-grid {

@@ -77,26 +77,44 @@ const isArticlesSection = computed(() => {
     gap: 1.5rem;
     margin-left: 2rem;
 }
-.nav-main, .nav-right { display: flex; align-items: center; gap: 1.75rem; flex-wrap: wrap; }
+.nav-main, .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 1.75rem;
+    flex-wrap: wrap;
+    min-height: 44px;
+}
 .header-link {
     text-decoration: none;
     font-size: 1.25rem;
     color: white;
     position: relative;
-    transition: color 0.2s;
+    transition: color 0.2s, box-shadow 0.2s;
     background: none;
     border: none;
     cursor: pointer;
     font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-height: 36px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 2px solid transparent;
 }
 .header-link--active {
     color: #ffffff;
     box-shadow: 0 0 0 2px #ffffff;
-    border-radius: 6px;
-    padding: 2px 8px;
-    margin: -2px -8px;
 }
-.bell-link { display: inline-flex; align-items: center; padding: 0.25rem; }
+.bell-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    min-width: 36px;
+    padding: 4px 8px;
+}
 .bell-icon { width: 28px; height: 28px; }
 .bell-link .badge {
     position: absolute; top: -4px; right: -8px;

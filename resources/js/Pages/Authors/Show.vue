@@ -1,8 +1,9 @@
 <script setup>
 import HeaderComponent from '@/Layouts/HeaderComponent.vue'
-import ArticleCard from '@/Components/ArticleCard.vue'
+import ArticleCard from '@/Components/Articles/ArticleCard.vue'
 import EditPencilIcon from '@/Components/EditPencilIcon.vue'
-import UserAvatar from '@/Components/UserAvatar.vue'
+import UserAvatar from '@/Components/User/UserAvatar.vue'
+import UserRoleBadge from '@/Components/UI/UserRoleBadge.vue'
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 
@@ -101,7 +102,10 @@ const toggleSubscribe = () => {
         </div>
 
         <div class="right">
-            <p class="userName">{{ author.name }}</p>
+            <p class="userName">
+                {{ author.name }}
+                <UserRoleBadge :user="author" class="profile-role-badge" />
+            </p>
             <p class="userTag">id_{{ author.id }}</p>
 
             <div v-if="isOwnProfile" class="bio-section">
@@ -200,7 +204,18 @@ const toggleSubscribe = () => {
 }
 .avatar-edit-btn:disabled { opacity: 0.6; cursor: wait; }
 .right { margin-top: 76px; flex: 1; min-width: 0; }
-.userName { font-size: clamp(2rem, 5vw, 58px); margin: 0; }
+.userName {
+    font-size: clamp(2rem, 5vw, 58px);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.profile-role-badge {
+    font-size: 0.85rem;
+    vertical-align: middle;
+}
 .userTag { font-size: clamp(1.25rem, 3vw, 48px); margin-bottom: 23px; color: #718096; }
 .bio-section { margin-bottom: 1.5rem; max-width: 800px; }
 .bio-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }

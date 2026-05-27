@@ -2,11 +2,12 @@
 import { router, useForm, usePage } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 import CommentItem from './CommentItem.vue'
-import UserAvatar from './UserAvatar.vue'
+import UserAvatar from '@/Components/User/UserAvatar.vue'
 
 const props = defineProps({
     comments: { type: Array, default: () => [] },
     articleSlug: { type: String, required: true },
+    articleAuthorId: { type: Number, default: null },
     userCommentVotes: { type: Object, default: () => ({}) },
 })
 
@@ -73,6 +74,7 @@ const startReply = (id) => {
             <li v-for="comment in comments" :key="comment.id" class="comment-root">
                 <CommentItem
                     :comment="comment"
+                    :article-author-id="articleAuthorId"
                     :user-vote="userCommentVotes[comment.id]"
                     @reply="startReply"
                     @vote="voteComment"
@@ -81,6 +83,7 @@ const startReply = (id) => {
                     <li v-for="child in comment.children" :key="child.id">
                         <CommentItem
                             :comment="child"
+                            :article-author-id="articleAuthorId"
                             :user-vote="userCommentVotes[child.id]"
                             is-reply
                             @reply="startReply"
@@ -90,6 +93,7 @@ const startReply = (id) => {
                             <li v-for="grand in child.children" :key="grand.id">
                                 <CommentItem
                                     :comment="grand"
+                                    :article-author-id="articleAuthorId"
                                     :user-vote="userCommentVotes[grand.id]"
                                     is-reply
                                     @reply="startReply"

@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { router } from '@inertiajs/vue3'
-import ModalPanel from './ModalPanel.vue'
+import ModalPanel from '@/Components/ModalPanel.vue'
 
 const props = defineProps({
     articleSlug: { type: String, default: null },

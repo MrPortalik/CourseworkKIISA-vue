@@ -2,9 +2,10 @@
 import { Head, Link, useForm, router, usePage } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 import HeaderComponent from '@/Layouts/HeaderComponent.vue'
-import ArticleTaxonomyPickers from '@/Components/ArticleTaxonomyPickers.vue'
-import CoauthorInvitePanel from '@/Components/CoauthorInvitePanel.vue'
+import ArticleTaxonomyPickers from '@/Components/Articles/ArticleTaxonomyPickers.vue'
+import CoauthorInvitePanel from '@/Components/Articles/CoauthorInvitePanel.vue'
 import { uploadArticleContentImage } from '@/lib/articleContentImage'
+import { buildArticleHtml, extractContentImages, htmlToPlainText } from '@/lib/articleContent'
 
 const props = defineProps({
     article: Object,
@@ -23,9 +24,11 @@ const heroPreview = ref(props.article.hero_banner || null)
 const contentImageInput = ref(null)
 const uploadingImage = ref(false)
 
+const embeddedImages = ref(extractContentImages(props.article.content))
+
 const form = useForm({
     title: props.article.title,
-    content: props.article.content,
+    content: htmlToPlainText(props.article.content),
     is_published: props.article.is_published,
     is_publishable: props.article.is_publishable,
     is_hit: props.article.is_hit ?? false,
@@ -59,7 +62,7 @@ const onContentImageSelected = async (event) => {
     uploadingImage.value = true
     try {
         const url = await uploadArticleContentImage(file)
-        form.content += `\n<img src="${url}" class="content-image-float" alt="" />`
+        embeddedImages.value.push({ src: url, className: 'content-image-float', alt: '' })
     } finally {
         uploadingImage.value = false
         event.target.value = ''
@@ -69,6 +72,7 @@ const onContentImageSelected = async (event) => {
 const submit = () => form
     .transform((data) => ({
         ...data,
+        content: buildArticleHtml(data.content, embeddedImages.value),
         category_ids: data.category_ids?.length ? data.category_ids : [],
         _method: 'PUT',
     }))

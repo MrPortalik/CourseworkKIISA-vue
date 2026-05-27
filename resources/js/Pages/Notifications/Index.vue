@@ -2,7 +2,7 @@
 import { Head, Link, router } from '@inertiajs/vue3'
 import { ref } from 'vue'
 import HeaderComponent from '@/Layouts/HeaderComponent.vue'
-import UserAvatar from '@/Components/UserAvatar.vue'
+import UserAvatar from '@/Components/User/UserAvatar.vue'
 
 const props = defineProps({
     notifications: Object,

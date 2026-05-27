@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
-import ModalPanel from './ModalPanel.vue'
+import ModalPanel from '@/Components/ModalPanel.vue'
 
 const props = defineProps({
     tags: { type: Array, default: () => [] },

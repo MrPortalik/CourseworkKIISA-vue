@@ -1,12 +1,14 @@
 <script setup>
 import { Link, usePage } from '@inertiajs/vue3'
 import { computed } from 'vue'
-import UserAvatar from './UserAvatar.vue'
+import UserAvatar from '@/Components/User/UserAvatar.vue'
+import UserRoleBadge from '@/Components/UI/UserRoleBadge.vue'
 
 const props = defineProps({
     comment: Object,
     userVote: Number,
     isReply: { type: Boolean, default: false },
+    articleAuthorId: { type: Number, default: null },
 })
 
 const page = usePage()
@@ -23,25 +25,27 @@ const scoreClass = computed(() => {
     if (score.value < 0) return 'score--negative'
     return 'score--neutral'
 })
-
 </script>
 
 <template>
     <article class="comment-item" :class="{ reply: isReply }">
         <UserAvatar :src="comment.user?.avatar" :alt="comment.user?.name" :size="40" class="comment-avatar" />
         <div class="comment-body">
-            <header>
-                <Link
-                    v-if="comment.user?.id"
-                    :href="route('authors.show', comment.user.id)"
-                    class="author-link"
-                >
-                    <strong>{{ comment.user.name }}</strong>
-                </Link>
-                <strong v-else>{{ comment.user?.name }}</strong>
+            <header class="comment-header">
+                <div class="comment-author-row">
+                    <Link
+                        v-if="comment.user?.id"
+                        :href="route('authors.show', comment.user.id)"
+                        class="author-link"
+                    >
+                        <strong>{{ comment.user.name }}</strong>
+                    </Link>
+                    <strong v-else>{{ comment.user?.name }}</strong>
+                    <UserRoleBadge :user="comment.user" :article-author-id="articleAuthorId" />
+                </div>
                 <span class="date">{{ formatDate(comment.created_at) }}</span>
             </header>
-            <p>{{ comment.body }}</p>
+            <p class="comment-text">{{ comment.body }}</p>
             <div class="comment-actions">
                 <div v-if="!isOwnComment && $page.props.auth?.user" class="vote-pill">
                     <button
@@ -83,12 +87,20 @@ const scoreClass = computed(() => {
     flex-shrink: 0;
 }
 .comment-body { flex: 1; min-width: 0; }
-header {
+.comment-header {
     display: flex;
-    align-items: baseline;
+    align-items: flex-start;
+    justify-content: space-between;
     gap: 0.5rem;
     margin-bottom: 0.25rem;
     flex-wrap: wrap;
+}
+.comment-author-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    min-width: 0;
 }
 header strong { color: var(--page-text, inherit); }
 .author-link {
@@ -96,12 +108,18 @@ header strong { color: var(--page-text, inherit); }
     color: inherit;
 }
 .author-link:hover strong { text-decoration: underline; opacity: 0.85; }
-.date { font-size: 0.75rem; color: #718096; }
-p {
+.date {
+    font-size: 0.75rem;
+    color: #718096;
+    flex-shrink: 0;
+}
+.comment-text {
     margin: 0 0 0.5rem;
     font-size: 0.95rem;
     line-height: 1.5;
     color: var(--page-text, inherit);
+    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 .comment-actions { display: flex; align-items: center; gap: 1rem; }
 .vote-pill {

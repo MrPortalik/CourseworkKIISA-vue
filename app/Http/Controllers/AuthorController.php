@@ -42,7 +42,7 @@ class AuthorController extends Controller
         }
 
         return Inertia::render('Authors/Show', [
-            'author' => $user->only(['id', 'name', 'email', 'bio', 'avatar']),
+            'author' => $user->only(['id', 'name', 'email', 'bio', 'avatar', 'role']),
             'articles' => $articles,
             'isSubscribed' => $isSubscribed,
             'isOwnProfile' => $request->user()?->id === $user->id,

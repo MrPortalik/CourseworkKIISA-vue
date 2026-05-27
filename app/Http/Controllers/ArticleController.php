@@ -103,11 +103,16 @@ class ArticleController extends Controller
         $article->loadAvg('votes as average_rating', 'vote');
         $article->loadCount('votes as ratings_count');
 
+        $commentUserFields = ['id', 'name', 'avatar', 'role'];
+
         $comments = Comment::where('article_id', $article->id)
             ->whereNull('parent_id')
             ->with([
-                'user',
-                'children' => fn ($q) => $q->with(['user', 'children.user'])->withCount([
+                'user:' . implode(',', $commentUserFields),
+                'children' => fn ($q) => $q->with([
+                    'user:' . implode(',', $commentUserFields),
+                    'children.user:' . implode(',', $commentUserFields),
+                ])->withCount([
                     'votes as upvotes_count' => fn ($v) => $v->where('vote', 1),
                     'votes as downvotes_count' => fn ($v) => $v->where('vote', -1),
                 ]),

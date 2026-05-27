@@ -100,12 +100,18 @@ const formatDate = (dateString) => {
     font-size: 0.75rem;
     color: #718096;
     margin-top: auto;
+    min-height: 2.75rem;
 }
 .author {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
     word-break: break-word;
     overflow-wrap: anywhere;
     flex: 1;
     min-width: 0;
+    line-height: 1.3;
 }
 .date {
     flex-shrink: 0;

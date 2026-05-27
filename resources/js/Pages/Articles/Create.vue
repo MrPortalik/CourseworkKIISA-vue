@@ -2,8 +2,9 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 import HeaderComponent from '@/Layouts/HeaderComponent.vue'
-import ArticleTaxonomyPickers from '@/Components/ArticleTaxonomyPickers.vue'
+import ArticleTaxonomyPickers from '@/Components/Articles/ArticleTaxonomyPickers.vue'
 import { uploadArticleContentImage } from '@/lib/articleContentImage'
+import { buildArticleHtml } from '@/lib/articleContent'
 
 const props = defineProps({
     categories: Array,
@@ -17,6 +18,7 @@ const bannerPreview = ref(null)
 const heroPreview = ref(null)
 const contentImageInput = ref(null)
 const uploadingImage = ref(false)
+const embeddedImages = ref([])
 
 const form = useForm({
     title: '',
@@ -51,7 +53,7 @@ const onContentImageSelected = async (event) => {
     uploadingImage.value = true
     try {
         const url = await uploadArticleContentImage(file)
-        form.content += (form.content ? '\n' : '') + `<img src="${url}" class="content-image-float" alt="" />`
+        embeddedImages.value.push({ src: url, className: 'content-image-float', alt: '' })
     } finally {
         uploadingImage.value = false
         event.target.value = ''
@@ -61,6 +63,7 @@ const onContentImageSelected = async (event) => {
 const submit = () => form
     .transform((data) => ({
         ...data,
+        content: buildArticleHtml(data.content, embeddedImages.value),
         category_ids: data.category_ids?.length ? data.category_ids : [],
     }))
     .post(route('articles.store'), { forceFormData: true })

@@ -2,9 +2,9 @@
 import { Head, Link, router } from '@inertiajs/vue3'
 import { computed, ref, watch } from 'vue'
 import PageWithSidebar from '@/Layouts/PageWithSidebar.vue'
-import ArticleSearchBar from '@/Components/ArticleSearchBar.vue'
-import ArticleCard from '@/Components/ArticleCard.vue'
-import CategoryArticleSliders from '@/Components/CategoryArticleSliders.vue'
+import ArticleSearchBar from '@/Components/Articles/ArticleSearchBar.vue'
+import ArticleCard from '@/Components/Articles/ArticleCard.vue'
+import CategoryArticleSliders from '@/Components/Articles/CategoryArticleSliders.vue'
 
 const props = defineProps({
     articles: Object,
@@ -171,15 +171,6 @@ const gotoCategory = (categoryId) => {
     gap: 1rem;
 }
 .actions { display: flex; gap: 0.75rem; }
-.action-button {
-    background: var(--theme_black);
-    color: white;
-    padding: 0.65rem 1.25rem;
-    border-radius: 0.5rem;
-    text-decoration: none;
-    font-weight: 600;
-}
-.action-button.secondary { background: var(--theme_black); }
 .articles-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));

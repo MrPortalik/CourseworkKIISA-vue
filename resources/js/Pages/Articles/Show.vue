@@ -1,7 +1,7 @@
 <script setup>
 import PageWithSidebar from '@/Layouts/PageWithSidebar.vue'
 import StarRating from '@/Components/StarRating.vue'
-import CommentThread from '@/Components/CommentThread.vue'
+import CommentThread from '@/Components/Comments/CommentThread.vue'
 import { Head, Link, router, usePage } from '@inertiajs/vue3'
 import { computed } from 'vue'
 
@@ -61,8 +61,6 @@ const deleteArticle = () => {
                 <button type="button" class="delete-btn" @click="deleteArticle">Удалить</button>
             </div>
 
-            <img v-if="article.banner" :src="article.banner" alt="" class="book-cover" />
-
             <div class="article-content" v-html="article.content" />
 
             <hr class="article-divider" />
@@ -80,6 +78,7 @@ const deleteArticle = () => {
             <CommentThread
                 :comments="comments"
                 :article-slug="article.slug"
+                :article-author-id="article.user_id"
                 :user-comment-votes="userCommentVotes"
             />
         </article>
@@ -135,19 +134,22 @@ const deleteArticle = () => {
 }
 .article-date { font-size: 1.1rem; }
 .dot { opacity: 0.45; }
-.book-cover {
-    aspect-ratio: 9/16;
-    max-width: 200px;
-    object-fit: cover;
-    float: right;
-    margin: 0 0 1rem 1.25rem;
-    border-radius: 6px;
-}
 .article-content {
     line-height: 1.8;
-    overflow: hidden;
     margin-bottom: 1.5rem;
     font-size: 1.05rem;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+.article-content :deep(p) {
+    margin: 0 0 1rem;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+.article-content :deep(img) {
+    max-width: 100%;
+    height: auto;
 }
 .article-content :deep(.content-image-float) {
     float: right;

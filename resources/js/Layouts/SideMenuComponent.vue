@@ -1,7 +1,7 @@
 <script setup>
 import { Link, usePage } from '@inertiajs/vue3'
 import { computed } from 'vue'
-import UserAvatar from '@/Components/UserAvatar.vue'
+import UserAvatar from '@/Components/User/UserAvatar.vue'
 
 const page = usePage()
 const categories = computed(() => page.props.sidebarCategories ?? [])
