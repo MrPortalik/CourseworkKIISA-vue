@@ -104,6 +104,10 @@ watch(() => page.url, closeNav)
     gap: 1rem;
     padding-inline: 20px;
     background-color: var(--header-bg, var(--dark_black));
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: clip;
 }
 
 .header-left {

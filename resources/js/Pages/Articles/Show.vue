@@ -407,4 +407,31 @@ const scrollToRating = () => {
 [data-theme="dark"] .reject-modal { background: #141414; color: #f0f0f0; }
 [data-theme="dark"] .reject-textarea { background: #1a1a1a; border-color: #404040; color: #f0f0f0; }
 [data-theme="dark"] .mod-btn { background: #2a2a2a; color: #f0f0f0; }
+
+@media (max-width: 768px) {
+    .byline {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.65rem;
+    }
+
+    .byline-rating {
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 0.35rem 0.5rem;
+    }
+
+    .header-star {
+        font-size: 1.25rem;
+    }
+
+    .author-link {
+        font-size: 1.05rem;
+    }
+
+    .article-date {
+        font-size: 0.95rem;
+    }
+}
 </style>

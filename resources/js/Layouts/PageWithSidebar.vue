@@ -29,13 +29,19 @@ useEdgeSwipeOpen(openSidebar)
     display: flex;
     align-items: stretch;
     min-height: calc(100vh - 130px);
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
 }
 
 .page-main {
     flex: 1;
     min-width: 0;
+    max-width: 100%;
     padding: 2rem 2.5rem 3rem;
     background: var(--content-bg);
+    overflow-x: clip;
+    box-sizing: border-box;
 }
 
 .mobile-sidebar-toggle {

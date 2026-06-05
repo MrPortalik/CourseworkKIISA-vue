@@ -27,10 +27,21 @@
     --content-bg: #18181b;
 }
 
+html {
+    overflow-x: clip;
+}
+
 body {
     background: var(--content-bg);
     color: var(--page-text);
     transition: background 0.2s, color 0.2s;
+    overflow-x: clip;
+    max-width: 100%;
+}
+
+#app {
+    overflow-x: clip;
+    max-width: 100%;
 }
 
 .content-area,
@@ -439,6 +450,12 @@ p {
 }
 
 @media (max-width: 768px) {
+    section {
+        max-width: 100%;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
     h1 { font-size: clamp(1.75rem, 7vw, 58px); }
     h2 { font-size: clamp(1.35rem, 5vw, 34px); }
     h3 { font-size: clamp(1.1rem, 4vw, 22px); }

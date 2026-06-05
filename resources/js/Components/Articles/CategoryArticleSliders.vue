@@ -194,10 +194,12 @@ onUnmounted(() => {
     justify-content: center;
     gap: 0.5rem;
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
 }
 .slider-viewport {
-    flex: 0 0 var(--slider-viewport-width);
-    width: min(100%, var(--slider-viewport-width));
+    flex: 1 1 0;
+    width: 100%;
     max-width: var(--slider-viewport-width);
     min-width: 0;
     overflow: hidden;

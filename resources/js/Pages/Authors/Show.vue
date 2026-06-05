@@ -176,7 +176,16 @@ const toggleSubscribe = () => {
     font-weight: 600;
     font-size: 0.9rem;
 }
-.user { display: flex; max-width: 1620px; margin: 0 auto; padding: 0 1rem; gap: 2rem; }
+.user {
+    display: flex;
+    max-width: 1620px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 1rem;
+    gap: 2rem;
+    box-sizing: border-box;
+    overflow-x: clip;
+}
 .left {
     flex: 0 0 auto;
     width: min(356px, 100%);
