@@ -1,6 +1,7 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3'
+import { Head, Link, router, useForm } from '@inertiajs/vue3'
 import HeaderComponent from '@/Layouts/HeaderComponent.vue'
+import { ref } from 'vue'
 
 defineProps({
     pendingArticles: Object,
@@ -8,6 +9,31 @@ defineProps({
 })
 
 const formatDate = (d) => (d ? new Date(d).toLocaleDateString('ru-RU') : '')
+
+const rejectTarget = ref(null)
+const rejectForm = useForm({ reason: '' })
+
+const openReject = (article) => {
+    rejectTarget.value = article
+    rejectForm.reason = ''
+}
+
+const closeReject = () => {
+    rejectTarget.value = null
+    rejectForm.reset()
+}
+
+const submitReject = () => {
+    if (!rejectTarget.value) return
+    rejectForm.post(route('admin.articles.reject', rejectTarget.value.slug), {
+        preserveScroll: true,
+        onSuccess: closeReject,
+    })
+}
+
+const approve = (article) => {
+    router.post(route('admin.articles.approve', article.slug), {}, { preserveScroll: true })
+}
 </script>
 
 <template>
@@ -18,8 +44,8 @@ const formatDate = (d) => (d ? new Date(d).toLocaleDateString('ru-RU') : '')
         <div class="admin-top">
             <h1>Админ-панель</h1>
             <nav class="admin-nav">
-                <Link :href="route('admin.categories')" class="admin-tab">Категории</Link>
-                <Link :href="route('admin.taxonomy')" class="admin-tab">Теги</Link>
+                <Link :href="route('admin.categories')" class="admin-tab btn-accent">Категории</Link>
+                <Link :href="route('admin.taxonomy')" class="admin-tab btn-accent">Теги</Link>
             </nav>
         </div>
 
@@ -39,7 +65,8 @@ const formatDate = (d) => (d ? new Date(d).toLocaleDateString('ru-RU') : '')
                     </div>
                     <div class="actions">
                         <Link :href="route('articles.show', article.slug)" class="btn">Просмотр</Link>
-                        <Link :href="route('articles.edit', article.slug)" class="btn btn--primary">Модерация</Link>
+                        <button type="button" class="btn btn--success" @click="approve(article)">Принять</button>
+                        <button type="button" class="btn btn--danger" @click="openReject(article)">Отклонить</button>
                     </div>
                 </article>
             </div>
@@ -65,14 +92,25 @@ const formatDate = (d) => (d ? new Date(d).toLocaleDateString('ru-RU') : '')
             </div>
             <p v-else class="empty">Нет черновиков</p>
         </div>
+
+        <div v-if="rejectTarget" class="reject-overlay" @click.self="closeReject">
+            <form class="reject-modal" @submit.prevent="submitReject">
+                <h3>Отклонить публикацию</h3>
+                <p class="reject-title">«{{ rejectTarget.title }}»</p>
+                <label class="reject-label">Причина (будет отправлена автору)</label>
+                <textarea v-model="rejectForm.reason" rows="4" required class="reject-textarea" />
+                <div class="reject-actions">
+                    <button type="button" class="btn" @click="closeReject">Отмена</button>
+                    <button type="submit" class="btn btn--danger" :disabled="rejectForm.processing">Отклонить</button>
+                </div>
+            </form>
+        </div>
     </section>
 </template>
 
 <style scoped>
 .admin-panel { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem 3rem; }
-.admin-panel h1 {
-    margin: 0 0 0.75rem;
-}
+.admin-panel h1 { margin: 0 0 0.75rem; }
 .admin-top {
     display: flex;
     justify-content: space-between;
@@ -81,71 +119,109 @@ const formatDate = (d) => (d ? new Date(d).toLocaleDateString('ru-RU') : '')
     gap: 0.5rem;
     margin-bottom: 2rem;
 }
-.admin-nav {
-    display: flex;
-    gap: 0.75rem;
-    align-items: center;
-}
+.admin-nav { display: flex; gap: 0.75rem; align-items: center; }
 .admin-tab {
-    background: #edf2f7;
-    border: none;
-    padding: 0.6rem 1.2rem;
-    border-radius: 0.5rem;
     text-decoration: none;
     font-weight: 600;
     color: #4a5568;
-    transition: background 0.2s, color 0.2s;
-}
-.admin-tab:hover {
-    background: #e2e8f0;
-    color: #2d3748;
 }
 .section { margin-bottom: 2.5rem; }
-.section h2 {
-    margin: 0 0 0.75rem;
-}
+.section h2 { margin: 0 0 0.75rem; }
 .articles-list { display: flex; flex-direction: column; gap: 1rem; }
-.admin-card { display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; }
+.admin-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+}
 .cover-preview { width: 72px; aspect-ratio: 9/16; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
 .card-body { flex: 1; }
 .meta { color: #718096; font-size: 0.875rem; }
 .badge { font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 999px; font-weight: 600; }
 .badge--publishable { background: #fef9c3; color: #a16207; }
 .badge--draft { background: #fed7d7; color: #c53030; }
-.actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
-.btn { padding: 0.5rem 1rem; border-radius: 6px; text-decoration: none; background: #edf2f7; color: #2d3748; font-size: 0.875rem; }
-.btn--primary { background: #4299e1; color: #fff; }
-.empty { text-align: center; color: #718096; padding: 2rem; background: #f7fafc; border-radius: 8px; }
-
-[data-theme="dark"] .admin-panel { color: #f0f0f0; }
-[data-theme="dark"] .admin-card {
-    background: var(--theme_black);
-    border-color: #333;
+.actions { display: flex; gap: 0.5rem; flex-shrink: 0; flex-wrap: wrap; }
+.btn {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    text-decoration: none;
+    background: #edf2f7;
+    color: #2d3748;
+    font-size: 0.875rem;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
 }
+.btn--primary { background: #4299e1; color: #fff; }
+.btn--success { background: #48bb78; color: #fff; }
+.btn--danger { background: #f56565; color: #fff; }
+.empty { text-align: center; color: #718096; padding: 2rem; background: #f7fafc; border-radius: 8px; }
+.reject-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 1rem;
+}
+.reject-modal {
+    background: #fff;
+    border-radius: 10px;
+    padding: 1.5rem;
+    width: min(480px, 100%);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+.reject-modal h3 { margin: 0 0 0.5rem; }
+.reject-title { color: #718096; margin: 0 0 1rem; font-size: 0.95rem; }
+.reject-label { display: block; font-weight: 600; margin-bottom: 0.35rem; }
+.reject-textarea {
+    width: 100%;
+    padding: 0.65rem;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    box-sizing: border-box;
+    margin-bottom: 1rem;
+    font-family: inherit;
+}
+.reject-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+[data-theme="dark"] .admin-panel { color: #f0f0f0; }
+[data-theme="dark"] .admin-card { background: var(--theme_black); border-color: #333; }
 [data-theme="dark"] .admin-card h3 { color: #f0f0f0; }
 [data-theme="dark"] .meta { color: #aaa; }
-[data-theme="dark"] .btn {
-    background: #2a2a2a;
-    color: #f0f0f0;
-    border: 1px solid #404040;
-}
-[data-theme="dark"] .btn--primary {
-    background: #3182ce;
-    color: #fff;
-    border-color: transparent;
-}
-[data-theme="dark"] .empty {
-    background: #141414;
-    border: 1px solid #333;
-    color: #aaa;
-}
-[data-theme="dark"] .admin-tab {
-    background: #141414;
-    color: #ccc;
-    border: 1px solid #404040;
-}
-[data-theme="dark"] .admin-tab:hover {
-    background: #1e1e1e;
-    color: #f0f0f0;
+[data-theme="dark"] .btn { background: #2a2a2a; color: #f0f0f0; border: 1px solid #404040; }
+[data-theme="dark"] .empty { background: #141414; border: 1px solid #333; color: #aaa; }
+[data-theme="dark"] .reject-modal { background: #141414; color: #f0f0f0; }
+[data-theme="dark"] .reject-textarea { background: #1a1a1a; border-color: #404040; color: #f0f0f0; }
+
+@media (max-width: 768px) {
+    .admin-panel {
+        margin: 1rem auto;
+        padding: 0 1rem 2rem;
+    }
+
+    .admin-top {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .admin-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .actions {
+        width: 100%;
+    }
+
+    .actions .btn {
+        flex: 1 1 auto;
+        text-align: center;
+        justify-content: center;
+    }
 }
 </style>

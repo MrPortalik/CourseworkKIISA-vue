@@ -1,3 +1,32 @@
+# КИИСА — информационный портал
+
+Laravel + Vue (Inertia) приложение для публикации и модерации статей.
+
+## Развёртывание на VPS
+
+Загруженные файлы (баннеры, изображения в тексте статей) сохраняются в `storage/app/public` и отдаются через URL `/storage/...`. Для корректной работы на сервере выполните:
+
+```bash
+# 1. Симлинк public/storage → storage/app/public (обязательно!)
+php artisan storage:link
+
+# 2. Права на запись (www-data или пользователь PHP-FPM)
+chmod -R 775 storage bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache
+
+# 3. В .env укажите реальный адрес сайта
+APP_URL=https://ваш-домен.ru
+FILESYSTEM_DISK=public
+```
+
+**Проверка:** после загрузки изображения в редакторе статьи URL должен начинаться с `/storage/articles/content/...` и открываться в браузере.
+
+При деплое через Docker симлинк создаётся автоматически (`Dockerfile`: `storage:link` при сборке и при старте контейнера).
+
+Схемы пользовательских и задачных потоков: [docs/flows.md](docs/flows.md).
+
+---
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">

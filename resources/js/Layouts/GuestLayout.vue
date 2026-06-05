@@ -50,4 +50,15 @@ import { Link } from '@inertiajs/vue3'
 }
 [data-theme="dark"] .auth-logo-light { display: none; }
 [data-theme="dark"] .auth-logo-dark { display: block; }
+
+@media (max-width: 768px) {
+    .auth-page {
+        padding: 1.25rem 1rem 2rem;
+        min-height: calc(100vh - 72px);
+    }
+
+    .auth-card {
+        padding: 1.5rem 1.25rem 1.75rem;
+    }
+}
 </style>

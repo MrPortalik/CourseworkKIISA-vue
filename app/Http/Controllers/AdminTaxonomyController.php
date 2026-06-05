@@ -63,11 +63,13 @@ class AdminTaxonomyController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255|unique:tags,name',
+            'description' => 'nullable|string|max:1000',
         ]);
 
         Tag::create([
             'name' => $request->name,
             'slug' => Str::slug($request->name),
+            'description' => $request->description,
         ]);
 
         return back();
@@ -77,11 +79,13 @@ class AdminTaxonomyController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255|unique:tags,name,'.$tag->id,
+            'description' => 'nullable|string|max:1000',
         ]);
 
         $tag->update([
             'name' => $request->name,
             'slug' => Str::slug($request->name),
+            'description' => $request->description,
         ]);
 
         return back();

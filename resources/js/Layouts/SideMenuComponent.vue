@@ -1,12 +1,15 @@
 <script setup>
 import { Link, usePage } from '@inertiajs/vue3'
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import UserAvatar from '@/Components/User/UserAvatar.vue'
+import MobileDrawer from '@/Components/MobileDrawer.vue'
+import { useMobileSidebar } from '@/composables/useMobileSidebar'
 
 const page = usePage()
 const categories = computed(() => page.props.sidebarCategories ?? [])
 const objectRanges = computed(() => page.props.objectRanges ?? [])
 const pageUrl = computed(() => page.url)
+const { isOpen, close } = useMobileSidebar()
 
 const isCategoryActive = (id) => {
     try {
@@ -23,10 +26,16 @@ const isAllArticlesActive = computed(() =>
 )
 
 const avatarSrc = computed(() => page.props.auth?.user?.avatar ?? null)
+
+const onNavClick = () => {
+    close()
+}
+
+watch(() => page.url, close)
 </script>
 
 <template>
-    <aside class="sideMenu">
+    <aside class="sideMenu sideMenu--desktop">
         <div v-if="$page.props.auth?.user" class="userMenu">
             <Link :href="route('dashboard')" class="avatar-link">
                 <UserAvatar :src="avatarSrc" alt="Аватар" :size="56" class="userLogo" />
@@ -74,6 +83,57 @@ const avatarSrc = computed(() => page.props.auth?.user?.avatar ?? null)
             </Link>
         </nav>
     </aside>
+
+    <MobileDrawer :open="isOpen" title="Категории и подборки" @close="close">
+        <div v-if="$page.props.auth?.user" class="userMenu userMenu--drawer">
+            <Link :href="route('dashboard')" class="avatar-link" @click="onNavClick">
+                <UserAvatar :src="avatarSrc" alt="Аватар" :size="48" class="userLogo" />
+            </Link>
+            <div class="textHolder">
+                <Link :href="route('dashboard')" class="nickname sidebar-user-link" @click="onNavClick">{{ $page.props.auth.user.name }}</Link>
+                <Link :href="route('dashboard')" class="username sidebar-user-link" @click="onNavClick">id_{{ $page.props.auth.user.id }}</Link>
+            </div>
+        </div>
+
+        <div v-else class="userMenu guest userMenu--drawer">
+            <Link :href="route('login')" @click="onNavClick">
+                <UserAvatar alt="Гость" :size="48" class="userLogo" />
+            </Link>
+            <p class="nickname">Гость</p>
+        </div>
+
+        <nav class="side-nav side-nav--drawer">
+            <p class="side-nav-title">Подборки</p>
+            <Link :href="route('articles.index', { section: 'hits' })" class="side-link" :class="{ 'side-link--active': pageUrl.includes('section=hits') }" @click="onNavClick">Хиты</Link>
+            <Link :href="route('articles.index', { section: 'editors_choice' })" class="side-link" :class="{ 'side-link--active': pageUrl.includes('section=editors_choice') }" @click="onNavClick">Выбор редакции</Link>
+            <Link :href="route('articles.index', { section: 'new' })" class="side-link" :class="{ 'side-link--active': pageUrl.includes('section=new') }" @click="onNavClick">Новинки</Link>
+
+            <p class="side-nav-title">Категории</p>
+            <Link :href="route('articles.index')" class="side-link" :class="{ 'side-link--active': isAllArticlesActive }" @click="onNavClick">Все статьи</Link>
+            <Link
+                v-for="cat in categories"
+                :key="`drawer-${cat.id}`"
+                :href="route('articles.index', { category: cat.id })"
+                class="side-link"
+                :class="{ 'side-link--active': isCategoryActive(cat.id) }"
+                @click="onNavClick"
+            >
+                {{ cat.name }}
+            </Link>
+
+            <p class="side-nav-title">Объекты</p>
+            <Link
+                v-for="range in objectRanges"
+                :key="`drawer-${range.index}`"
+                :href="route('articles.objects', range.index)"
+                class="side-link"
+                :class="{ 'side-link--active': route().current() === 'articles.objects' && Number(route().params.range) === range.index }"
+                @click="onNavClick"
+            >
+                {{ range.label }}
+            </Link>
+        </nav>
+    </MobileDrawer>
 </template>
 
 <style scoped>
@@ -85,6 +145,7 @@ const avatarSrc = computed(() => page.props.auth?.user?.avatar ?? null)
     padding-bottom: 2rem;
     min-height: calc(100vh - 130px);
 }
+
 .userMenu {
     padding: 16px 14px;
     display: flex;
@@ -92,12 +153,23 @@ const avatarSrc = computed(() => page.props.auth?.user?.avatar ?? null)
     gap: 12px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
+
+.userMenu--drawer {
+    margin: 0 0.75rem 0.5rem;
+    border-bottom: none;
+    padding: 0.5rem 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
 .userMenu.guest {
     flex-direction: column;
     align-items: center;
     text-align: center;
 }
+
 .avatar-link { flex-shrink: 0; }
+
 .userLogo {
     width: 56px;
     height: 56px;
@@ -105,6 +177,12 @@ const avatarSrc = computed(() => page.props.auth?.user?.avatar ?? null)
     object-fit: cover;
     display: block;
 }
+
+.userMenu--drawer .userLogo {
+    width: 48px;
+    height: 48px;
+}
+
 .textHolder {
     min-width: 0;
     flex: 1;
@@ -112,6 +190,7 @@ const avatarSrc = computed(() => page.props.auth?.user?.avatar ?? null)
     flex-direction: column;
     gap: 4px;
 }
+
 .sidebar-user-link {
     color: white;
     text-decoration: none;
@@ -119,21 +198,30 @@ const avatarSrc = computed(() => page.props.auth?.user?.avatar ?? null)
     word-break: break-word;
     line-height: 1.25;
 }
+
 .sidebar-user-link:hover {
     color: rgba(255, 255, 255, 0.85);
     text-decoration: underline;
 }
+
 .nickname {
     font-size: 1rem;
     margin: 0;
     font-weight: 600;
 }
+
 .username {
     font-size: 0.78rem;
     margin: 0;
     color: rgba(255, 255, 255, 0.65);
 }
+
 .side-nav { padding: 1rem 0; }
+
+.side-nav--drawer {
+    padding: 0.25rem 0 0;
+}
+
 .side-nav-title {
     font-size: 0.75rem;
     text-transform: uppercase;
@@ -142,6 +230,11 @@ const avatarSrc = computed(() => page.props.auth?.user?.avatar ?? null)
     padding: 0.75rem 1.25rem 0.35rem;
     margin: 0;
 }
+
+.side-nav--drawer .side-nav-title {
+    padding-left: 1rem;
+}
+
 .side-link {
     display: block;
     padding: 0.5rem 1.25rem;
@@ -150,11 +243,30 @@ const avatarSrc = computed(() => page.props.auth?.user?.avatar ?? null)
     font-size: 1rem;
     transition: background 0.15s;
 }
+
+.side-nav--drawer .side-link {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    border-radius: 8px;
+    margin: 0 0.75rem;
+}
+
 .side-link:hover { background: rgba(255, 255, 255, 0.08); }
+
 .side-link--active {
     background: rgba(255, 255, 255, 0.12);
     color: #fff;
     border-left: 3px solid rgba(255, 255, 255, 0.5);
     padding-left: calc(1.25rem - 3px);
+}
+
+.side-nav--drawer .side-link--active {
+    padding-left: calc(1rem - 3px);
+}
+
+@media (max-width: 768px) {
+    .sideMenu--desktop {
+        display: none;
+    }
 }
 </style>

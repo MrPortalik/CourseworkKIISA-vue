@@ -61,7 +61,7 @@ const isCoauthorInvite = (n) => n.data?.type === 'coauthor_invitation'
                 </button>
                 <button
                     type="button"
-                    class="tab-btn action-button"
+                    class="tab-btn"
                     :class="{ active: tab === 'subscriptions' }"
                     @click="tab = 'subscriptions'"
                 >
@@ -112,13 +112,21 @@ const isCoauthorInvite = (n) => n.data?.type === 'coauthor_invitation'
                         </div>
                     </template>
                     <template v-else-if="notification.data.article_slug">
-                        <Link
-                            :href="route('articles.show', notification.data.article_slug)"
-                            class="notification-link"
-                            @click="openArticle(notification)"
-                        >
-                            {{ notification.data.message }}
-                        </Link>
+                        <div class="notification-body">
+                            <Link
+                                :href="route('articles.show', notification.data.article_slug)"
+                                class="notification-link"
+                                @click="openArticle(notification)"
+                            >
+                                {{ notification.data.message }}
+                            </Link>
+                            <p
+                                v-if="notification.data.type === 'publication_rejected' && notification.data.reason"
+                                class="rejection-reason"
+                            >
+                                {{ notification.data.reason }}
+                            </p>
+                        </div>
                         <div class="notification-actions">
                             <button v-if="!notification.read_at" class="read-btn" @click="markRead(notification.id)">
                                 Прочитано
@@ -256,6 +264,18 @@ const isCoauthorInvite = (n) => n.data?.type === 'coauthor_invitation'
 
 .notification-link:hover {
     color: #3182ce;
+}
+
+.notification-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.rejection-reason {
+    margin: 0.35rem 0 0;
+    font-size: 0.9rem;
+    color: #718096;
+    line-height: 1.4;
 }
 
 .notification-text {
@@ -399,5 +419,36 @@ const isCoauthorInvite = (n) => n.data?.type === 'coauthor_invitation'
     border-radius: 20px;
     font-weight: 600;
     padding: 0.5rem 1.25rem;
+}
+
+@media (max-width: 768px) {
+    .notifications-page {
+        margin: 1rem auto;
+        padding: 0 1rem 2rem;
+    }
+
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .tabs {
+        width: 100%;
+    }
+
+    .tab-btn {
+        flex: 1;
+        text-align: center;
+    }
+
+    .author-item {
+        flex-wrap: wrap;
+    }
+
+    .profile-link {
+        margin-left: 0;
+        width: 100%;
+        text-align: center;
+    }
 }
 </style>

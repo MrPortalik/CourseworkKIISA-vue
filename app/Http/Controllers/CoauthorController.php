@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Article;
 use App\Models\ArticleCoauthor;
 use App\Models\User;
-use App\Notifications\CoauthorInvitationNotification;
+use App\Services\CoauthorInvitationService;
 use Illuminate\Http\Request;
 
 class CoauthorController extends Controller
@@ -49,32 +49,7 @@ class CoauthorController extends Controller
             return back()->withErrors(['coauthor' => 'Нельзя пригласить себя.']);
         }
 
-        $existing = ArticleCoauthor::where('article_id', $article->id)
-            ->where('user_id', $inviteeId)
-            ->first();
-
-        if ($existing) {
-            if ($existing->status === ArticleCoauthor::STATUS_ACCEPTED) {
-                return back()->withErrors(['coauthor' => 'Пользователь уже является со-автором.']);
-            }
-            if ($existing->status === ArticleCoauthor::STATUS_PENDING) {
-                return back()->withErrors(['coauthor' => 'Приглашение уже отправлено.']);
-            }
-        }
-
-        $record = ArticleCoauthor::updateOrCreate(
-            [
-                'article_id' => $article->id,
-                'user_id' => $inviteeId,
-            ],
-            [
-                'invited_by' => $request->user()->id,
-                'status' => ArticleCoauthor::STATUS_PENDING,
-            ]
-        );
-
-        $invitee = User::findOrFail($inviteeId);
-        $invitee->notify(new CoauthorInvitationNotification($article, $request->user(), $record->id));
+        app(CoauthorInvitationService::class)->invite($article, $inviteeId, $request->user());
 
         return back()->with('success', 'Приглашение отправлено.');
     }

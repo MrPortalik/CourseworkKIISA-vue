@@ -47,10 +47,13 @@ RUN chmod -R 777 storage bootstrap/cache
 # 10. Генерируем ключ приложения
 RUN php artisan key:generate --no-interaction
 
-# 11. Копируем nginx конфиг
+# 11. Симлинк public/storage → storage/app/public (отдача загруженных файлов)
+RUN php artisan storage:link --force
+
+# 12. Копируем nginx конфиг
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 80
 
-# 12. Запускаем как root (nginx требует root для некоторых операций)
-CMD sh -c "php-fpm -D && nginx -g 'daemon off;'"
+# 13. Запускаем как root (nginx требует root для некоторых операций)
+CMD sh -c "php artisan storage:link --force 2>/dev/null || true && php-fpm -D && nginx -g 'daemon off;'"

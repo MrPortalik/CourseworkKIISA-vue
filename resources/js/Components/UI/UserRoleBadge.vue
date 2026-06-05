@@ -4,6 +4,7 @@ import { computed } from 'vue'
 const props = defineProps({
     user: { type: Object, default: null },
     articleAuthorId: { type: Number, default: null },
+    variant: { type: String, default: 'default' },
 })
 
 const isAdmin = computed(() => props.user?.role === 'admin')
@@ -13,9 +14,13 @@ const isArticleAuthor = computed(
 </script>
 
 <template>
-    <span v-if="isArticleAuthor || isAdmin" class="role-badges-wrap">
+    <span
+        v-if="isArticleAuthor || isAdmin"
+        class="role-badges-wrap"
+        :class="{ 'role-badges-wrap--profile': variant === 'profile' }"
+    >
         <span v-if="isArticleAuthor" class="role-badge role-badge--author">Автор статьи</span>
-        <span v-else-if="isAdmin" class="role-badge role-badge--admin">Администратор</span>
+        <span v-if="isAdmin" class="role-badge role-badge--admin">Администратор</span>
     </span>
 </template>
 
@@ -23,6 +28,8 @@ const isArticleAuthor = computed(
 .role-badges-wrap {
     display: inline-flex;
     align-items: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
 }
 .role-badge {
     display: inline-block;
@@ -35,6 +42,11 @@ const isArticleAuthor = computed(
     letter-spacing: 0.02em;
     vertical-align: middle;
     white-space: nowrap;
+}
+.role-badges-wrap--profile .role-badge {
+    font-size: clamp(0.7rem, 1.2vw, 0.95rem);
+    padding: 0.2rem 0.55rem;
+    border-radius: 6px;
 }
 .role-badge--author {
     background: #fef9c3;

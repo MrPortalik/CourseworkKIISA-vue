@@ -37,6 +37,7 @@ const form = useForm({ body: '', parent_id: null })
 const submit = () => {
     form.parent_id = replyTo.value
     form.post(route('articles.comments.store', props.articleSlug), {
+        preserveScroll: true,
         onSuccess: () => {
             form.reset()
             replyTo.value = null

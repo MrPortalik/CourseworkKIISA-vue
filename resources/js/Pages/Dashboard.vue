@@ -139,8 +139,33 @@
     }
 
     .empty-state h3 {
-        font-size: 45px;
+        font-size: clamp(1.5rem, 6vw, 45px);
         text-align: center;
         margin-top: 15%;
+    }
+
+    @media (max-width: 768px) {
+        .user {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .right {
+            margin-top: 1.5rem;
+            margin-left: 0;
+            width: 100%;
+            padding: 0 1rem;
+            box-sizing: border-box;
+        }
+
+        .profile img {
+            width: min(220px, 70vw);
+            height: min(220px, 70vw);
+        }
+
+        .actionBtn {
+            width: min(356px, 100%);
+            margin-top: 1.5rem;
+        }
     }
 </style>

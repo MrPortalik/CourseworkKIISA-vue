@@ -58,6 +58,9 @@ const close = () => { open.value = false }
     padding: 0.25rem;
     display: flex;
     align-items: center;
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
 }
 .settings-backdrop {
     position: fixed;
@@ -107,5 +110,17 @@ const close = () => { open.value = false }
 [data-theme="dark"] .close-btn {
     background: #e8e8e8;
     color: #111;
+}
+
+@media (max-width: 768px) {
+    .settings-panel {
+        position: fixed;
+        left: 1rem;
+        right: 1rem;
+        top: auto;
+        bottom: 1rem;
+        width: auto;
+        max-width: none;
+    }
 }
 </style>

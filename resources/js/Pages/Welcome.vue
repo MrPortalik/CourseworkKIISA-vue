@@ -1,8 +1,10 @@
 <script setup>
 import HeaderComponent from '@/Layouts/HeaderComponent.vue';
+import {Head} from "@inertiajs/vue3";
 </script>
 
 <template>
+    <Head title="Лендинг" />
     <main class="landing">
         <HeaderComponent/>
         <h1>ИНФОРМАЦИОННЫЙ ПОРТАЛ<br>СОБСТВЕННЫХ ТЕМАТИЧЕСКИХ ИСТОРИЙ</h1>

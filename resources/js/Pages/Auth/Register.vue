@@ -126,11 +126,15 @@ const submit = () => {
     padding: 0.75rem 1rem;
     border: none;
     border-radius: 8px;
-    background: var(--theme_black);
+    background: #4299e1;
     color: #fff;
     font-weight: 600;
     font-size: 1rem;
     cursor: pointer;
+    transition: background 0.2s;
+}
+.auth-submit:hover:not(:disabled) {
+    background: #3182ce;
 }
 .auth-submit:disabled { opacity: 0.6; cursor: wait; }
 .auth-footer {
@@ -152,5 +156,12 @@ const submit = () => {
     background: #1a1a1a;
     border-color: #404040;
     color: #f0f0f0;
+}
+[data-theme="dark"] .auth-submit {
+    background: #ffffff;
+    color: #151515;
+}
+[data-theme="dark"] .auth-submit:hover:not(:disabled) {
+    background: #f0f0f0;
 }
 </style>

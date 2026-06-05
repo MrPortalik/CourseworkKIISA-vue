@@ -16,18 +16,24 @@ const props = defineProps({
     tags: Array,
     objectRange: Object,
     activeCategory: Object,
-    categorySliders: Array,
+    categorySliders: { type: Array, default: () => [] },
 })
 
 const previewOrder = ref([])
 const allArticlesOpen = ref(false)
+
+const sliderFiltersKey = computed(() => JSON.stringify({
+    tags: props.filters?.tags ?? [],
+    tags_match: props.filters?.tags_match ?? 'all',
+    categories: props.filters?.categories ?? [],
+}))
 
 const isFirstPage = computed(() => (props.articles?.current_page ?? 1) === 1)
 
 const showCategorySliders = computed(() =>
     props.categorySliders?.length
     && isFirstPage.value
-    && !props.filters?.search
+    && !props.filters?.q
     && !props.filters?.category
     && !props.filters?.section
     && !props.objectRange
@@ -77,6 +83,16 @@ watch(showCategorySliders, (visible) => {
     if (!visible) allArticlesOpen.value = true
 })
 
+watch(
+    () => props.filters?.tags,
+    (tags) => {
+        if (tags?.length && props.filters?.search) {
+            allArticlesOpen.value = true
+        }
+    },
+    { deep: true, immediate: true },
+)
+
 const toggleAllArticles = () => {
     allArticlesOpen.value = !allArticlesOpen.value
 }
@@ -95,8 +111,8 @@ const gotoCategory = (categoryId) => {
                 {{ activeCategory?.name || (objectRange ? `Объекты (${objectRange.label})` : 'Статьи') }}
             </h1>
             <nav class="actions">
-                <Link v-if="$page.props.auth?.user" :href="route('articles.create')" class="action-button">Создать статью</Link>
-                <Link v-if="$page.props.auth?.user" :href="route('articles.drafts')" class="action-button secondary">Наброски</Link>
+                <Link v-if="$page.props.auth?.user" :href="route('articles.create')" class="page-cta page-cta--primary">Создать статью</Link>
+                <Link v-if="$page.props.auth?.user" :href="route('articles.drafts')" class="page-cta page-cta--primary">Наброски</Link>
             </nav>
         </div>
 
@@ -104,6 +120,7 @@ const gotoCategory = (categoryId) => {
 
         <CategoryArticleSliders
             v-if="showCategorySliders"
+            :key="sliderFiltersKey"
             :sliders="categorySliders"
             :all-articles-open="allArticlesOpen"
             @toggle-all-articles="toggleAllArticles"
@@ -113,14 +130,14 @@ const gotoCategory = (categoryId) => {
         <template v-if="filters.search && filters.q">
             <template v-if="exactArticles?.data?.length">
                 <h2 class="section-heading">Наибольшее совпадение</h2>
-                <div class="articles-grid">
+                <div class="articles-grid articles-grid--7">
                     <ArticleCard v-for="article in exactArticles.data" :key="article.id" :article="article" />
                 </div>
             </template>
 
             <template v-if="searchMeta?.showOthers && otherArticles?.data?.length">
                 <h2 class="section-heading">{{ searchMeta?.hasExact ? 'Другие совпадения' : 'Наибольшее совпадение' }}</h2>
-                <div class="articles-grid">
+                <div class="articles-grid articles-grid--7">
                     <ArticleCard v-for="article in otherArticles.data" :key="'o-' + article.id" :article="article" />
                 </div>
             </template>
@@ -140,7 +157,7 @@ const gotoCategory = (categoryId) => {
                 class="all-articles-section"
             >
                 <h2 v-if="showCategorySliders" class="section-heading">Все статьи</h2>
-                <div v-if="displayArticles.length" class="articles-grid">
+                <div v-if="displayArticles.length" class="articles-grid articles-grid--7">
                     <ArticleCard v-for="article in displayArticles" :key="article.id" :article="article" />
                 </div>
                 <p v-else class="empty-state">Статей пока нет</p>
@@ -172,11 +189,7 @@ const gotoCategory = (categoryId) => {
 }
 .actions { display: flex; gap: 0.75rem; }
 .articles-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1.25rem;
     margin-bottom: 2rem;
-    align-items: stretch;
 }
 .all-articles-section {
     width: 100%;

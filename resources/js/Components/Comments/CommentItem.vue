@@ -25,6 +25,8 @@ const scoreClass = computed(() => {
     if (score.value < 0) return 'score--negative'
     return 'score--neutral'
 })
+
+const canVote = computed(() => Boolean(page.props.auth?.user) && !isOwnComment.value)
 </script>
 
 <template>
@@ -47,8 +49,15 @@ const scoreClass = computed(() => {
             </header>
             <p class="comment-text">{{ comment.body }}</p>
             <div class="comment-actions">
-                <div v-if="!isOwnComment && $page.props.auth?.user" class="vote-pill">
+                <div
+                    class="vote-pill"
+                    :class="{
+                        'vote-pill--readonly': !canVote,
+                        'vote-pill--own': isOwnComment,
+                    }"
+                >
                     <button
+                        v-if="canVote"
                         type="button"
                         class="vote-arrow up"
                         :class="{ active: userVote === 1 }"
@@ -56,8 +65,10 @@ const scoreClass = computed(() => {
                     >
                         ▲
                     </button>
+                    <span v-else class="vote-arrow vote-arrow--static up" aria-hidden="true">▲</span>
                     <span class="score" :class="scoreClass">{{ score }}</span>
                     <button
+                        v-if="canVote"
                         type="button"
                         class="vote-arrow down"
                         :class="{ active: userVote === -1 }"
@@ -65,6 +76,7 @@ const scoreClass = computed(() => {
                     >
                         ▼
                     </button>
+                    <span v-else class="vote-arrow vote-arrow--static down" aria-hidden="true">▼</span>
                 </div>
                 <button type="button" class="btn-reply" @click="$emit('reply', comment.id)">Ответить</button>
             </div>
@@ -143,6 +155,27 @@ header strong { color: var(--page-text, inherit); }
 }
 .vote-arrow.up.active { color: #22c55e; }
 .vote-arrow.down.active { color: #ef4444; }
+.vote-pill--readonly {
+    opacity: 0.85;
+}
+.vote-pill--own {
+    background: transparent;
+    border-color: #edf2f7;
+    opacity: 1;
+}
+.vote-arrow--static {
+    cursor: default;
+    pointer-events: none;
+}
+.vote-pill--own .vote-arrow--static {
+    color: #e2e8f0;
+    opacity: 0.35;
+    font-size: 0.55rem;
+}
+.vote-pill--own .score {
+    color: #a0aec0 !important;
+    opacity: 0.75;
+}
 .score {
     font-size: 0.75rem;
     font-weight: 700;
@@ -160,5 +193,16 @@ header strong { color: var(--page-text, inherit); }
     cursor: pointer;
 }
 [data-theme="dark"] .vote-pill { background: #1a1a1a; border-color: #404040; }
+[data-theme="dark"] .vote-pill--own {
+    background: transparent;
+    border-color: #2d2d2d;
+}
+[data-theme="dark"] .vote-pill--own .vote-arrow--static {
+    color: #4a5568;
+    opacity: 0.45;
+}
+[data-theme="dark"] .vote-pill--own .score {
+    color: #718096 !important;
+}
 [data-theme="dark"] .score--neutral { color: #ccc; }
 </style>

@@ -5,7 +5,15 @@ import HeaderComponent from '@/Layouts/HeaderComponent.vue'
 import ArticleTaxonomyPickers from '@/Components/Articles/ArticleTaxonomyPickers.vue'
 import CoauthorInvitePanel from '@/Components/Articles/CoauthorInvitePanel.vue'
 import { uploadArticleContentImage } from '@/lib/articleContentImage'
-import { buildArticleHtml, extractContentImages, htmlToPlainText } from '@/lib/articleContent'
+import ArticleContentField from '@/Components/Articles/ArticleContentField.vue'
+import {
+    buildArticleHtml,
+    createImageId,
+    extractContentImages,
+    getReferencedImageIds,
+    htmlToPlainText,
+    insertImageAfterParagraph,
+} from '@/lib/articleContent'
 
 const props = defineProps({
     article: Object,
@@ -22,7 +30,9 @@ const isOwn = computed(() => page.props.auth.user?.id === props.article.user_id)
 const bannerPreview = ref(props.article.banner || null)
 const heroPreview = ref(props.article.hero_banner || null)
 const contentImageInput = ref(null)
+const contentFieldRef = ref(null)
 const uploadingImage = ref(false)
+const insertAtParagraph = ref(0)
 
 const embeddedImages = ref(extractContentImages(props.article.content))
 
@@ -56,13 +66,43 @@ const onHeroChange = (e) => {
     heroPreview.value = URL.createObjectURL(file)
 }
 
+const imageLabels = computed(() =>
+    Object.fromEntries(embeddedImages.value.map((img) => [img.id, img.fileName])),
+)
+
+const openImagePicker = (paragraphIndex) => {
+    insertAtParagraph.value = paragraphIndex
+    contentImageInput.value?.click()
+}
+
+const onInsertAtParagraph = (paragraphIndex) => {
+    openImagePicker(paragraphIndex)
+}
+
+const insertContentImage = () => {
+    const idx = contentFieldRef.value?.getParagraphIndexAtCursor?.() ?? 0
+    openImagePicker(idx)
+}
+
 const onContentImageSelected = async (event) => {
     const file = event.target.files[0]
     if (!file) return
     uploadingImage.value = true
     try {
         const url = await uploadArticleContentImage(file)
-        embeddedImages.value.push({ src: url, className: 'content-image-float', alt: '' })
+        const imageId = createImageId()
+        embeddedImages.value.push({
+            id: imageId,
+            src: url,
+            className: 'content-image-float',
+            alt: '',
+            fileName: file.name,
+        })
+        form.content = insertImageAfterParagraph(
+            form.content,
+            insertAtParagraph.value,
+            imageId,
+        )
     } finally {
         uploadingImage.value = false
         event.target.value = ''
@@ -70,12 +110,17 @@ const onContentImageSelected = async (event) => {
 }
 
 const submit = () => form
-    .transform((data) => ({
-        ...data,
-        content: buildArticleHtml(data.content, embeddedImages.value),
-        category_ids: data.category_ids?.length ? data.category_ids : [],
-        _method: 'PUT',
-    }))
+    .transform((data) => {
+        const referenced = getReferencedImageIds(data.content)
+        const images = embeddedImages.value.filter((img) => referenced.has(img.id))
+
+        return {
+            ...data,
+            content: buildArticleHtml(data.content, images),
+            category_ids: data.category_ids?.length ? data.category_ids : [],
+            _method: 'PUT',
+        }
+    })
     .post(route('articles.update', props.article.slug), { forceFormData: true })
 
 const deleteArticle = () => {
@@ -128,9 +173,26 @@ const deleteArticle = () => {
             </div>
 
             <div class="form-group">
-                <textarea v-model="form.content" class="form-textarea" rows="15" required />
-                <input ref="contentImageInput" type="file" accept="image/*" class="hidden" @change.stop="onContentImageSelected" />
-                <button type="button" class="toolbar-btn" @click.prevent="contentImageInput?.click()">Вставить изображение</button>
+                <div class="content-toolbar">
+                    <label class="form-label">Содержание</label>
+                    <button
+                        type="button"
+                        class="toolbar-btn btn-accent"
+                        :disabled="uploadingImage"
+                        @mousedown.prevent="insertContentImage"
+                    >
+                        Добавить в текущий выделенный абзац
+                    </button>
+                    <input ref="contentImageInput" type="file" accept="image/*" class="hidden" @change.stop="onContentImageSelected" />
+                </div>
+                <ArticleContentField
+                    ref="contentFieldRef"
+                    v-model:content="form.content"
+                    :image-labels="imageLabels"
+                    :rows="15"
+                    required
+                    @insert-at-paragraph="onInsertAtParagraph"
+                />
             </div>
 
             <div class="form-group publish-options">
@@ -163,7 +225,11 @@ const deleteArticle = () => {
 .article-form { background: #fff; padding: 2rem; border: 1px solid #e2e8f0; border-radius: 8px; }
 .form-group { margin-bottom: 1.25rem; }
 .form-label { display: block; font-weight: 600; margin-bottom: 0.5rem; }
-.form-input, .form-textarea { width: 100%; padding: 0.75rem; border: 1px solid #cbd5e0; border-radius: 6px; }
+.form-input { width: 100%; padding: 0.75rem; border: 1px solid #cbd5e0; border-radius: 6px; }
+.content-toolbar { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+.content-toolbar .form-label { margin-bottom: 0; flex: 1; }
+.content-toolbar .toolbar-btn { margin-left: auto; margin-top: 0.25rem; margin-bottom: 0.25rem; }
+.hidden { display: none; }
 .preview-book { aspect-ratio: 9/16; max-width: 160px; object-fit: cover; margin-top: 0.5rem; }
 .preview-hero { width: 100%; max-height: 180px; object-fit: cover; margin-top: 0.5rem; border-radius: 6px; }
 .publish-options { display: flex; flex-direction: column; gap: 0.65rem; }

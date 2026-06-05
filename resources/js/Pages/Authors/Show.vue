@@ -104,7 +104,7 @@ const toggleSubscribe = () => {
         <div class="right">
             <p class="userName">
                 {{ author.name }}
-                <UserRoleBadge :user="author" class="profile-role-badge" />
+                <UserRoleBadge :user="author" variant="profile" />
             </p>
             <p class="userTag">id_{{ author.id }}</p>
 
@@ -125,7 +125,7 @@ const toggleSubscribe = () => {
                 <div v-else class="bio-edit">
                     <textarea v-model="profileForm.bio" rows="5" placeholder="Расскажите о себе..." />
                     <div class="bio-actions">
-                        <button type="button" class="save-bio" :disabled="profileForm.processing" @click="saveBio">
+                        <button type="button" class="save-bio btn-accent" :disabled="profileForm.processing" @click="saveBio">
                             {{ profileForm.processing ? 'Сохранение...' : 'Сохранить' }}
                         </button>
                         <button type="button" class="cancel-bio" :disabled="profileForm.processing" @click="editingBio = false">
@@ -138,7 +138,7 @@ const toggleSubscribe = () => {
 
             <p class="works-label">Работы:</p>
 
-            <div v-if="articles.data?.length" class="cards">
+            <div v-if="articles.data?.length" class="cards articles-grid articles-grid--6">
                 <ArticleCard
                     v-for="article in articles.data"
                     :key="article.id"
@@ -212,10 +212,6 @@ const toggleSubscribe = () => {
     flex-wrap: wrap;
     gap: 0.5rem;
 }
-.profile-role-badge {
-    font-size: 0.85rem;
-    vertical-align: middle;
-}
 .userTag { font-size: clamp(1.25rem, 3vw, 48px); margin-bottom: 23px; color: #718096; }
 .bio-section { margin-bottom: 1.5rem; max-width: 800px; }
 .bio-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
@@ -234,7 +230,6 @@ const toggleSubscribe = () => {
 .bio-text { white-space: pre-wrap; }
 .bio-edit textarea { width: 100%; padding: 0.75rem; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 1rem; }
 .bio-actions { display: flex; gap: 0.75rem; margin-top: 0.75rem; }
-.save-bio { background: #0db7ff; color: #fff; border: none; padding: 0.6rem 1.25rem; border-radius: 8px; cursor: pointer; font-weight: 600; }
 .cancel-bio { background: #edf2f7; color: #2d3748; border: none; padding: 0.6rem 1.25rem; border-radius: 8px; cursor: pointer; font-weight: 600; }
 [data-theme="dark"] .cancel-bio { background: #2a2a2a; color: #f0f0f0; }
 .txt { max-width: 100%; margin-bottom: 20px; font-size: 1.1rem; line-height: 1.6; }
@@ -279,16 +274,34 @@ const toggleSubscribe = () => {
     border-color: #b0b0b0;
 }
 .cards {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 20px;
     margin-bottom: 4rem;
-}
-@media (max-width: 1200px) {
-    .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 900px) {
     .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 768px) {
+    .user {
+        flex-direction: column;
+        align-items: center;
+        padding-top: 0.5rem;
+    }
+    .left {
+        width: 100%;
+    }
+    .profile { margin-top: 1rem; }
+    .avatar-round,
+    .left :deep(.user-avatar) {
+        width: min(220px, 70vw) !important;
+        height: min(220px, 70vw) !important;
+    }
+    .right {
+        margin-top: 1.5rem;
+        width: 100%;
+    }
+    .actionBtn {
+        margin-top: 1.5rem;
+        min-width: 0;
+    }
 }
 @media (max-width: 520px) {
     .cards { grid-template-columns: 1fr; }

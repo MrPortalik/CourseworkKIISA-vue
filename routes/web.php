@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\ArticleModerationController;
 use App\Http\Controllers\AdminTaxonomyController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\AuthorController;
@@ -90,6 +91,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 Route::middleware(['auth', 'verified', 'admin'])->group(function () {
+    Route::post('/admin/articles/{article}/approve', [ArticleModerationController::class, 'approve'])->name('admin.articles.approve');
+    Route::post('/admin/articles/{article}/reject', [ArticleModerationController::class, 'reject'])->name('admin.articles.reject');
     Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
     Route::get('/admin/categories', [AdminTaxonomyController::class, 'categories'])->name('admin.categories');
     Route::get('/admin/tags', [AdminTaxonomyController::class, 'tags'])->name('admin.taxonomy');

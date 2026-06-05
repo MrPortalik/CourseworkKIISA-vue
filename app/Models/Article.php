@@ -25,6 +25,7 @@ class Article extends Model
         'object_number',
         'is_published',
         'is_publishable',
+        'publication_rejection_reason',
         'is_hit',
         'is_editors_choice',
         'is_new',

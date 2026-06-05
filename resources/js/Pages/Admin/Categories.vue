@@ -60,7 +60,7 @@ const close = () => {
                         placeholder="Описание"
                     />
                 </div>
-                <button type="submit" class="btn-add">Добавить</button>
+                <button type="submit" class="btn-add btn-accent">Добавить</button>
             </form>
 
             <ul class="category-list">

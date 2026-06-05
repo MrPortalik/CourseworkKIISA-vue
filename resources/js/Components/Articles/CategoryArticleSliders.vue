@@ -105,10 +105,7 @@ onUnmounted(() => {
                 >
                     ‹
                 </button>
-                <div
-                    class="slider-viewport"
-                    :class="{ 'slider-viewport--centered': !scrollState[row.category.id]?.hasOverflow }"
-                >
+                <div class="slider-viewport">
                     <div
                         :id="trackId(row.category.id)"
                         data-slider-track
@@ -204,15 +201,16 @@ onUnmounted(() => {
     max-width: var(--slider-viewport-width);
     min-width: 0;
     overflow: hidden;
-}
-.slider-viewport--centered .slider-track {
-    margin-inline: auto;
+    display: flex;
+    justify-content: center;
 }
 .slider-track {
     display: inline-flex;
     flex-wrap: nowrap;
+    align-items: stretch;
     gap: var(--slider-gap);
-    width: 100%;
+    width: max-content;
+    max-width: 100%;
     overflow-x: auto;
     overflow-y: hidden;
     scroll-behavior: smooth;
@@ -231,7 +229,14 @@ onUnmounted(() => {
     flex: 0 0 var(--slider-card-width);
     width: var(--slider-card-width);
     max-width: var(--slider-card-width);
+    height: 380px;
+    align-self: stretch;
     scroll-snap-align: start;
+}
+.slider-track :deep(.card-link) {
+    min-height: 0;
+    height: 100%;
+    box-sizing: border-box;
 }
 .slider-nav {
     flex-shrink: 0;
@@ -294,5 +299,28 @@ onUnmounted(() => {
 }
 [data-theme="dark"] .goto-link {
     color: #63b3ed;
+}
+
+@media (max-width: 768px) {
+    .category-sliders {
+        --slider-card-width: 160px;
+        --slider-visible-count: 2;
+    }
+
+    .slider-head {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.35rem;
+    }
+
+    .slider-title {
+        font-size: 1.25rem;
+    }
+
+    .slider-nav {
+        width: 32px;
+        height: 32px;
+        font-size: 1.1rem;
+    }
 }
 </style>

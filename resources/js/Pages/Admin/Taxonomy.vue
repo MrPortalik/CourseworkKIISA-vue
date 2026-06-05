@@ -9,7 +9,7 @@ defineProps({
 
 const showModal = ref(true)
 
-const newTag = useForm({ name: '' })
+const newTag = useForm({ name: '', description: '' })
 
 const addTag = () => {
     newTag.post(route('admin.tags.store'), {
@@ -18,7 +18,11 @@ const addTag = () => {
 }
 
 const saveTag = (tag) => {
-    router.put(route('admin.tags.update', tag.id), { name: tag.name }, { preserveScroll: true })
+    router.put(
+        route('admin.tags.update', tag.id),
+        { name: tag.name, description: tag.description || '' },
+        { preserveScroll: true },
+    )
 }
 
 const deleteTag = (tag) => {
@@ -44,23 +48,35 @@ const close = () => {
             </div>
 
             <form class="add-form" @submit.prevent="addTag">
-                <div class="split-field">
+                <div class="split-field split-field--stacked">
                     <input
                         v-model="newTag.name"
-                        class="split-input split-input--single"
+                        class="split-input"
                         placeholder="Название тега"
                         required
                     />
+                    <input
+                        v-model="newTag.description"
+                        class="split-input split-input--desc"
+                        placeholder="Описание (необязательно)"
+                    />
                 </div>
-                <button type="submit" class="btn-add">Добавить</button>
+                <button type="submit" class="btn-add btn-accent">Добавить</button>
             </form>
 
             <ul class="tag-list">
                 <li v-for="tag in tags" :key="tag.id" class="tag-row">
-                    <div class="split-field">
+                    <div class="split-field split-field--stacked">
                         <input
                             v-model="tag.name"
-                            class="split-input split-input--single"
+                            class="split-input"
+                            placeholder="Название"
+                            @blur="saveTag(tag)"
+                        />
+                        <input
+                            v-model="tag.description"
+                            class="split-input split-input--desc"
+                            placeholder="Описание (необязательно)"
                             @blur="saveTag(tag)"
                         />
                     </div>
@@ -75,7 +91,7 @@ const close = () => {
                 </li>
             </ul>
 
-            <button type="button" class="btn-close" @click="close">Закрыть</button>
+            <button type="button" class="btn-close btn-accent" @click="close">Закрыть</button>
         </div>
     </div>
 </template>
@@ -95,7 +111,7 @@ const close = () => {
     background: #fff;
     border-radius: 14px;
     width: 100%;
-    max-width: 480px;
+    max-width: 720px;
     max-height: 85vh;
     overflow-y: auto;
     padding: 1.5rem;
@@ -132,6 +148,11 @@ const close = () => {
     background: #fff;
     min-width: 0;
 }
+.split-field--stacked .split-input--desc {
+    border-top: 1px solid #e2e8f0;
+    font-size: 0.9rem;
+    color: #718096;
+}
 .split-input {
     border: none;
     outline: none;
@@ -145,12 +166,20 @@ const close = () => {
     list-style: none;
     padding: 0;
     margin: 0 0 1rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
 }
 .tag-row {
     display: flex;
     align-items: stretch;
     gap: 0.5rem;
-    margin-bottom: 0.65rem;
+    margin-bottom: 0;
+    min-width: 0;
+}
+.tag-row .split-field {
+    flex: 1;
+    min-width: 0;
 }
 .row-delete {
     flex-shrink: 0;
@@ -165,24 +194,9 @@ const close = () => {
     padding: 0;
 }
 .row-delete:hover { background: #fed7d7; }
-.btn-add {
-    background: #4299e1;
-    color: #fff;
-    border: none;
-    padding: 0 1rem;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-    white-space: nowrap;
-}
 .btn-close {
     width: 100%;
-    padding: 0.65rem;
-    background: #edf2f7;
-    border: none;
-    border-radius: 8px;
     cursor: pointer;
-    font-weight: 600;
 }
 [data-theme="dark"] .modal-window {
     background: #141414;
@@ -196,13 +210,18 @@ const close = () => {
     border-color: #404040;
 }
 [data-theme="dark"] .split-input { color: #f0f0f0; }
+[data-theme="dark"] .split-field--stacked .split-input--desc {
+    border-color: #333;
+    color: #aaa;
+}
 [data-theme="dark"] .row-delete {
     background: #2a1515;
     border-color: #553333;
     color: #fc8181;
 }
-[data-theme="dark"] .btn-close {
-    background: #2a2a2a;
-    color: #f0f0f0;
+@media (max-width: 640px) {
+    .tag-list {
+        grid-template-columns: 1fr;
+    }
 }
 </style>

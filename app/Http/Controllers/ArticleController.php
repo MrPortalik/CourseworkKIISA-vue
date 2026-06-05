@@ -7,7 +7,9 @@ use App\Models\Category;
 use App\Models\Comment;
 use App\Models\CommentVote;
 use App\Models\Tag;
+use App\Notifications\ArticlePublicationApprovedNotification;
 use App\Services\ArticleSearchService;
+use App\Services\CoauthorInvitationService;
 use App\Support\ArticlesListingPaginator;
 use App\Support\ObjectNumberParser;
 use Illuminate\Http\Request;
@@ -85,7 +87,7 @@ class ArticleController extends Controller
         }
 
         return Inertia::render('Articles/Drafts', [
-            'articles' => $query->paginate(12),
+            'articles' => $query->paginate(21),
             'isAdmin' => $request->user()->isAdmin(),
         ]);
     }
@@ -178,10 +180,10 @@ class ArticleController extends Controller
         ]);
 
         if ($request->hasFile('banner')) {
-            $article->banner = Storage::url($request->file('banner')->store('banners', 'public'));
+            $article->banner = $this->publicStorageUrl($request->file('banner')->store('banners', 'public'));
         }
         if ($request->hasFile('hero_banner')) {
-            $article->hero_banner = Storage::url($request->file('hero_banner')->store('hero_banners', 'public'));
+            $article->hero_banner = $this->publicStorageUrl($request->file('hero_banner')->store('hero_banners', 'public'));
         }
 
         Article::syncObjectNumberFromTitle($article);
@@ -189,6 +191,12 @@ class ArticleController extends Controller
         $this->syncPublicationTimestamp($article, false);
         $this->syncArticleCategories($article, $request);
         $article->tags()->sync($request->input('tag_ids', []));
+
+        app(CoauthorInvitationService::class)->inviteMany(
+            $article,
+            $request->input('coauthor_user_ids', []),
+            $request->user()
+        );
 
         if ($isAdmin && $article->is_published) {
             $article->notifySubscribersOfPublication();
@@ -239,11 +247,11 @@ class ArticleController extends Controller
 
         if ($request->hasFile('banner')) {
             $this->deleteStoredFile($article->banner);
-            $data['banner'] = Storage::url($request->file('banner')->store('banners', 'public'));
+            $data['banner'] = $this->publicStorageUrl($request->file('banner')->store('banners', 'public'));
         }
         if ($request->hasFile('hero_banner')) {
             $this->deleteStoredFile($article->hero_banner);
-            $data['hero_banner'] = Storage::url($request->file('hero_banner')->store('hero_banners', 'public'));
+            $data['hero_banner'] = $this->publicStorageUrl($request->file('hero_banner')->store('hero_banners', 'public'));
         }
 
         if ($request->user()->isAdmin()) {
@@ -264,6 +272,7 @@ class ArticleController extends Controller
 
         if ($request->user()->isAdmin() && ! $wasPublished && $article->is_published) {
             $article->notifySubscribersOfPublication();
+            $article->user?->notify(new ArticlePublicationApprovedNotification($article));
         }
 
         return redirect()->route('articles.show', $article->slug);
@@ -278,7 +287,7 @@ class ArticleController extends Controller
         $path = $request->file('image')->store('articles/content', 'public');
 
         return response()->json([
-            'url' => Storage::url($path),
+            'url' => $this->publicStorageUrl($path),
         ]);
     }
 
@@ -299,13 +308,12 @@ class ArticleController extends Controller
         $canShowSliders = ! $extraQuery
             && ! $request->filled('category')
             && ! $request->filled('q')
-            && ! $request->filled('section')
-            && ! $request->boolean('search');
+            && ! $request->filled('section');
 
         $categorySliders = [];
 
         if ($canShowSliders && $currentPage === 1) {
-            $categorySliders = $this->buildCategorySlidersData();
+            $categorySliders = $this->buildCategorySlidersData($request);
         }
 
         $baseQuery = Article::with(['user', 'category', 'categories', 'tags'])->published();
@@ -324,6 +332,7 @@ class ArticleController extends Controller
                 'category' => $request->category,
                 'categories' => $this->normalizeIdList($request->input('categories', [])),
                 'tags' => $this->normalizeIdList($request->input('tags', [])),
+                'tags_match' => $request->input('tags_match') === 'any' ? 'any' : 'all',
                 'section' => $request->section,
                 'search' => $request->boolean('search'),
             ],
@@ -344,6 +353,7 @@ class ArticleController extends Controller
                 'showOthers' => $relatedIds->isNotEmpty(),
             ];
             $payload['articles'] = ['data' => [], 'links' => []];
+            $payload['categorySliders'] = [];
 
             return $payload;
         }
@@ -363,16 +373,14 @@ class ArticleController extends Controller
             $payload['articles'] = $this->paginateArticlesListing($baseQuery, $request);
         }
 
-        if ($categorySliders !== []) {
-            $payload['categorySliders'] = $categorySliders;
-        }
+        $payload['categorySliders'] = $categorySliders;
 
         return $payload;
     }
 
-    private function applyListingFilters($query, Request $request): void
+    private function applyListingFilters($query, Request $request, bool $includeSidebarCategory = true): void
     {
-        if ($request->filled('category')) {
+        if ($includeSidebarCategory && $request->filled('category')) {
             $query->where(function ($q) use ($request) {
                 $q->where('category_id', $request->category)
                     ->orWhereHas('categories', fn ($c) => $c->where('categories.id', $request->category));
@@ -386,7 +394,7 @@ class ArticleController extends Controller
 
         $tagIds = $this->normalizeIdList($request->input('tags', []));
         if ($tagIds !== []) {
-            $query->whereHas('tags', fn ($t) => $t->whereIn('tags.id', $tagIds));
+            $this->applyTagMatchFilter($query, $tagIds, $request->input('tags_match'));
         }
 
         if ($request->section === 'hits') {
@@ -522,15 +530,19 @@ class ArticleController extends Controller
 
     private function normalizeContent(string $content): string
     {
+        $trimmed = trim($content);
+        if ($trimmed === '') {
+            return '';
+        }
+
         if (str_contains($content, '<img') || str_contains($content, '<p>')) {
             return $content;
         }
 
         return collect(preg_split('/\r\n|\r|\n/', $content))
-            ->map(fn ($p) => trim($p))
-            ->filter()
+            ->filter(fn ($p) => trim($p) !== '')
             ->map(fn ($p) => '<p>'.e($p).'</p>')
-            ->implode('');
+            ->implode("\n");
     }
 
     private function syncPublicationTimestamp(Article $article, bool $wasPublished): void
@@ -562,6 +574,8 @@ class ArticleController extends Controller
             'category_ids.*' => 'exists:categories,id',
             'tag_ids' => 'nullable|array',
             'tag_ids.*' => 'exists:tags,id',
+            'coauthor_user_ids' => 'nullable|array',
+            'coauthor_user_ids.*' => 'exists:users,id',
             'banner' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
             'hero_banner' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:8192',
         ];
@@ -590,21 +604,24 @@ class ArticleController extends Controller
         $article->saveQuietly();
     }
 
-    private function buildCategorySlidersData(): array
+    private function buildCategorySlidersData(?Request $request = null): array
     {
         return Category::orderBy('name')
             ->get()
-            ->map(function (Category $cat) {
-                $articles = Article::query()
+            ->map(function (Category $cat) use ($request) {
+                $query = Article::query()
                     ->published()
                     ->with('user')
                     ->where(function ($q) use ($cat) {
                         $q->where('category_id', $cat->id)
                             ->orWhereHas('categories', fn ($c) => $c->where('categories.id', $cat->id));
-                    })
-                    ->latest()
-                    ->limit(15)
-                    ->get();
+                    });
+
+                if ($request) {
+                    $this->applyListingFilters($query, $request, includeSidebarCategory: false);
+                }
+
+                $articles = $query->latest()->limit(15)->get();
 
                 return [
                     'category' => $cat->only(['id', 'name', 'description']),
@@ -612,8 +629,28 @@ class ArticleController extends Controller
                 ];
             })
             ->filter(fn ($row) => $row['articles']->isNotEmpty())
+            ->map(fn ($row) => [
+                'category' => $row['category'],
+                'articles' => $row['articles']->values()->all(),
+            ])
             ->values()
             ->all();
+    }
+
+    private function applyTagMatchFilter($query, array $tagIds, mixed $tagsMatch): void
+    {
+        if ($tagsMatch === 'any') {
+            $query->whereHas('tags', fn ($t) => $t->whereIn('tags.id', $tagIds));
+
+            return;
+        }
+
+        $query->whereHas(
+            'tags',
+            fn ($t) => $t->whereIn('tags.id', $tagIds),
+            '=',
+            count($tagIds),
+        );
     }
 
     private function normalizeArticleRequest(Request $request): void
@@ -636,6 +673,11 @@ class ArticleController extends Controller
         $ids = is_array($value) ? $value : explode(',', (string) $value);
 
         return array_values(array_filter(array_map('intval', $ids)));
+    }
+
+    private function publicStorageUrl(string $path): string
+    {
+        return '/storage/'.ltrim($path, '/');
     }
 
     private function deleteStoredFile(?string $url): void

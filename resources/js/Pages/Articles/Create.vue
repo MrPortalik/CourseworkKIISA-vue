@@ -3,8 +3,15 @@ import { Head, Link, useForm, usePage } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 import HeaderComponent from '@/Layouts/HeaderComponent.vue'
 import ArticleTaxonomyPickers from '@/Components/Articles/ArticleTaxonomyPickers.vue'
+import ArticleContentField from '@/Components/Articles/ArticleContentField.vue'
+import CoauthorInvitePanel from '@/Components/Articles/CoauthorInvitePanel.vue'
 import { uploadArticleContentImage } from '@/lib/articleContentImage'
-import { buildArticleHtml } from '@/lib/articleContent'
+import {
+    buildArticleHtml,
+    createImageId,
+    getReferencedImageIds,
+    insertImageAfterParagraph,
+} from '@/lib/articleContent'
 
 const props = defineProps({
     categories: Array,
@@ -17,8 +24,11 @@ const isAdmin = computed(() => page.props.auth?.user?.role === 'admin')
 const bannerPreview = ref(null)
 const heroPreview = ref(null)
 const contentImageInput = ref(null)
+const contentFieldRef = ref(null)
 const uploadingImage = ref(false)
 const embeddedImages = ref([])
+const pendingCoauthorIds = ref([])
+const insertAtParagraph = ref(0)
 
 const form = useForm({
     title: '',
@@ -27,6 +37,7 @@ const form = useForm({
     is_published: false,
     category_ids: [],
     tag_ids: [],
+    coauthor_user_ids: [],
     banner: null,
     hero_banner: null,
 })
@@ -45,7 +56,23 @@ const onHeroChange = (e) => {
     heroPreview.value = URL.createObjectURL(file)
 }
 
-const insertContentImage = () => contentImageInput.value?.click()
+const imageLabels = computed(() =>
+    Object.fromEntries(embeddedImages.value.map((img) => [img.id, img.fileName])),
+)
+
+const openImagePicker = (paragraphIndex) => {
+    insertAtParagraph.value = paragraphIndex
+    contentImageInput.value?.click()
+}
+
+const insertContentImage = () => {
+    const idx = contentFieldRef.value?.getParagraphIndexAtCursor?.() ?? 0
+    openImagePicker(idx)
+}
+
+const onInsertAtParagraph = (paragraphIndex) => {
+    openImagePicker(paragraphIndex)
+}
 
 const onContentImageSelected = async (event) => {
     const file = event.target.files[0]
@@ -53,7 +80,19 @@ const onContentImageSelected = async (event) => {
     uploadingImage.value = true
     try {
         const url = await uploadArticleContentImage(file)
-        embeddedImages.value.push({ src: url, className: 'content-image-float', alt: '' })
+        const imageId = createImageId()
+        embeddedImages.value.push({
+            id: imageId,
+            src: url,
+            className: 'content-image-float',
+            alt: '',
+            fileName: file.name,
+        })
+        form.content = insertImageAfterParagraph(
+            form.content,
+            insertAtParagraph.value,
+            imageId,
+        )
     } finally {
         uploadingImage.value = false
         event.target.value = ''
@@ -61,11 +100,17 @@ const onContentImageSelected = async (event) => {
 }
 
 const submit = () => form
-    .transform((data) => ({
-        ...data,
-        content: buildArticleHtml(data.content, embeddedImages.value),
-        category_ids: data.category_ids?.length ? data.category_ids : [],
-    }))
+    .transform((data) => {
+        const referenced = getReferencedImageIds(data.content)
+        const images = embeddedImages.value.filter((img) => referenced.has(img.id))
+
+        return {
+            ...data,
+            content: buildArticleHtml(data.content, images),
+            category_ids: data.category_ids?.length ? data.category_ids : [],
+            coauthor_user_ids: pendingCoauthorIds.value,
+        }
+    })
     .post(route('articles.store'), { forceFormData: true })
 </script>
 
@@ -105,14 +150,26 @@ const submit = () => form
             />
 
             <div class="form-group">
+                <label class="form-label">Со-авторы</label>
+                <CoauthorInvitePanel v-model:pending-user-ids="pendingCoauthorIds" />
+            </div>
+
+            <div class="form-group">
                 <div class="content-toolbar">
                     <label class="form-label">Содержание</label>
-                    <button type="button" class="toolbar-btn" :disabled="uploadingImage" @click.prevent="insertContentImage">
-                        Вставить изображение справа
+                    <button type="button" class="toolbar-btn btn-accent" :disabled="uploadingImage" @mousedown.prevent="insertContentImage">
+                        Добавить в текущий выделенный абзац
                     </button>
                     <input ref="contentImageInput" type="file" accept="image/*" class="hidden" @change.stop="onContentImageSelected" />
                 </div>
-                <textarea v-model="form.content" class="form-textarea" rows="15" required />
+                <ArticleContentField
+                    ref="contentFieldRef"
+                    v-model:content="form.content"
+                    :image-labels="imageLabels"
+                    :rows="15"
+                    required
+                    @insert-at-paragraph="onInsertAtParagraph"
+                />
             </div>
 
             <div class="form-group publish-options">
@@ -140,10 +197,9 @@ const submit = () => form
 .article-form { background: #fff; padding: 2rem; border: 1px solid #e2e8f0; border-radius: 8px; }
 .form-group { margin-bottom: 1.25rem; }
 .form-label { display: block; font-weight: 600; margin-bottom: 0.5rem; }
-.form-input, .form-textarea { width: 100%; padding: 0.75rem; border: 1px solid #cbd5e0; border-radius: 6px; }
+.form-input { width: 100%; padding: 0.75rem; border: 1px solid #cbd5e0; border-radius: 6px; }
 .preview-book { aspect-ratio: 9/16; max-width: 180px; object-fit: cover; margin-top: 0.75rem; border-radius: 4px; }
 .preview-hero { width: 100%; max-height: 200px; object-fit: cover; margin-top: 0.75rem; border-radius: 6px; }
-.tag-label { display: inline-flex; gap: 0.35rem; margin-right: 1rem; }
 .publish-options { display: flex; flex-direction: column; gap: 0.65rem; }
 .checkbox-label { display: flex; gap: 0.5rem; align-items: flex-start; font-weight: 600; }
 .checkbox-label em.admin-only { font-style: normal; font-weight: 500; color: #718096; }
@@ -152,8 +208,9 @@ const submit = () => form
 .submit-button { background: #4299e1; color: #fff; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; }
 .cancel-button { padding: 0.75rem 1.5rem; text-decoration: none; color: #4a5568; }
 .hidden { display: none; }
-.toolbar-btn { margin-left: auto; }
-.content-toolbar { display: flex; align-items: center; gap: 0.5rem; }
+.content-toolbar { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+.content-toolbar .form-label { margin-bottom: 0; flex: 1; }
+.content-toolbar .toolbar-btn { margin-left: auto; margin-top: 0.25rem; margin-bottom: 0.25rem; }
 .back-button { color: #4299e1; }
 [data-theme="dark"] .article-form {
     background: #141414;

@@ -37,6 +37,10 @@ const formatDate = (dateString) => {
                 <span class="author">{{ article.user?.name }}</span>
                 <span class="date">{{ formatDate(article.created_at) }}</span>
             </div>
+            <div v-else class="card-meta card-meta--publication">
+                <span v-if="article.published_at" class="date">{{ formatDate(article.published_at) }}</span>
+                <span v-else class="date date--unpublished">Не опубликовано</span>
+            </div>
 
             <div v-if="article.is_coauthor" class="card-coauthor">Со-автор</div>
             <div v-if="!article.is_published && !article.is_publishable" class="card-draft card-draft--plain">Черновик</div>
@@ -51,15 +55,19 @@ const formatDate = (dateString) => {
     border: 1px solid #e2e8f0;
     border-radius: 0.5rem;
     overflow: hidden;
-    min-height: 320px;
     height: 100%;
+    display: flex;
+    flex-direction: column;
     transition: box-shadow 0.2s;
 }
 .article-card:hover { box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08); }
 .card-link {
     display: flex;
     flex-direction: column;
+    flex: 1;
     height: 100%;
+    min-height: 380px;
+    box-sizing: border-box;
     padding: 1rem;
     text-decoration: none;
     color: inherit;
@@ -116,6 +124,14 @@ const formatDate = (dateString) => {
 .date {
     flex-shrink: 0;
     white-space: nowrap;
+}
+.card-meta--publication {
+    justify-content: center;
+    text-align: center;
+}
+.date--unpublished {
+    color: #a0aec0;
+    font-style: italic;
 }
 .book-cover--empty {
     display: flex;
