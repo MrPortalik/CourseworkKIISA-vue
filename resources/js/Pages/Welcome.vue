@@ -60,53 +60,64 @@ import {Head} from "@inertiajs/vue3";
         .landing {
             height: auto;
             min-height: calc(100dvh - 72px);
-            background-size: 120% auto;
-            background-position: center 32%;
+            background-color: #110000;
+            background-size: contain;
+            background-position: center 50%;
+        }
+
+        [data-theme="light"] .landing,
+        [data-theme="dark"] .landing {
+            background-color: #110000;
         }
 
         .landing-content {
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            gap: 1.5rem;
+            gap: 1rem;
             min-height: calc(100dvh - 72px);
-            padding: 0 1.25rem 2rem;
+            padding: 1.25rem 1.25rem 2rem;
             box-sizing: border-box;
-        }
-
-        .landing h1 {
-            padding: 4.5rem 0 0;
-            font-size: clamp(1.15rem, 4.5vw, 1.75rem);
-            line-height: 1.2;
-            max-width: 88%;
+            position: relative;
+            z-index: 1;
         }
 
         .landing p {
+            order: 1;
             padding: 0;
-            align-self: flex-end;
-            font-size: clamp(2.25rem, 13vw, 3.5rem);
-            text-align: right;
+            align-self: flex-start;
+            font-size: clamp(3rem, 16vw, 4.5rem);
+            line-height: 1;
+            text-align: left;
+        }
+
+        .landing h1 {
+            order: 2;
+            padding: 0;
+            margin-top: auto;
+            font-size: clamp(1.35rem, 5.5vw, 2rem);
+            line-height: 1.25;
+            max-width: 100%;
+            text-align: left;
         }
     }
 
     @media (max-width: 480px) {
         .landing {
-            background-size: 145% auto;
-            background-position: center 38%;
+            background-size: 115% auto;
+            background-position: center 48%;
         }
 
         .landing-content {
             padding-inline: 1rem;
         }
 
-        .landing h1 {
-            padding-top: 3.25rem;
-            max-width: 95%;
-            font-size: clamp(1rem, 4.8vw, 1.35rem);
+        .landing p {
+            font-size: clamp(2.75rem, 18vw, 3.75rem);
         }
 
-        .landing p {
-            font-size: clamp(1.85rem, 15vw, 2.75rem);
+        .landing h1 {
+            font-size: clamp(1.2rem, 6vw, 1.75rem);
         }
     }
 
