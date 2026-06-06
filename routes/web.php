@@ -4,7 +4,6 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminReportController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\PlatformReportController;
-use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\UserMessageController;
 use App\Http\Controllers\ArticleModerationController;
 use App\Http\Controllers\AdminTaxonomyController;
@@ -20,8 +19,6 @@ use App\Models\Faq;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-
-Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
