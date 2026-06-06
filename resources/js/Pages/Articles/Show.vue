@@ -135,22 +135,10 @@ const canReport = computed(() => isLoggedIn.value && props.article.is_published)
                 </div>
             </div>
 
-            <div class="article-actions">
-                <template v-if="canEdit">
-                    <Link :href="route('articles.edit', article.slug)" class="edit-btn">Редактировать</Link>
-                    <button type="button" class="delete-btn" @click="deleteArticle">Удалить</button>
-                </template>
-                <button v-if="canReport" type="button" class="report-btn" @click="showReportModal = true">
-                    Пожаловаться
-                </button>
+            <div v-if="canEdit" class="article-actions">
+                <Link :href="route('articles.edit', article.slug)" class="edit-btn">Редактировать</Link>
+                <button type="button" class="delete-btn" @click="deleteArticle">Удалить</button>
             </div>
-
-            <FeedbackModal
-                :open="showReportModal"
-                type="article_complaint"
-                :article-id="article.id"
-                @close="showReportModal = false"
-            />
 
             <div class="article-content" v-html="article.content" />
 
@@ -164,13 +152,25 @@ const canReport = computed(() => isLoggedIn.value && props.article.is_published)
                 :can-rate="canRate"
             />
 
-            <Link :href="route('articles.index')" class="back-link">← Назад к статьям</Link>
-
             <CommentThread
                 :comments="comments"
                 :article-slug="article.slug"
                 :article-author-id="article.user_id"
                 :user-comment-votes="userCommentVotes"
+            />
+
+            <div class="article-footer">
+                <Link :href="route('articles.index')" class="back-link">← Назад к статьям</Link>
+                <button v-if="canReport" type="button" class="report-link" @click="showReportModal = true">
+                    Пожаловаться
+                </button>
+            </div>
+
+            <FeedbackModal
+                :open="showReportModal"
+                type="article_complaint"
+                :article-id="article.id"
+                @close="showReportModal = false"
             />
         </article>
 
@@ -370,7 +370,7 @@ const canReport = computed(() => isLoggedIn.value && props.article.is_published)
     gap: 0.5rem;
     margin-bottom: 1.25rem;
 }
-.edit-btn, .delete-btn, .report-btn {
+.edit-btn, .delete-btn {
     padding: 8px 14px;
     border-radius: 4px;
     border: none;
@@ -381,15 +381,30 @@ const canReport = computed(() => isLoggedIn.value && props.article.is_published)
 }
 .edit-btn { background: #4a90e2; }
 .delete-btn { background: #f44336; }
-.report-btn { background: #718096; margin-left: auto; }
-.back-link {
-    display: inline-block;
-    margin: 1.5rem 0 2rem;
-    font-weight: 500;
-    color: #4299e1;
-    text-decoration: none;
+.article-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-bottom: 1rem;
 }
+.back-link,
+.report-link {
+    font-weight: 500;
+    font-size: 1rem;
+    text-decoration: none;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
+}
+.back-link { color: #4299e1; }
 .back-link:hover { color: #3182ce; }
+.report-link { color: #e53e3e; }
+.report-link:hover { color: #c53030; text-decoration: underline; }
 .reject-overlay {
     position: fixed;
     inset: 0;

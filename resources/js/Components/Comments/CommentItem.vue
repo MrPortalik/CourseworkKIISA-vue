@@ -13,8 +13,10 @@ const props = defineProps({
 
 const page = usePage()
 const isOwnComment = computed(() => page.props.auth?.user?.id === props.comment.user_id)
+const isAdmin = computed(() => ['admin', 'owner'].includes(page.props.auth?.user?.role))
+const canDelete = computed(() => isOwnComment.value || isAdmin.value)
 
-defineEmits(['reply', 'vote'])
+defineEmits(['reply', 'vote', 'delete'])
 
 const formatDate = (d) => d ? new Date(d).toLocaleString('ru-RU') : ''
 
@@ -79,6 +81,14 @@ const canVote = computed(() => Boolean(page.props.auth?.user) && !isOwnComment.v
                     <span v-else class="vote-arrow vote-arrow--static down" aria-hidden="true">▼</span>
                 </div>
                 <button type="button" class="btn-reply" @click="$emit('reply', comment.id)">Ответить</button>
+                <button
+                    v-if="canDelete"
+                    type="button"
+                    class="btn-delete"
+                    @click="$emit('delete', comment.id)"
+                >
+                    Удалить
+                </button>
             </div>
         </div>
     </article>
@@ -184,13 +194,20 @@ header strong { color: var(--page-text, inherit); }
 .score--neutral { color: #4a5568; }
 .score--positive { color: #22c55e; }
 .score--negative { color: #ef4444; }
-.btn-reply {
+.btn-reply,
+.btn-delete {
     background: none;
     border: none;
     color: #4a5568;
     font-weight: 600;
     font-size: 0.8rem;
     cursor: pointer;
+}
+.btn-delete {
+    color: #e53e3e;
+}
+.btn-delete:hover {
+    text-decoration: underline;
 }
 [data-theme="dark"] .vote-pill { background: #1a1a1a; border-color: #404040; }
 [data-theme="dark"] .vote-pill--own {

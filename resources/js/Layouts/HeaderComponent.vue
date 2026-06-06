@@ -56,7 +56,7 @@ watch(() => page.url, closeNav)
                 <Link :href="route('articles.index')" class="header-link" :class="{ 'header-link--active': isArticlesSection }">Статьи</Link>
                 <Link :href="route('aboutus')" class="header-link" :class="{ 'header-link--active': isActive(['aboutus', 'faq.index']) }">О нас</Link>
                 <Link v-if="$page.props.auth?.user" :href="route('dashboard')" class="header-link" :class="{ 'header-link--active': isActive(['dashboard', 'authors.show']) }">Личный кабинет</Link>
-                <Link v-if="isAdmin" :href="route('admin.index')" class="header-link" :class="{ 'header-link--active': isActive(['admin.']) }">
+                <Link v-if="isAdmin" :href="route('admin.index')" class="header-link" :class="{ 'header-link--active': route().current()?.startsWith('admin.') }">
                     Админ-панель
                     <span v-if="pendingReportsCount > 0" class="badge badge--inline">{{ pendingReportsCount }}</span>
                 </Link>
@@ -88,7 +88,7 @@ watch(() => page.url, closeNav)
                 <Link :href="route('articles.index')" class="mobile-nav-link" :class="{ 'mobile-nav-link--active': isArticlesSection }" @click="closeNav">Статьи</Link>
                 <Link :href="route('aboutus')" class="mobile-nav-link" :class="{ 'mobile-nav-link--active': isActive(['aboutus', 'faq.index']) }" @click="closeNav">О нас</Link>
                 <Link v-if="$page.props.auth?.user" :href="route('dashboard')" class="mobile-nav-link" :class="{ 'mobile-nav-link--active': isActive(['dashboard', 'authors.show']) }" @click="closeNav">Личный кабинет</Link>
-                <Link v-if="isAdmin" :href="route('admin.index')" class="mobile-nav-link" :class="{ 'mobile-nav-link--active': isActive(['admin.']) }" @click="closeNav">
+                <Link v-if="isAdmin" :href="route('admin.index')" class="mobile-nav-link" :class="{ 'mobile-nav-link--active': route().current()?.startsWith('admin.') }" @click="closeNav">
                     Админ-панель
                     <span v-if="pendingReportsCount > 0" class="badge badge--inline">{{ pendingReportsCount }}</span>
                 </Link>

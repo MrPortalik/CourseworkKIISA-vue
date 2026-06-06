@@ -53,6 +53,11 @@ const voteComment = (commentId, vote) => {
 const startReply = (id) => {
     replyTo.value = id
 }
+
+const deleteComment = (commentId) => {
+    if (!confirm('Удалить комментарий?')) return
+    router.delete(route('comments.destroy', commentId), { preserveScroll: true })
+}
 </script>
 
 <template>
@@ -79,6 +84,7 @@ const startReply = (id) => {
                     :user-vote="userCommentVotes[comment.id]"
                     @reply="startReply"
                     @vote="voteComment"
+                    @delete="deleteComment"
                 />
                 <ul v-if="comment.children?.length" class="comment-replies">
                     <li v-for="child in comment.children" :key="child.id">
@@ -89,6 +95,7 @@ const startReply = (id) => {
                             is-reply
                             @reply="startReply"
                             @vote="voteComment"
+                            @delete="deleteComment"
                         />
                         <ul v-if="child.children?.length" class="comment-replies nested">
                             <li v-for="grand in child.children" :key="grand.id">
@@ -99,6 +106,7 @@ const startReply = (id) => {
                                     is-reply
                                     @reply="startReply"
                                     @vote="voteComment"
+                                    @delete="deleteComment"
                                 />
                             </li>
                         </ul>

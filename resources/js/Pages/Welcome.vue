@@ -37,38 +37,24 @@ import PageHead from '@/Components/PageHead.vue';
         background-image: url('/Assets/landingBackground.png');
     }
 
-    .landing-content {
-        position: relative;
-        width: 100%;
-        max-width: 1920px;
-        height: 100%;
-        margin: 0 auto;
-    }
-
     .landing h1 {
-        position: absolute;
-        top: 28.23%;
-        left: 26.56%;
-        padding: 0;
-        margin: 0;
-        max-width: min(42%, 720px);
-        box-sizing: border-box;
+        padding-top: 271px;
+        padding-left: 510px;
+        justify-self: start;
         color: white;
-        font-size: clamp(1.35rem, 3.02vw, 58px);
-        line-height: 1.15;
+        margin: 0;
+        max-width: 100%;
+        box-sizing: border-box;
     }
 
     .landing p {
-        position: absolute;
-        right: 28.28%;
-        bottom: 12.5%;
-        padding: 0;
-        margin: 0;
         font-family: "Oswald", sans-serif;
         font-weight: 400;
-        font-size: clamp(2rem, 3.02vw, 58px);
-        line-height: 1;
+        font-size: 58px;
         color: white;
+        justify-self: end;
+        padding-right: 543px;
+        margin: 0;
         box-sizing: border-box;
     }
 
@@ -99,8 +85,8 @@ import PageHead from '@/Components/PageHead.vue';
         }
 
         .landing p {
-            position: static;
             order: 1;
+            padding: 0;
             align-self: flex-start;
             font-size: clamp(3rem, 16vw, 4.5rem);
             line-height: 1;
@@ -108,12 +94,12 @@ import PageHead from '@/Components/PageHead.vue';
         }
 
         .landing h1 {
-            position: static;
             order: 2;
+            padding: 0;
             margin-top: auto;
-            max-width: 100%;
             font-size: clamp(1.35rem, 5.5vw, 2rem);
             line-height: 1.25;
+            max-width: 100%;
             text-align: right;
         }
     }
