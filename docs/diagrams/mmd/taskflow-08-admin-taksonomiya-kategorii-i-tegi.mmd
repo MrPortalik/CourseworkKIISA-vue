@@ -1,0 +1,48 @@
+flowchart TB
+ subgraph NAV["Навигация из Admin/Index.vue"]
+ ADMIN["GET /admin"]
+ CAT_PAGE["Admin/Categories.vue<br/>GET /admin/categories"]
+ TAG_PAGE["Admin/Taxonomy.vue<br/>GET /admin/tags"]
+ end
+
+ subgraph CATEGORIES["AdminTaxonomyController — категории"]
+ C_STORE["POST /admin/categories"]
+ C_UPDATE["PUT /admin/categories/{category}"]
+ C_DELETE["DELETE /admin/categories/{category}"]
+ end
+
+ subgraph TAGS["AdminTaxonomyController — теги"]
+ T_STORE["POST /admin/tags"]
+ T_UPDATE["PUT /admin/tags/{tag}"]
+ T_DELETE["DELETE /admin/tags/{tag}"]
+ end
+
+ subgraph FIELDS["Поля"]
+ CF["name, description"]
+ TF["name, description, slug"]
+ end
+
+ subgraph CASCADE["Каскад при удалении"]
+ C_NULL["articles.category_id → null"]
+ C_PIVOT["article_category — detach"]
+ T_DETACH["tag→articles detach"]
+ end
+
+ subgraph GUARD["middleware auth + verified + admin"]
+ end
+
+ ADMIN --> CAT_PAGE
+ ADMIN --> TAG_PAGE
+ GUARD --> CAT_PAGE
+ GUARD --> TAG_PAGE
+ CAT_PAGE --> C_STORE
+ CAT_PAGE --> C_UPDATE
+ CAT_PAGE --> C_DELETE
+ TAG_PAGE --> T_STORE
+ TAG_PAGE --> T_UPDATE
+ TAG_PAGE --> T_DELETE
+ C_STORE --> CF
+ T_STORE --> TF
+ C_DELETE --> C_NULL
+ C_DELETE --> C_PIVOT
+ T_DELETE --> T_DETACH

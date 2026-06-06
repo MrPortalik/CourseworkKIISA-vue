@@ -3,6 +3,8 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Inertia\Inertia;
+use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -26,5 +28,29 @@ class Handler extends ExceptionHandler
         $this->reportable(function (Throwable $e) {
             //
         });
+    }
+
+    public function render($request, Throwable $e): Response
+    {
+        $response = parent::render($request, $e);
+
+        if ($response->getStatusCode() === 419) {
+            return back()->with([
+                'message' => 'Страница устарела, обновите её и попробуйте снова.',
+            ]);
+        }
+
+        if ($request->expectsJson()) {
+            return $response;
+        }
+
+        $status = $response->getStatusCode();
+        if (! in_array($status, [403, 404, 500, 503], true)) {
+            return $response;
+        }
+
+        return Inertia::render('Errors/Show', ['status' => $status])
+            ->toResponse($request)
+            ->setStatusCode($status);
     }
 }

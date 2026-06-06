@@ -1,0 +1,47 @@
+flowchart TB
+ subgraph LANDING["Главная"]
+ HOME["Welcome.vue<br/>GET /"]
+ ABOUT["AboutUs.vue<br/>GET /aboutus"]
+ FAQ["Faq/Index.vue<br/>GET /faq"]
+ end
+
+ subgraph ARTICLES["Каталог статей"]
+ LIST["Articles/Index.vue<br/>GET /articles"]
+ SEARCH["Поиск q, фильтры category/tags/section"]
+ PREVIEW["Автокомплит search-preview"]
+ OBJECTS["Диапазон объектов /articles/objects/{range}"]
+ CARD["ArticleCard → клик"]
+ end
+
+ subgraph READ["Чтение"]
+ SHOW["Articles/Show.vue<br/>GET /articles/{slug}"]
+ CONTENT["Контент, теги, соавторы"]
+ COMMENTS["Комментарии — только просмотр"]
+ RATING["Рейтинг — без auth недоступен"]
+ end
+
+ subgraph AUTH_ENTRY["Вход в систему"]
+ LOGIN["Login.vue<br/>GET /login"]
+ REG["Register.vue<br/>GET /register"]
+ end
+
+ subgraph RESTRICT["Ограничения гостя"]
+ NO_DRAFT["Черновики → 404"]
+ NO_WRITE["Нет комментариев / оценок / подписок"]
+ end
+
+ HOME --> LIST
+ HOME --> ABOUT
+ HOME --> FAQ
+ HOME --> LOGIN
+ HOME --> REG
+ LIST --> SEARCH
+ SEARCH --> PREVIEW
+ LIST --> OBJECTS
+ LIST --> CARD
+ CARD --> SHOW
+ SHOW --> CONTENT
+ SHOW --> COMMENTS
+ SHOW --> RATING
+ SHOW --> NO_DRAFT
+ SHOW --> NO_WRITE

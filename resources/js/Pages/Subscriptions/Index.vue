@@ -1,5 +1,6 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3'
+import { Link } from '@inertiajs/vue3'
+import PageHead from '@/Components/PageHead.vue'
 import HeaderComponent from '@/Layouts/HeaderComponent.vue'
 
 defineProps({
@@ -8,7 +9,10 @@ defineProps({
 </script>
 
 <template>
-    <Head title="Подписки" />
+    <PageHead
+        title="Подписки"
+        description="Список авторов, на которых вы подписаны на портале КИИСА."
+    />
     <HeaderComponent />
 
     <section class="subscriptions-page">

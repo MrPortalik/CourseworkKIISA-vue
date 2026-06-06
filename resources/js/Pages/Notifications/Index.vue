@@ -1,5 +1,6 @@
 <script setup>
-import { Head, Link, router } from '@inertiajs/vue3'
+import { Link, router } from '@inertiajs/vue3'
+import PageHead from '@/Components/PageHead.vue'
 import { ref } from 'vue'
 import HeaderComponent from '@/Layouts/HeaderComponent.vue'
 import UserAvatar from '@/Components/User/UserAvatar.vue'
@@ -41,10 +42,36 @@ const respondCoauthor = (notification, action) => {
 }
 
 const isCoauthorInvite = (n) => n.data?.type === 'coauthor_invitation'
+const isAdminMessage = (n) => n.data?.type === 'admin_message'
+const isReportResponse = (n) => n.data?.type === 'report_response'
+
+const replyBodies = ref({})
+const replyProcessing = ref({})
+
+const submitReply = (notification) => {
+    const messageId = notification.data.message_id
+    const body = replyBodies.value[notification.id]?.trim()
+    if (!messageId || !body) return
+
+    replyProcessing.value[notification.id] = true
+    router.post(route('messages.reply', messageId), { body }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            replyBodies.value[notification.id] = ''
+            markRead(notification.id)
+        },
+        onFinish: () => {
+            replyProcessing.value[notification.id] = false
+        },
+    })
+}
 </script>
 
 <template>
-    <Head title="Уведомления" />
+    <PageHead
+        title="Уведомления"
+        description="Уведомления о публикациях, подписках и событиях на портале КИИСА."
+    />
     <HeaderComponent />
 
     <section class="notifications-page content-area">
@@ -108,6 +135,43 @@ const isCoauthorInvite = (n) => n.data?.type === 'coauthor_invitation'
                                 @click="respondCoauthor(notification, 'decline')"
                             >
                                 Нет
+                            </button>
+                        </div>
+                    </template>
+                    <template v-else-if="isAdminMessage(notification)">
+                        <p class="notification-text">
+                            <strong>{{ notification.data.sender_name }}:</strong>
+                            {{ notification.data.message }}
+                        </p>
+                        <form class="reply-form" @submit.prevent="submitReply(notification)">
+                            <textarea
+                                v-model="replyBodies[notification.id]"
+                                rows="3"
+                                class="reply-input"
+                                placeholder="Ваш ответ"
+                                required
+                            />
+                            <button type="submit" class="accept-btn" :disabled="replyProcessing[notification.id]">
+                                Ответить
+                            </button>
+                        </form>
+                    </template>
+                    <template v-else-if="isReportResponse(notification)">
+                        <p class="notification-text">
+                            <strong>Ответ администрации ({{ notification.data.admin_name }}):</strong>
+                            {{ notification.data.message }}
+                        </p>
+                        <div class="notification-actions">
+                            <Link
+                                v-if="notification.data.article_slug"
+                                :href="route('articles.show', notification.data.article_slug)"
+                                class="link"
+                                @click="openArticle(notification)"
+                            >
+                                Открыть статью
+                            </Link>
+                            <button v-if="!notification.read_at" class="read-btn" @click="markRead(notification.id)">
+                                Прочитано
                             </button>
                         </div>
                     </template>
@@ -298,6 +362,27 @@ const isCoauthorInvite = (n) => n.data?.type === 'coauthor_invitation'
 }
 
 .read-btn,
+.reply-form {
+    display: grid;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.reply-input {
+    width: 100%;
+    padding: 0.65rem;
+    border: 1px solid #cbd5e0;
+    border-radius: 8px;
+    font: inherit;
+    resize: vertical;
+}
+
+[data-theme="dark"] .reply-input {
+    background: #141414;
+    color: #f0f0f0;
+    border-color: #404040;
+}
+
 .accept-btn,
 .decline-btn {
     border: none;

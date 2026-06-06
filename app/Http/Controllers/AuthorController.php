@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Article;
 use App\Models\ArticleCoauthor;
 use App\Models\User;
+use App\Support\ImageUploadRules;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -17,6 +18,7 @@ class AuthorController extends Controller
             && ($request->user()->id === $user->id || $request->user()->isAdmin());
 
         $query = Article::with(['user', 'category', 'tags'])
+            ->withRatingStats()
             ->where(function ($q) use ($user) {
                 $q->where('user_id', $user->id)
                     ->orWhereHas('coauthorRecords', function ($r) use ($user) {
@@ -53,7 +55,7 @@ class AuthorController extends Controller
     {
         $request->validate([
             'bio' => 'nullable|string|max:2000',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            ...ImageUploadRules::rule('avatar', 2048),
         ]);
 
         $user = $request->user();

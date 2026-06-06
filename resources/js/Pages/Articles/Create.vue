@@ -1,10 +1,13 @@
 <script setup>
-import { Head, Link, useForm, usePage } from '@inertiajs/vue3'
+import { Link, useForm, usePage } from '@inertiajs/vue3'
+import PageHead from '@/Components/PageHead.vue'
 import { computed, ref } from 'vue'
 import HeaderComponent from '@/Layouts/HeaderComponent.vue'
 import ArticleTaxonomyPickers from '@/Components/Articles/ArticleTaxonomyPickers.vue'
 import ArticleContentField from '@/Components/Articles/ArticleContentField.vue'
 import CoauthorInvitePanel from '@/Components/Articles/CoauthorInvitePanel.vue'
+import PublicationRulesBanner from '@/Components/Articles/PublicationRulesBanner.vue'
+import { imageAccept, validateImageFile } from '@/lib/imageUpload'
 import { uploadArticleContentImage } from '@/lib/articleContentImage'
 import {
     buildArticleHtml,
@@ -19,7 +22,7 @@ const props = defineProps({
 })
 
 const page = usePage()
-const isAdmin = computed(() => page.props.auth?.user?.role === 'admin')
+const isAdmin = computed(() => ['admin', 'owner'].includes(page.props.auth?.user?.role))
 
 const bannerPreview = ref(null)
 const heroPreview = ref(null)
@@ -42,9 +45,18 @@ const form = useForm({
     hero_banner: null,
 })
 
+const fileError = ref('')
+
 const onBannerChange = (e) => {
     const file = e.target.files[0]
     if (!file) return
+    const error = validateImageFile(file)
+    if (error) {
+        fileError.value = error
+        e.target.value = ''
+        return
+    }
+    fileError.value = ''
     form.banner = file
     bannerPreview.value = URL.createObjectURL(file)
 }
@@ -52,6 +64,13 @@ const onBannerChange = (e) => {
 const onHeroChange = (e) => {
     const file = e.target.files[0]
     if (!file) return
+    const error = validateImageFile(file)
+    if (error) {
+        fileError.value = error
+        e.target.value = ''
+        return
+    }
+    fileError.value = ''
     form.hero_banner = file
     heroPreview.value = URL.createObjectURL(file)
 }
@@ -77,6 +96,13 @@ const onInsertAtParagraph = (paragraphIndex) => {
 const onContentImageSelected = async (event) => {
     const file = event.target.files[0]
     if (!file) return
+    const error = validateImageFile(file)
+    if (error) {
+        fileError.value = error
+        event.target.value = ''
+        return
+    }
+    fileError.value = ''
     uploadingImage.value = true
     try {
         const url = await uploadArticleContentImage(file)
@@ -115,7 +141,10 @@ const submit = () => form
 </script>
 
 <template>
-    <Head title="Создание статьи" />
+    <PageHead
+        title="Создание статьи"
+        description="Напишите и оформите новую статью для портала КИИСА: черновик, теги и отправка на модерацию."
+    />
     <HeaderComponent />
 
     <div class="article-create content-area">
@@ -124,7 +153,10 @@ const submit = () => form
             <Link :href="route('articles.index')" class="back-button">Назад</Link>
         </div>
 
+        <PublicationRulesBanner />
+
         <form class="article-form" @submit.prevent="submit">
+            <p v-if="fileError" class="file-error">{{ fileError }}</p>
             <div class="form-group">
                 <label class="form-label">Заголовок</label>
                 <input v-model="form.title" type="text" class="form-input" required placeholder="Например: Объект 42" />
@@ -132,13 +164,13 @@ const submit = () => form
 
             <div class="form-group">
                 <label class="form-label">Обложка (книжная ориентация)</label>
-                <input type="file" accept="image/*" @change="onBannerChange" />
+                <input type="file" :accept="imageAccept" @change="onBannerChange" />
                 <img v-if="bannerPreview" :src="bannerPreview" alt="" class="preview-book" />
             </div>
 
             <div class="form-group">
                 <label class="form-label">Баннер над заголовком (горизонтальный, необязательно)</label>
-                <input type="file" accept="image/*" @change="onHeroChange" />
+                <input type="file" :accept="imageAccept" @change="onHeroChange" />
                 <img v-if="heroPreview" :src="heroPreview" alt="" class="preview-hero" />
             </div>
 
@@ -160,7 +192,7 @@ const submit = () => form
                     <button type="button" class="toolbar-btn btn-accent" :disabled="uploadingImage" @mousedown.prevent="insertContentImage">
                         Добавить в текущий выделенный абзац
                     </button>
-                    <input ref="contentImageInput" type="file" accept="image/*" class="hidden" @change.stop="onContentImageSelected" />
+                    <input ref="contentImageInput" type="file" :accept="imageAccept" class="hidden" @change.stop="onContentImageSelected" />
                 </div>
                 <ArticleContentField
                     ref="contentFieldRef"
@@ -195,6 +227,7 @@ const submit = () => form
 .article-create.content-area { max-width: 800px; margin: 0 auto; padding: 2rem 1rem; width: 100%; }
 .page-header { display: flex; justify-content: space-between; margin-bottom: 2rem; }
 .article-form { background: #fff; padding: 2rem; border: 1px solid #e2e8f0; border-radius: 8px; }
+.file-error { color: #c53030; margin: 0 0 1rem; font-weight: 600; }
 .form-group { margin-bottom: 1.25rem; }
 .form-label { display: block; font-weight: 600; margin-bottom: 0.5rem; }
 .form-input { width: 100%; padding: 0.75rem; border: 1px solid #cbd5e0; border-radius: 6px; }

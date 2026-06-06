@@ -4,7 +4,9 @@ import ArticleCard from '@/Components/Articles/ArticleCard.vue'
 import EditPencilIcon from '@/Components/EditPencilIcon.vue'
 import UserAvatar from '@/Components/User/UserAvatar.vue'
 import UserRoleBadge from '@/Components/UI/UserRoleBadge.vue'
-import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3'
+import { Link, router, useForm, usePage } from '@inertiajs/vue3'
+import { imageAccept, validateImageFile } from '@/lib/imageUpload'
+import PageHead from '@/Components/PageHead.vue'
 import { computed, ref } from 'vue'
 
 const props = defineProps({
@@ -28,6 +30,12 @@ const profileForm = useForm({
 const onAvatar = (e) => {
     const file = e.target.files[0]
     if (!file) return
+    const error = validateImageFile(file)
+    if (error) {
+        alert(error)
+        e.target.value = ''
+        return
+    }
     profileForm.avatar = file
     avatarPreview.value = URL.createObjectURL(file)
     saveProfile()
@@ -60,7 +68,10 @@ const toggleSubscribe = () => {
 </script>
 
 <template>
-    <Head :title="author.name" />
+    <PageHead
+        :title="author.name"
+        :description="`Страница автора ${author.name} на портале КИИСА: биография и опубликованные статьи.`"
+    />
     <HeaderComponent />
 
     <div v-if="isOwnProfile && profileForm.processing" class="profile-loading">
@@ -88,7 +99,7 @@ const toggleSubscribe = () => {
                 >
                     <EditPencilIcon variant="light" />
                 </button>
-                <input ref="avatarInput" type="file" accept="image/*" hidden @change="onAvatar" />
+                <input ref="avatarInput" type="file" :accept="imageAccept" hidden @change="onAvatar" />
             </figure>
 
             <button
@@ -313,7 +324,7 @@ const toggleSubscribe = () => {
     }
 }
 @media (max-width: 520px) {
-    .cards { grid-template-columns: 1fr; }
+    .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 .empty-state h3 { color: #718096; text-align: center; margin-top: 2rem; }
 .pagination { display: flex; gap: 0.5rem; flex-wrap: wrap; }

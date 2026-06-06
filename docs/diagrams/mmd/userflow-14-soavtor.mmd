@@ -1,0 +1,36 @@
+flowchart TB
+ subgraph INVITE["Получение приглашения"]
+ MAIL["CoauthorInvitationNotification"]
+ LIST["Notifications/Index.vue<br/>GET /notifications"]
+ CARD["Карточка coauthor_invitation"]
+ end
+
+ subgraph DECIDE["Решение"]
+ ACCEPT["POST /coauthors/{coauthor}/accept"]
+ DECLINE["POST /coauthors/{coauthor}/decline"]
+ READ["POST /notifications/{id}/read"]
+ end
+
+ subgraph RESULT["Результат"]
+ OK["status = accepted"]
+ NO["status = declined"]
+ SHOW["Articles/Show.vue — в блоке coauthors"]
+ PROFILE["Authors/Show.vue — статья в списке автора"]
+ end
+
+ subgraph EDIT_ACCESS["Доступ к черновику"]
+ PREVIEW["GET /articles/{slug}<br/>неопубликованная — видна соавтору?"]
+ NOTE["show: только user_id или admin<br/>соавтор видит через профиль автора"]
+ end
+
+ MAIL --> LIST
+ LIST --> CARD
+ CARD --> ACCEPT
+ CARD --> DECLINE
+ ACCEPT --> READ
+ DECLINE --> READ
+ ACCEPT --> OK
+ DECLINE --> NO
+ OK --> SHOW
+ OK --> PROFILE
+ PROFILE --> EDIT_ACCESS

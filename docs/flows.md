@@ -287,7 +287,7 @@ flowchart TB
  SWITCH["Смена up↔down → updateOrCreate"]
  end
 
- subgraph DB[("comment_votes")]
+ subgraph DB_TABLE["comment_votes"]
  REC["comment_id + user_id + vote"]
  end
 

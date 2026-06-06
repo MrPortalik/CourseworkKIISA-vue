@@ -1,7 +1,8 @@
 <script setup>
 import GuestLayout from '@/Layouts/GuestLayout.vue'
 import InputError from '@/Components/InputError.vue'
-import { Head, Link, useForm } from '@inertiajs/vue3'
+import { Link, useForm } from '@inertiajs/vue3'
+import PageHead from '@/Components/PageHead.vue'
 
 defineProps({
     canResetPassword: { type: Boolean },
@@ -23,7 +24,10 @@ const submit = () => {
 
 <template>
     <GuestLayout>
-        <Head title="Вход" />
+        <PageHead
+            title="Вход"
+            description="Войдите в аккаунт на информационном портале КИИСА, чтобы публиковать статьи и оставлять комментарии."
+        />
 
         <h1 class="auth-title">Вход</h1>
         <p class="auth-subtitle">Войдите в аккаунт на портале КИИСА</p>

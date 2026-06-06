@@ -19,6 +19,8 @@ class User extends Authenticatable
         'password',
         'bio',
         'avatar',
+        'role',
+        'is_blocked',
     ];
 
     protected $hidden = [
@@ -29,6 +31,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'is_blocked' => 'boolean',
     ];
 
     public function articles(): HasMany
@@ -52,9 +55,36 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    public function isOwner(): bool
+    {
+        return $this->role === 'owner';
+    }
+
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return in_array($this->role, ['admin', 'owner'], true);
+    }
+
+    public function isStaff(): bool
+    {
+        return $this->isAdmin();
+    }
+
+    public function canManageUser(User $target): bool
+    {
+        if ($this->id === $target->id) {
+            return false;
+        }
+
+        if ($target->isOwner()) {
+            return false;
+        }
+
+        if ($this->isOwner()) {
+            return true;
+        }
+
+        return $this->isAdmin() && ! $target->isAdmin();
     }
 
     public function isSubscribedTo(User $author): bool

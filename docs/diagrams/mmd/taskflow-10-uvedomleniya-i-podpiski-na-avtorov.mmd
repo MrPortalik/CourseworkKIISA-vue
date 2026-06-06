@@ -1,0 +1,46 @@
+flowchart TB
+ subgraph SUBSCRIBE["Подписка на автора"]
+ PROFILE["Authors/Show.vue"]
+ SUB["POST /authors/{user}/subscribe"]
+ UNSUB["DELETE /authors/{user}/subscribe"]
+ MILESTONE["SubscriberMilestoneNotification<br/>1, 100, 1000…"]
+ end
+
+ subgraph PUB_NOTIFY["При публикации статьи"]
+ APPROVE["ArticleModerationController::approve"]
+ ADMIN_PUB["ArticleController admin publish"]
+ PUB_N["ArticlePublishedNotification → подписчикам"]
+ end
+
+ subgraph PAGE["Notifications/Index.vue"]
+ INDEX["GET /notifications"]
+ TAB1["Вкладка «Лента»"]
+ TAB2["Вкладка «Подписки»"]
+ READ1["POST /notifications/{id}/read"]
+ READALL["POST /notifications/read-all"]
+ end
+
+ subgraph TYPES["Типы уведомлений"]
+ T1["coauthor_invitation"]
+ T2["publication_approved / rejected"]
+ T3["article_published"]
+ T4["subscriber_milestone"]
+ end
+
+ subgraph REDIRECT["Маршрут-редирект"]
+ OLD["GET /subscriptions → /notifications"]
+ end
+
+ PROFILE --> SUB
+ PROFILE --> UNSUB
+ SUB --> MILESTONE
+ SUB --> TAB2
+ APPROVE --> PUB_N
+ ADMIN_PUB --> PUB_N
+ PUB_N --> TAB1
+ INDEX --> TAB1
+ INDEX --> TAB2
+ TAB1 --> READ1
+ TAB1 --> READALL
+ T1 -->|"accept/decline"| COAUTH["CoauthorController"]
+ OLD --> INDEX

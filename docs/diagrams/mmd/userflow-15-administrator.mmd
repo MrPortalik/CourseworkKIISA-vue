@@ -1,0 +1,54 @@
+flowchart TB
+ subgraph ACCESS["Доступ"]
+ LOGIN["Вход role=admin"]
+ GUARD["middleware admin"]
+ end
+
+ subgraph PANEL["Admin/Index.vue"]
+ ADMIN["GET /admin"]
+ PENDING["Ожидают публикации<br/>is_publishable && !is_published"]
+ ALL_DRAFTS["Все неопубликованные"]
+ APPROVE["POST /admin/articles/{article}/approve"]
+ REJECT["POST /admin/articles/{article}/reject"]
+ end
+
+ subgraph TAXONOMY["Таксономия"]
+ CATS["Admin/Categories.vue<br/>GET /admin/categories"]
+ TAGS["Admin/Taxonomy.vue<br/>GET /admin/tags"]
+ CRUD["POST/PUT/DELETE категорий и тегов"]
+ end
+
+ subgraph ARTICLE_POWER["Расширенные права на статьи"]
+ DIRECT["Create/Edit: is_published напрямую"]
+ FLAGS["is_hit, is_editors_choice, is_new"]
+ ALL_DRAFTS_LIST["Articles/Drafts.vue — все черновики"]
+ MOD_ON_SHOW["Articles/Show.vue — модерация на странице"]
+ EDIT_ANY["Редактирование/удаление любой статьи"]
+ end
+
+ subgraph EFFECT["Эффекты действий"]
+ PUB["Публикация + published_at"]
+ N1["ArticlePublicationApprovedNotification"]
+ N2["ArticlePublishedNotification → подписчики"]
+ N3["ArticlePublicationRejectedNotification"]
+ end
+
+ LOGIN --> GUARD
+ GUARD --> ADMIN
+ ADMIN --> PENDING
+ ADMIN --> ALL_DRAFTS
+ PENDING --> APPROVE
+ PENDING --> REJECT
+ ADMIN --> CATS
+ ADMIN --> TAGS
+ CATS --> CRUD
+ TAGS --> CRUD
+ GUARD --> DIRECT
+ DIRECT --> FLAGS
+ GUARD --> ALL_DRAFTS_LIST
+ GUARD --> MOD_ON_SHOW
+ GUARD --> EDIT_ANY
+ APPROVE --> PUB
+ APPROVE --> N1
+ APPROVE --> N2
+ REJECT --> N3

@@ -1,10 +1,18 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3'
+import { Link } from '@inertiajs/vue3'
+import { ref } from 'vue'
+import PageHead from '@/Components/PageHead.vue'
 import PageWithSidebar from '@/Layouts/PageWithSidebar.vue'
+import FeedbackModal from '@/Components/FeedbackModal.vue'
+
+const feedbackOpen = ref(false)
 </script>
 
 <template>
-    <Head title="О нас" />
+    <PageHead
+        title="О нас"
+        description="Творческое объединение «Элепортиевы грёзы» и портал КИИСА: каноничные истории, модерация и сообщество авторов."
+    />
     <PageWithSidebar>
         <h1>О нас</h1>
         <p class="intro">
@@ -14,7 +22,12 @@ import PageWithSidebar from '@/Layouts/PageWithSidebar.vue'
             пользовательские статьи, часто находящиеся в рамках каноничного сюжета; модерацией проекта занимается администрация портала.
         </p>
 
-        <Link :href="route('faq.index')" class="faq-link actionBtn">FAQ</Link>
+        <div class="about-actions">
+            <Link :href="route('faq.index')" class="faq-link actionBtn">FAQ</Link>
+            <button type="button" class="feedback-link actionBtn" @click="feedbackOpen = true">Обратная связь</button>
+        </div>
+
+        <FeedbackModal :open="feedbackOpen" @close="feedbackOpen = false" />
     </PageWithSidebar>
 </template>
 
@@ -27,6 +40,17 @@ h1 { margin-bottom: 0.5rem; }
     line-height: 1.6;
     color: #718096;
 }
+.about-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.feedback-link {
+    border: none;
+    cursor: pointer;
+}
+
 .actionBtn {
     display: inline-flex;
     margin-top: 0.5rem;

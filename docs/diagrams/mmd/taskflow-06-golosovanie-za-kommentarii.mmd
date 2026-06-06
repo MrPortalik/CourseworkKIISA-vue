@@ -1,0 +1,30 @@
+flowchart TB
+ subgraph UI["CommentThread.vue"]
+ UP["👍 upvote"]
+ DOWN["👎 downvote"]
+ end
+
+ subgraph API["CommentVoteController"]
+ VOTE["POST /comments/{comment}/vote<br/>vote: 1 или -1"]
+ end
+
+ subgraph RULES["Правила"]
+ AUTH["middleware auth"]
+ SELF["403 — нельзя голосовать за свой комментарий"]
+ TOGGLE["Повторный клик → снять голос"]
+ SWITCH["Смена up↔down → updateOrCreate"]
+ end
+
+ subgraph DB_TABLE["comment_votes"]
+ REC["comment_id + user_id + vote"]
+ end
+
+ UP --> AUTH
+ DOWN --> AUTH
+ AUTH --> VOTE
+ VOTE --> SELF
+ VOTE --> TOGGLE
+ VOTE --> SWITCH
+ TOGGLE --> REC
+ SWITCH --> REC
+ REC -->|"back()"| UI

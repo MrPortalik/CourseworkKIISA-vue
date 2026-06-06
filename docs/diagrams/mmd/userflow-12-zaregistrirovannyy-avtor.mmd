@@ -1,0 +1,56 @@
+flowchart TB
+ subgraph ONBOARD["Вход и профиль"]
+ LOGIN["POST /login"]
+ VERIFY["Подтверждение email<br/>middleware verified"]
+ DASH["GET /dashboard"]
+ PROFILE["Authors/Show.vue<br/>GET /authors/{user}"]
+ BIO["POST /profile/dashboard<br/>bio + avatar"]
+ end
+
+ subgraph WRITE["Создание контента"]
+ CREATE["Articles/Create.vue<br/>GET /articles/create"]
+ SAVE["POST /articles"]
+ DRAFTS["Articles/Drafts.vue<br/>GET /articles/drafts"]
+ EDIT["Articles/Edit.vue<br/>GET /articles/{slug}/edit"]
+ UPDATE["PUT /articles/{slug}"]
+ DELETE["DELETE /articles/{slug}"]
+ end
+
+ subgraph PUBLISH["Путь к публикации"]
+ CHECK{"«Предложить к публикации»?"}
+ DRAFT["Черновик is_publishable=false"]
+ MOD["Ожидание модерации"]
+ OK["Опубликована"]
+ REJ["Отклонена + причина в уведомлении"]
+ end
+
+ subgraph COAUTH["Соавторы"]
+ INVITE["CoauthorInvitePanel"]
+ NOTIF["Уведомление приглашённому"]
+ end
+
+ subgraph ACCOUNT["Аккаунт"]
+ SETTINGS["Profile/Edit.vue<br/>GET /profile"]
+ LOGOUT["GET /logout"]
+ end
+
+ LOGIN --> VERIFY
+ VERIFY --> DASH
+ DASH --> PROFILE
+ PROFILE --> BIO
+ PROFILE --> CREATE
+ CREATE --> SAVE
+ SAVE --> CHECK
+ CHECK -->|нет| DRAFT
+ CHECK -->|да| MOD
+ DRAFT --> DRAFTS
+ DRAFTS --> EDIT
+ EDIT --> UPDATE
+ MOD --> OK
+ MOD --> REJ
+ REJ --> EDIT
+ OK --> SHOW["Articles/Show.vue"]
+ CREATE --> INVITE
+ INVITE --> NOTIF
+ PROFILE --> SETTINGS
+ PROFILE --> LOGOUT

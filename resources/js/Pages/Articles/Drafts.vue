@@ -1,5 +1,6 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3'
+import { Link } from '@inertiajs/vue3'
+import PageHead from '@/Components/PageHead.vue'
 import PageWithSidebar from '@/Layouts/PageWithSidebar.vue'
 import ArticleCard from '@/Components/Articles/ArticleCard.vue'
 
@@ -10,7 +11,10 @@ defineProps({
 </script>
 
 <template>
-    <Head title="Наброски" />
+    <PageHead
+        title="Наброски"
+        description="Черновики ваших статей на портале КИИСА: продолжите редактирование или отправьте материал на модерацию."
+    />
 
     <PageWithSidebar>
         <div class="page-header">

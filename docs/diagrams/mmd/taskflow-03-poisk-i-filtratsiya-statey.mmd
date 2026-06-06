@@ -1,0 +1,49 @@
+flowchart TB
+ subgraph ENTRY["Точки входа"]
+ LIST["Articles/Index.vue<br/>GET /articles"]
+ OBJECTS["GET /articles/objects/{range}<br/>диапазон номеров объекта"]
+ PREVIEW["GET /articles/search-preview<br/>JSON автокомплит"]
+ end
+
+ subgraph FILTERS["Параметры URL"]
+ Q["q — текст поиска"]
+ CAT["category — одна категория"]
+ CATS["categories[] — несколько"]
+ TAGS["tags[] + tags_match all/any"]
+ SEC["section: hits / editors_choice / new"]
+ SEARCH["search=1 — режим «точное/похожее»"]
+ end
+
+ subgraph SERVICE["ArticleSearchService"]
+ RANK["rankArticles — ранжирование"]
+ SPLIT["splitForListing — exact + related"]
+ end
+
+ subgraph BACKEND["ArticleController::buildArticlesListing"]
+ PUB["Article::published()"]
+ APPLY["applyListingFilters"]
+ PAGINATE["ArticlesListingPaginator<br/>стр.1: 21, далее: 63"]
+ SLIDERS["categorySliders — 15 статей/категория"]
+ end
+
+ subgraph OUTPUT["Результат"]
+ GRID["ArticleCard + сетка"]
+ SLIDER_UI["CategoryArticleSliders"]
+ EXACT["exactArticles + otherArticles"]
+ end
+
+ LIST --> FILTERS
+ OBJECTS --> PUB
+ FILTERS --> PUB
+ PUB --> APPLY
+ Q --> PREVIEW
+ PREVIEW --> RANK
+ Q --> RANK
+ SEARCH --> SPLIT
+ SPLIT --> EXACT
+ RANK --> PAGINATE
+ APPLY --> PAGINATE
+ PAGINATE --> GRID
+ LIST -->|"page=1, без фильтров"| SLIDERS
+ SLIDERS --> SLIDER_UI
+ EXACT --> GRID

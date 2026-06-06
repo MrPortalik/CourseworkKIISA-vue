@@ -1,6 +1,7 @@
 <script setup>
-import { Head, Link, router } from '@inertiajs/vue3'
+import { Link, router } from '@inertiajs/vue3'
 import { computed, ref, watch } from 'vue'
+import PageHead from '@/Components/PageHead.vue'
 import PageWithSidebar from '@/Layouts/PageWithSidebar.vue'
 import ArticleSearchBar from '@/Components/Articles/ArticleSearchBar.vue'
 import ArticleCard from '@/Components/Articles/ArticleCard.vue'
@@ -100,10 +101,27 @@ const toggleAllArticles = () => {
 const gotoCategory = (categoryId) => {
     router.get(route('articles.index', { category: categoryId }))
 }
+
+const pageTitle = computed(() =>
+    props.activeCategory?.name
+    || (props.objectRange ? `Объекты ${props.objectRange.label}` : 'Статьи'),
+)
+
+const pageDescription = computed(() => {
+    if (props.activeCategory?.name) {
+        return `Статьи категории «${props.activeCategory.name}» на портале КИИСА: поиск, фильтры и чтение материалов вселенной.`
+    }
+
+    if (props.objectRange) {
+        return `Подборка объектов ${props.objectRange.label} на портале КИИСА: статьи и истории в выбранном диапазоне номеров.`
+    }
+
+    return 'Каталог статей портала КИИСА: поиск, категории, подборки и фильтры по объектам вселенной.'
+})
 </script>
 
 <template>
-    <Head :title="activeCategory?.name || (objectRange ? `Объекты ${objectRange.label}` : 'Статьи')" />
+    <PageHead :title="pageTitle" :description="pageDescription" />
 
     <PageWithSidebar>
         <div class="page-header">

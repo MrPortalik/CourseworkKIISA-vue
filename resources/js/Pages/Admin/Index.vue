@@ -1,5 +1,6 @@
 <script setup>
-import { Head, Link, router, useForm } from '@inertiajs/vue3'
+import { Link, router, useForm } from '@inertiajs/vue3'
+import PageHead from '@/Components/PageHead.vue'
 import HeaderComponent from '@/Layouts/HeaderComponent.vue'
 import { ref } from 'vue'
 
@@ -37,13 +38,20 @@ const approve = (article) => {
 </script>
 
 <template>
-    <Head title="Админ-панель" />
+    <PageHead
+        title="Админ-панель"
+        description="Модерация статей и управление публикациями на портале КИИСА."
+    />
     <HeaderComponent />
 
     <section class="admin-panel content-area">
         <div class="admin-top">
             <h1>Админ-панель</h1>
             <nav class="admin-nav">
+                <Link :href="route('admin.reports.index')" class="admin-tab btn-accent">
+                    Жалобы и предложения
+                </Link>
+                <Link :href="route('admin.users.index')" class="admin-tab btn-accent">Пользователи</Link>
                 <Link :href="route('admin.categories')" class="admin-tab btn-accent">Категории</Link>
                 <Link :href="route('admin.taxonomy')" class="admin-tab btn-accent">Теги</Link>
             </nav>

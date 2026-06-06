@@ -1,0 +1,56 @@
+flowchart TB
+ subgraph UI["Vue-страницы"]
+ CREATE["Articles/Create.vue<br/>GET /articles/create"]
+ EDIT["Articles/Edit.vue<br/>GET /articles/{slug}/edit"]
+ DRAFTS["Articles/Drafts.vue<br/>GET /articles/drafts"]
+ SHOW["Articles/Show.vue<br/>GET /articles/{slug}"]
+ end
+
+ subgraph FORM["Форма автора"]
+ F1["Заголовок, категории, теги"]
+ F2["Обложка banner / hero_banner"]
+ F3["Редактор содержания"]
+ F4["Приглашение соавторов"]
+ F5{"Чекбокс «Предложить к публикации»"}
+ end
+
+ subgraph API["ArticleController"]
+ STORE["POST /articles → store"]
+ UPDATE["PUT /articles/{slug} → update"]
+ UPLOAD["POST /articles/content-images"]
+ DESTROY["DELETE /articles/{slug}"]
+ end
+
+ subgraph STORAGE["Файлы public/storage"]
+ BANNERS["banners/"]
+ HERO["hero_banners/"]
+ CONTENT["articles/content/"]
+ end
+
+ subgraph DB["База данных"]
+ ART["articles + categories + tags"]
+ COAUTH["CoauthorInvitationService"]
+ end
+
+ CREATE --> FORM
+ EDIT --> FORM
+ F3 --> UPLOAD
+ UPLOAD --> CONTENT
+ UPLOAD -->|"JSON { url }"| F3
+ FORM --> STORE
+ FORM --> UPDATE
+ STORE --> BANNERS
+ STORE --> HERO
+ UPDATE --> BANNERS
+ UPDATE --> HERO
+ STORE --> ART
+ UPDATE --> ART
+ STORE --> COAUTH
+ F5 -->|"false"| DRAFTS
+ F5 -->|"true, is_publishable"| ART
+ STORE --> SHOW
+ UPDATE --> SHOW
+ DRAFTS --> EDIT
+ SHOW --> EDIT
+ SHOW --> DESTROY
+ DESTROY -->|"редирект"| INDEX["Articles/Index.vue<br/>GET /articles"]

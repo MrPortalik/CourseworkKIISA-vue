@@ -1,0 +1,46 @@
+flowchart TB
+ subgraph INVITE_UI["Create/Edit.vue + CoauthorInvitePanel"]
+ SEARCH["GET /users/search?q="]
+ PICK["Выбор пользователя"]
+ FORM_IDS["coauthor_user_ids при сохранении"]
+ EXTRA["POST /articles/{slug}/coauthors<br/>отдельное приглашение"]
+ end
+
+ subgraph SERVICE["CoauthorInvitationService"]
+ MANY["inviteMany при store/update"]
+ ONE["invite"]
+ RECORD["ArticleCoauthor status=pending"]
+ SKIP["Пропуск: автор, дубликат pending/accepted"]
+ end
+
+ subgraph NOTIFY["Уведомление"]
+ INV["CoauthorInvitationNotification"]
+ PAGE["Notifications/Index.vue"]
+ end
+
+ subgraph RESPONSE["Ответ приглашённого"]
+ ACCEPT["POST /coauthors/{coauthor}/accept"]
+ DECLINE["POST /coauthors/{coauthor}/decline"]
+ end
+
+ subgraph STATUS["Статусы ArticleCoauthor"]
+ PENDING["pending"]
+ ACCEPTED["accepted → в карточке статьи"]
+ DECLINED["declined"]
+ end
+
+ SEARCH --> PICK
+ PICK --> FORM_IDS
+ PICK --> EXTRA
+ FORM_IDS --> MANY
+ EXTRA --> ONE
+ MANY --> ONE
+ ONE --> SKIP
+ ONE --> RECORD
+ RECORD --> INV
+ INV --> PAGE
+ PAGE --> ACCEPT
+ PAGE --> DECLINE
+ ACCEPT --> ACCEPTED
+ DECLINE --> DECLINED
+ ACCEPTED --> SHOW["Articles/Show.vue — список coauthors"]

@@ -4,12 +4,15 @@ import { computed, watch } from 'vue'
 import UserAvatar from '@/Components/User/UserAvatar.vue'
 import MobileDrawer from '@/Components/MobileDrawer.vue'
 import { useMobileSidebar } from '@/composables/useMobileSidebar'
+import FeedbackModal from '@/Components/FeedbackModal.vue'
+import { ref } from 'vue'
 
 const page = usePage()
 const categories = computed(() => page.props.sidebarCategories ?? [])
 const objectRanges = computed(() => page.props.objectRanges ?? [])
 const pageUrl = computed(() => page.url)
 const { isOpen, close } = useMobileSidebar()
+const feedbackOpen = ref(false)
 
 const isCategoryActive = (id) => {
     try {
@@ -82,6 +85,12 @@ watch(() => page.url, close)
                 {{ range.label }}
             </Link>
         </nav>
+
+        <div class="side-footer">
+            <button type="button" class="side-link side-link--feedback" @click="feedbackOpen = true">
+                Обратная связь
+            </button>
+        </div>
     </aside>
 
     <MobileDrawer :open="isOpen" title="Категории и подборки" @close="close">
@@ -133,7 +142,15 @@ watch(() => page.url, close)
                 {{ range.label }}
             </Link>
         </nav>
+
+        <div class="side-footer side-footer--drawer">
+            <button type="button" class="side-link side-link--feedback" @click="feedbackOpen = true; onNavClick()">
+                Обратная связь
+            </button>
+        </div>
     </MobileDrawer>
+
+    <FeedbackModal :open="feedbackOpen" @close="feedbackOpen = false" />
 </template>
 
 <style scoped>
@@ -144,6 +161,8 @@ watch(() => page.url, close)
     color: white;
     padding-bottom: 2rem;
     min-height: calc(100vh - 130px);
+    display: flex;
+    flex-direction: column;
 }
 
 .userMenu {
@@ -262,6 +281,26 @@ watch(() => page.url, close)
 
 .side-nav--drawer .side-link--active {
     padding-left: calc(1rem - 3px);
+}
+
+.side-footer {
+    margin-top: auto;
+    padding: 0.5rem 0 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.side-footer--drawer {
+    margin: 0.75rem 0.75rem 0;
+    padding-top: 0.75rem;
+}
+
+.side-link--feedback {
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font: inherit;
 }
 
 @media (max-width: 768px) {

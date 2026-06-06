@@ -1,5 +1,5 @@
 <script setup>
-import { Head } from '@inertiajs/vue3'
+import PageHead from '@/Components/PageHead.vue'
 import PageWithSidebar from '@/Layouts/PageWithSidebar.vue'
 
 defineProps({
@@ -8,7 +8,10 @@ defineProps({
 </script>
 
 <template>
-    <Head title="FAQ" />
+    <PageHead
+        title="FAQ"
+        description="Ответы на частые вопросы о проекте КИИСА, публикации статей, модерации и правилах портала."
+    />
     <PageWithSidebar>
         <h1>FAQ</h1>
         <p class="intro">Ответы на частые вопросы о проекте КИИСА.</p>

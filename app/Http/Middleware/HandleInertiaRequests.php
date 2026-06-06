@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Category;
+use App\Models\PlatformReport;
 use App\Support\ObjectNumberParser;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -42,6 +43,9 @@ class HandleInertiaRequests extends Middleware
             'sidebarCategories' => Category::orderBy('name')->get(['id', 'name']),
             'sidebarTags' => \App\Models\Tag::orderBy('name')->get(['id', 'name', 'slug']),
             'objectRanges' => $objectRanges,
+            'pendingReportsCount' => $user && $user->isStaff()
+                ? PlatformReport::where('status', PlatformReport::STATUS_PENDING)->count()
+                : 0,
         ];
     }
 }

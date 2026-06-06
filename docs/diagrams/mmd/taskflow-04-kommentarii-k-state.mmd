@@ -1,0 +1,34 @@
+flowchart TB
+ subgraph VIEW["Articles/Show.vue"]
+ PAGE["GET /articles/{slug}<br/>ArticleController::show"]
+ THREAD["CommentThread — дерево до 3 уровней"]
+ FORM["Форма нового комментария / ответа"]
+ end
+
+ subgraph LOAD["Загрузка данных"]
+ ROOT["Comment parent_id = null"]
+ CHILD["children → children.user"]
+ VOTES_CNT["upvotes_count / downvotes_count"]
+ USER_VOTES["userCommentVotes для auth"]
+ end
+
+ subgraph API["CommentController"]
+ STORE["POST /articles/{slug}/comments<br/>body + parent_id?"]
+ DELETE["DELETE /comments/{comment}"]
+ end
+
+ subgraph RULES["Правила"]
+ AUTH["middleware auth"]
+ OWNER["Удаление: автор комментария или admin"]
+ end
+
+ PAGE --> LOAD
+ LOAD --> THREAD
+ THREAD --> FORM
+ FORM --> AUTH
+ AUTH --> STORE
+ STORE -->|"Comment::create"| DB[("comments")]
+ STORE -->|"back()"| PAGE
+ THREAD --> DELETE
+ DELETE --> OWNER
+ DELETE --> DB

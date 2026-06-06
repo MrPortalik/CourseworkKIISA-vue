@@ -1,5 +1,6 @@
 <script setup>
     import HeaderComponent from '@/Layouts/HeaderComponent.vue';
+    import PageHead from '@/Components/PageHead.vue';
     import {Link} from "@inertiajs/vue3";
 
     const props = defineProps({
@@ -14,6 +15,10 @@
 </script>
 
 <template>
+    <PageHead
+        title="Личный кабинет"
+        description="Ваши опубликованные статьи и профиль автора на информационном портале КИИСА."
+    />
     <HeaderComponent/>
 
     <section class="user">

@@ -1,5 +1,6 @@
 <script setup>
-import { Head, router, useForm } from '@inertiajs/vue3'
+import { router, useForm } from '@inertiajs/vue3'
+import PageHead from '@/Components/PageHead.vue'
 import HeaderComponent from '@/Layouts/HeaderComponent.vue'
 import { ref } from 'vue'
 
@@ -36,7 +37,10 @@ const close = () => {
 </script>
 
 <template>
-    <Head title="Категории" />
+    <PageHead
+        title="Категории"
+        description="Управление категориями статей в админ-панели портала КИИСА."
+    />
     <HeaderComponent />
 
     <div v-if="showModal" class="modal-overlay">

@@ -11,7 +11,9 @@ use App\Notifications\ArticlePublicationApprovedNotification;
 use App\Services\ArticleSearchService;
 use App\Services\CoauthorInvitationService;
 use App\Support\ArticlesListingPaginator;
+use App\Support\ImageUploadRules;
 use App\Support\ObjectNumberParser;
+use App\Support\Seo;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Storage;
@@ -80,7 +82,7 @@ class ArticleController extends Controller
 
     public function drafts(Request $request)
     {
-        $query = Article::with(['user', 'category'])->unpublished()->latest();
+        $query = Article::with(['user', 'category'])->withRatingStats()->unpublished()->latest();
 
         if (! $request->user()->isAdmin()) {
             $query->currentAuthor($request->user());
@@ -140,6 +142,7 @@ class ArticleController extends Controller
 
         return Inertia::render('Articles/Show', [
             'article' => $article,
+            'metaDescription' => Seo::articleDescription($article->content),
             'comments' => $comments,
             'userRating' => $userRating,
             'userCommentVotes' => $userCommentVotes,
@@ -281,7 +284,7 @@ class ArticleController extends Controller
     public function uploadContentImage(Request $request)
     {
         $request->validate([
-            'image' => 'required|image|mimes:jpeg,png,jpg,webp|max:4096',
+            ...ImageUploadRules::rule('image', 4096, required: true),
         ]);
 
         $path = $request->file('image')->store('articles/content', 'public');
@@ -316,7 +319,9 @@ class ArticleController extends Controller
             $categorySliders = $this->buildCategorySlidersData($request);
         }
 
-        $baseQuery = Article::with(['user', 'category', 'categories', 'tags'])->published();
+        $baseQuery = Article::with(['user', 'category', 'categories', 'tags'])
+            ->published()
+            ->withRatingStats();
 
         if ($extraQuery) {
             $extraQuery($baseQuery);
@@ -480,6 +485,7 @@ class ArticleController extends Controller
         $slice = $ids->slice($offset, $take)->values();
 
         $articles = Article::with(['user', 'category', 'tags'])
+            ->withRatingStats()
             ->whereIn('id', $slice)
             ->get()
             ->sortBy(fn ($a) => $slice->search($a->id))
@@ -576,8 +582,8 @@ class ArticleController extends Controller
             'tag_ids.*' => 'exists:tags,id',
             'coauthor_user_ids' => 'nullable|array',
             'coauthor_user_ids.*' => 'exists:users,id',
-            'banner' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
-            'hero_banner' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:8192',
+            ...ImageUploadRules::rule('banner', 5120),
+            ...ImageUploadRules::rule('hero_banner', 8192),
         ];
 
         if ($request->user()->isAdmin()) {
@@ -611,6 +617,7 @@ class ArticleController extends Controller
             ->map(function (Category $cat) use ($request) {
                 $query = Article::query()
                     ->published()
+                    ->withRatingStats()
                     ->with('user')
                     ->where(function ($q) use ($cat) {
                         $q->where('category_id', $cat->id)

@@ -1,7 +1,8 @@
 <script setup>
 import GuestLayout from '@/Layouts/GuestLayout.vue'
 import InputError from '@/Components/InputError.vue'
-import { Head, Link, useForm } from '@inertiajs/vue3'
+import { Link, useForm } from '@inertiajs/vue3'
+import PageHead from '@/Components/PageHead.vue'
 
 const form = useForm({
     name: '',
@@ -19,7 +20,10 @@ const submit = () => {
 
 <template>
     <GuestLayout>
-        <Head title="Регистрация" />
+        <PageHead
+            title="Регистрация"
+            description="Создайте аккаунт на портале КИИСА для публикации статей, рейтингов и участия в сообществе."
+        />
 
         <h1 class="auth-title">Регистрация</h1>
         <p class="auth-subtitle">Создайте аккаунт на портале КИИСА</p>

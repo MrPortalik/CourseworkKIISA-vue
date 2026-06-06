@@ -7,7 +7,8 @@ const props = defineProps({
     variant: { type: String, default: 'default' },
 })
 
-const isAdmin = computed(() => props.user?.role === 'admin')
+const isOwner = computed(() => props.user?.role === 'owner')
+const isAdmin = computed(() => ['admin', 'owner'].includes(props.user?.role))
 const isArticleAuthor = computed(
     () => props.articleAuthorId != null && props.user?.id === props.articleAuthorId,
 )
@@ -20,7 +21,8 @@ const isArticleAuthor = computed(
         :class="{ 'role-badges-wrap--profile': variant === 'profile' }"
     >
         <span v-if="isArticleAuthor" class="role-badge role-badge--author">Автор статьи</span>
-        <span v-if="isAdmin" class="role-badge role-badge--admin">Администратор</span>
+        <span v-if="isOwner" class="role-badge role-badge--owner">Владелец</span>
+        <span v-else-if="isAdmin" class="role-badge role-badge--admin">Администратор</span>
     </span>
 </template>
 
@@ -57,6 +59,11 @@ const isArticleAuthor = computed(
     background: #fee2e2;
     color: #b91c1c;
     border: 1px solid #fecaca;
+}
+.role-badge--owner {
+    background: #ede9fe;
+    color: #6d28d9;
+    border: 1px solid #ddd6fe;
 }
 [data-theme="dark"] .role-badge--author {
     background: rgba(254, 249, 195, 0.2);

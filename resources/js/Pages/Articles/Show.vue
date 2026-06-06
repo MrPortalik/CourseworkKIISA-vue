@@ -3,12 +3,15 @@ import PageWithSidebar from '@/Layouts/PageWithSidebar.vue'
 import StarRating from '@/Components/StarRating.vue'
 import CommentThread from '@/Components/Comments/CommentThread.vue'
 import TagWithTooltip from '@/Components/UI/TagWithTooltip.vue'
-import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3'
+import { Link, router, useForm, usePage } from '@inertiajs/vue3'
+import PageHead from '@/Components/PageHead.vue'
+import FeedbackModal from '@/Components/FeedbackModal.vue'
 import { computed, ref } from 'vue'
 import { formatRating } from '@/lib/formatRating'
 
 const props = defineProps({
     article: Object,
+    metaDescription: { type: String, default: '' },
     comments: Array,
     userRating: Number,
     userCommentVotes: Object,
@@ -20,7 +23,7 @@ const page = usePage()
 const formatDate = (d) =>
     d ? new Date(d).toLocaleDateString('ru-RU', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''
 
-const isAdmin = computed(() => page.props.auth?.user?.role === 'admin')
+const isAdmin = computed(() => ['admin', 'owner'].includes(page.props.auth?.user?.role))
 
 const canEdit = computed(() => {
     const u = page.props.auth?.user
@@ -68,10 +71,17 @@ const headerStarRating = computed(() => {
 const scrollToRating = () => {
     document.getElementById('article-rating')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 }
+
+const showReportModal = ref(false)
+const isLoggedIn = computed(() => !!page.props.auth?.user)
+const canReport = computed(() => isLoggedIn.value && props.article.is_published)
 </script>
 
 <template>
-    <Head><title>{{ article.title }}</title></Head>
+    <PageHead
+        :title="article.title"
+        :description="metaDescription || `Статья «${article.title}» на информационном портале КИИСА.`"
+    />
 
     <PageWithSidebar>
         <article class="article-show">
@@ -125,10 +135,22 @@ const scrollToRating = () => {
                 </div>
             </div>
 
-            <div v-if="canEdit" class="article-actions">
-                <Link :href="route('articles.edit', article.slug)" class="edit-btn">Редактировать</Link>
-                <button type="button" class="delete-btn" @click="deleteArticle">Удалить</button>
+            <div class="article-actions">
+                <template v-if="canEdit">
+                    <Link :href="route('articles.edit', article.slug)" class="edit-btn">Редактировать</Link>
+                    <button type="button" class="delete-btn" @click="deleteArticle">Удалить</button>
+                </template>
+                <button v-if="canReport" type="button" class="report-btn" @click="showReportModal = true">
+                    Пожаловаться
+                </button>
             </div>
+
+            <FeedbackModal
+                :open="showReportModal"
+                type="article_complaint"
+                :article-id="article.id"
+                @close="showReportModal = false"
+            />
 
             <div class="article-content" v-html="article.content" />
 
@@ -348,7 +370,7 @@ const scrollToRating = () => {
     gap: 0.5rem;
     margin-bottom: 1.25rem;
 }
-.edit-btn, .delete-btn {
+.edit-btn, .delete-btn, .report-btn {
     padding: 8px 14px;
     border-radius: 4px;
     border: none;
@@ -359,6 +381,7 @@ const scrollToRating = () => {
 }
 .edit-btn { background: #4a90e2; }
 .delete-btn { background: #f44336; }
+.report-btn { background: #718096; margin-left: auto; }
 .back-link {
     display: inline-block;
     margin: 1.5rem 0 2rem;

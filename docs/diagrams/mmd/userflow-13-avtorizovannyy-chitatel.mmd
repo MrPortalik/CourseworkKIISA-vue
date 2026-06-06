@@ -1,0 +1,48 @@
+flowchart TB
+ subgraph BROWSE["Навигация"]
+ LIST["GET /articles"]
+ SHOW["Articles/Show.vue<br/>GET /articles/{slug}"]
+ AUTHOR["Authors/Show.vue<br/>GET /authors/{user}"]
+ end
+
+ subgraph ENGAGE["Взаимодействие со статьёй"]
+ RATE["POST /articles/{slug}/rate<br/>1–5 звёзд"]
+ COMMENT["POST /articles/{slug}/comments"]
+ REPLY["Ответ parent_id"]
+ VOTE["POST /comments/{id}/vote<br/>±1"]
+ DEL_OWN["DELETE /comments/{id}<br/>свой комментарий"]
+ end
+
+ subgraph FOLLOW["Подписки"]
+ SUB["POST /authors/{user}/subscribe"]
+ UNSUB["DELETE /authors/{user}/subscribe"]
+ FEED["GET /notifications<br/>вкладка «Подписки»"]
+ ALERT["ArticlePublishedNotification"]
+ end
+
+ subgraph NOTIFY["Уведомления"]
+ INDEX["Notifications/Index.vue"]
+ READ["Отметить прочитанным"]
+ end
+
+ subgraph LIMITS["Ограничения"]
+ NO_SELF_RATE["Не оценивает свою статью"]
+ NO_SELF_VOTE["Не голосует за свой комментарий"]
+ NO_SELF_SUB["Не подписывается на себя"]
+ end
+
+ LIST --> SHOW
+ SHOW --> RATE
+ SHOW --> COMMENT
+ COMMENT --> REPLY
+ SHOW --> VOTE
+ SHOW --> DEL_OWN
+ SHOW --> AUTHOR
+ AUTHOR --> SUB
+ AUTHOR --> UNSUB
+ SUB --> FEED
+ ALERT --> INDEX
+ INDEX --> READ
+ RATE --> NO_SELF_RATE
+ VOTE --> NO_SELF_VOTE
+ SUB --> NO_SELF_SUB

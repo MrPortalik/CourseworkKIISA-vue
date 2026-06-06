@@ -3,7 +3,7 @@ import AuthenticatedLayout from '@/Layouts/HeaderComponent.vue';
 import DeleteUserForm from './Partials/DeleteUserForm.vue';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm.vue';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm.vue';
-import { Head } from '@inertiajs/vue3';
+import PageHead from '@/Components/PageHead.vue';
 
 defineProps({
     mustVerifyEmail: {
@@ -16,7 +16,10 @@ defineProps({
 </script>
 
 <template>
-    <Head title="Profile" />
+    <PageHead
+        title="Личный кабинет"
+        description="Настройки профиля на портале КИИСА: имя, email, пароль и безопасность аккаунта."
+    />
 
     <AuthenticatedLayout>
         <template #header>

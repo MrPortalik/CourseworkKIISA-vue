@@ -1,0 +1,60 @@
+flowchart TB
+ subgraph GUEST_UI["Страницы Auth/*.vue"]
+ LOGIN["Login.vue<br/>GET/POST /login"]
+ REG["Register.vue<br/>GET/POST /register"]
+ FORGOT["ForgotPassword.vue<br/>GET/POST /forgot-password"]
+ RESET["ResetPassword.vue<br/>GET/POST /reset-password/{token}"]
+ VERIFY["VerifyEmail.vue<br/>GET /verify-email"]
+ end
+
+ subgraph SESSION["AuthenticatedSessionController"]
+ LOGIN_OK["store → session regenerate"]
+ LOGOUT1["POST /logout"]
+ LOGOUT2["GET /logout → redirect /"]
+ end
+
+ subgraph REGISTER["RegisteredUserController"]
+ REG_OK["store → User::create"]
+ EVENT["event Registered"]
+ AUTO["Auth::login"]
+ end
+
+ subgraph VERIFY_FLOW["Подтверждение email"]
+ PROMPT["EmailVerificationPromptController"]
+ LINK["VerifyEmailController<br/>GET /verify-email/{id}/{hash}"]
+ RESEND["POST /email/verification-notification"]
+ end
+
+ subgraph PROFILE["Profile/Edit.vue"]
+ EDIT["GET /profile"]
+ PATCH["PATCH /profile"]
+ PASS["PUT /password"]
+ DEL["DELETE /profile"]
+ CONFIRM["ConfirmPassword.vue"]
+ end
+
+ subgraph HOME["После входа"]
+ DASH["GET /dashboard → redirect"]
+ AUTHOR["Authors/Show.vue<br/>GET /authors/{user}"]
+ end
+
+ LOGIN --> LOGIN_OK
+ LOGIN_OK --> DASH
+ DASH --> AUTHOR
+ REG --> REG_OK
+ REG_OK --> EVENT
+ EVENT --> AUTO
+ AUTO --> DASH
+ LOGIN_OK --> VERIFY
+ VERIFY --> PROMPT
+ PROMPT --> LINK
+ PROMPT --> RESEND
+ LINK --> DASH
+ EDIT --> PATCH
+ EDIT --> PASS
+ EDIT --> DEL
+ DEL --> CONFIRM
+ LOGOUT1 --> LOGIN
+ LOGOUT2 --> LOGIN
+ FORGOT --> RESET
+ RESET --> LOGIN

@@ -4,7 +4,8 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { useForm } from '@inertiajs/vue3';
+import PageHead from '@/Components/PageHead.vue';
 
 const props = defineProps({
     email: {
@@ -33,7 +34,10 @@ const submit = () => {
 
 <template>
     <GuestLayout>
-        <Head title="Reset Password" />
+        <PageHead
+            title="Новый пароль"
+            description="Задайте новый пароль для входа на информационный портал КИИСА."
+        />
 
         <form @submit.prevent="submit">
             <div>

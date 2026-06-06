@@ -1,5 +1,6 @@
 <script setup>
 import { Link } from '@inertiajs/vue3'
+import { formatRating } from '@/lib/formatRating'
 
 defineProps({
     article: { type: Object, required: true },
@@ -45,6 +46,11 @@ const formatDate = (dateString) => {
             <div v-if="article.is_coauthor" class="card-coauthor">Со-автор</div>
             <div v-if="!article.is_published && !article.is_publishable" class="card-draft card-draft--plain">Черновик</div>
             <div v-else-if="article.is_publishable && !article.is_published" class="card-draft card-draft--publishable">Публикуется</div>
+
+            <div class="card-rating" aria-label="Рейтинг статьи">
+                <span class="card-rating-value">{{ formatRating(article.average_rating || 0) }}</span>
+                <span class="card-rating-star" aria-hidden="true">★</span>
+            </div>
         </Link>
     </article>
 </template>
@@ -172,6 +178,29 @@ const formatDate = (dateString) => {
 }
 .card-draft--plain { background: #fed7d7; color: #c53030; }
 .card-draft--publishable { background: #fef9c3; color: #a16207; border: 1px solid #fde047; }
+.card-rating {
+    position: absolute;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #4a5568;
+    background: rgba(255, 255, 255, 0.92);
+    border-radius: 999px;
+    padding: 0.2rem 0.55rem;
+}
+.card-rating-star {
+    color: #f59e0b;
+    font-size: 0.95rem;
+    line-height: 1;
+}
+[data-theme="dark"] .card-rating {
+    background: rgba(20, 20, 20, 0.92);
+    color: #f0f0f0;
+}
 [data-theme="dark"] .article-card { background: var(--theme_black); border-color: #333; }
 [data-theme="dark"] .card-title { color: #f0f0f0; }
 </style>

@@ -1,0 +1,55 @@
+flowchart TB
+ subgraph AUTHOR["Действия автора"]
+ SUBMIT["Сохранить с is_publishable = true"]
+ DRAFT["Сохранить черновик<br/>is_publishable = false"]
+ end
+
+ subgraph STATE["Состояние статьи"]
+ S1["Черновик<br/>is_published = false"]
+ S2["На модерации<br/>is_publishable = true<br/>is_published = false"]
+ S3["Опубликована<br/>is_published = true"]
+ S4["Отклонена<br/>publication_rejection_reason"]
+ end
+
+ subgraph ADMIN_UI["Admin/Index.vue + Articles/Show.vue"]
+ PANEL["GET /admin"]
+ PREVIEW["Просмотр статьи"]
+ BTN_OK["Кнопка «Принять»"]
+ BTN_NO["Кнопка «Отклонить» + reason"]
+ end
+
+ subgraph MOD["ArticleModerationController"]
+ APPROVE["POST /admin/articles/{article}/approve"]
+ REJECT["POST /admin/articles/{article}/reject"]
+ end
+
+ subgraph DIRECT["Прямая публикация админом"]
+ ADMIN_EDIT["ArticleController update<br/>is_published = true"]
+ ADMIN_CREATE["ArticleController store<br/>is_published = true"]
+ end
+
+ subgraph NOTIFY["Уведомления"]
+ N1["ArticlePublicationApprovedNotification → автор"]
+ N2["ArticlePublicationRejectedNotification → автор"]
+ N3["ArticlePublishedNotification → подписчики"]
+ end
+
+ DRAFT --> S1
+ SUBMIT --> S2
+ S2 --> PANEL
+ PANEL --> PREVIEW
+ PREVIEW --> BTN_OK
+ PREVIEW --> BTN_NO
+ BTN_OK --> APPROVE
+ BTN_NO --> REJECT
+ APPROVE --> S3
+ REJECT --> S4
+ S4 -->|"редактирование"| EDIT["GET /articles/{slug}/edit"]
+ EDIT --> SUBMIT
+ APPROVE --> N1
+ APPROVE --> N3
+ REJECT --> N2
+ ADMIN_EDIT --> S3
+ ADMIN_CREATE --> S3
+ ADMIN_EDIT --> N1
+ ADMIN_CREATE --> N3

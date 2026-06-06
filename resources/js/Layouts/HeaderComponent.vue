@@ -5,7 +5,8 @@ import SettingsPanel from '@/Components/SettingsPanel.vue'
 import MobileDrawer from '@/Components/MobileDrawer.vue'
 
 const page = usePage()
-const isAdmin = computed(() => page.props.auth?.user?.role === 'admin')
+const isAdmin = computed(() => ['admin', 'owner'].includes(page.props.auth?.user?.role))
+const pendingReportsCount = computed(() => page.props.pendingReportsCount ?? 0)
 const unreadCount = computed(() => page.props.unreadNotificationsCount ?? 0)
 const pageUrl = computed(() => page.url)
 const navOpen = ref(false)
@@ -55,7 +56,10 @@ watch(() => page.url, closeNav)
                 <Link :href="route('articles.index')" class="header-link" :class="{ 'header-link--active': isArticlesSection }">Статьи</Link>
                 <Link :href="route('aboutus')" class="header-link" :class="{ 'header-link--active': isActive(['aboutus', 'faq.index']) }">О нас</Link>
                 <Link v-if="$page.props.auth?.user" :href="route('dashboard')" class="header-link" :class="{ 'header-link--active': isActive(['dashboard', 'authors.show']) }">Личный кабинет</Link>
-                <Link v-if="isAdmin" :href="route('admin.index')" class="header-link" :class="{ 'header-link--active': isActive(['admin.index', 'admin.categories', 'admin.taxonomy']) }">Админ-панель</Link>
+                <Link v-if="isAdmin" :href="route('admin.index')" class="header-link" :class="{ 'header-link--active': isActive(['admin.']) }">
+                    Админ-панель
+                    <span v-if="pendingReportsCount > 0" class="badge badge--inline">{{ pendingReportsCount }}</span>
+                </Link>
             </div>
 
             <div class="nav-right">
@@ -84,7 +88,10 @@ watch(() => page.url, closeNav)
                 <Link :href="route('articles.index')" class="mobile-nav-link" :class="{ 'mobile-nav-link--active': isArticlesSection }" @click="closeNav">Статьи</Link>
                 <Link :href="route('aboutus')" class="mobile-nav-link" :class="{ 'mobile-nav-link--active': isActive(['aboutus', 'faq.index']) }" @click="closeNav">О нас</Link>
                 <Link v-if="$page.props.auth?.user" :href="route('dashboard')" class="mobile-nav-link" :class="{ 'mobile-nav-link--active': isActive(['dashboard', 'authors.show']) }" @click="closeNav">Личный кабинет</Link>
-                <Link v-if="isAdmin" :href="route('admin.index')" class="mobile-nav-link" :class="{ 'mobile-nav-link--active': isActive(['admin.index', 'admin.categories', 'admin.taxonomy']) }" @click="closeNav">Админ-панель</Link>
+                <Link v-if="isAdmin" :href="route('admin.index')" class="mobile-nav-link" :class="{ 'mobile-nav-link--active': isActive(['admin.']) }" @click="closeNav">
+                    Админ-панель
+                    <span v-if="pendingReportsCount > 0" class="badge badge--inline">{{ pendingReportsCount }}</span>
+                </Link>
 
                 <div class="mobile-nav-divider" />
 
@@ -194,10 +201,8 @@ watch(() => page.url, closeNav)
 
 .bell-icon { width: 28px; height: 28px; }
 
-.bell-link .badge {
-    position: absolute;
-    top: -4px;
-    right: -8px;
+.bell-link .badge,
+.badge--inline {
     background: #e53e3e;
     color: white;
     font-size: 0.65rem;
@@ -205,6 +210,17 @@ watch(() => page.url, closeNav)
     border-radius: 9999px;
     min-width: 18px;
     text-align: center;
+}
+
+.bell-link .badge {
+    position: absolute;
+    top: -4px;
+    right: -8px;
+}
+
+.badge--inline {
+    margin-left: 0.35rem;
+    vertical-align: middle;
 }
 
 .site-header figure.header-logo {

@@ -1,6 +1,11 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminReportController;
+use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\PlatformReportController;
+use App\Http\Controllers\SitemapController;
+use App\Http\Controllers\UserMessageController;
 use App\Http\Controllers\ArticleModerationController;
 use App\Http\Controllers\AdminTaxonomyController;
 use App\Http\Controllers\ArticleController;
@@ -15,6 +20,8 @@ use App\Models\Faq;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
+Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -61,6 +68,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/articles/{article:slug}/comments', [CommentController::class, 'store'])->name('articles.comments.store');
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
     Route::post('/comments/{comment}/vote', [CommentVoteController::class, 'store'])->name('comments.vote');
+    Route::post('/reports', [PlatformReportController::class, 'store'])->name('reports.store');
+    Route::post('/messages/{message}/reply', [UserMessageController::class, 'reply'])->name('messages.reply');
 });
 
 Route::get('/articles/{article:slug}', [ArticleController::class, 'show'])->name('articles.show');
@@ -102,6 +111,16 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
     Route::post('/admin/tags', [AdminTaxonomyController::class, 'storeTag'])->name('admin.tags.store');
     Route::put('/admin/tags/{tag}', [AdminTaxonomyController::class, 'updateTag'])->name('admin.tags.update');
     Route::delete('/admin/tags/{tag}', [AdminTaxonomyController::class, 'destroyTag'])->name('admin.tags.destroy');
+    Route::get('/admin/reports', [AdminReportController::class, 'index'])->name('admin.reports.index');
+    Route::post('/admin/reports/{report}/respond', [AdminReportController::class, 'respond'])->name('admin.reports.respond');
+    Route::get('/admin/users', [AdminUserController::class, 'index'])->name('admin.users.index');
+    Route::get('/admin/users/{user}', [AdminUserController::class, 'show'])->name('admin.users.show');
+    Route::post('/admin/users/{user}/promote', [AdminUserController::class, 'promoteAdmin'])->name('admin.users.promote');
+    Route::post('/admin/users/{user}/demote', [AdminUserController::class, 'demoteAdmin'])->name('admin.users.demote');
+    Route::post('/admin/users/{user}/block', [AdminUserController::class, 'block'])->name('admin.users.block');
+    Route::post('/admin/users/{user}/unblock', [AdminUserController::class, 'unblock'])->name('admin.users.unblock');
+    Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy'])->name('admin.users.destroy');
+    Route::post('/admin/users/{user}/message', [AdminUserController::class, 'sendMessage'])->name('admin.users.message');
 });
 
 require __DIR__.'/auth.php';

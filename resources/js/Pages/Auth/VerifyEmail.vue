@@ -2,7 +2,8 @@
 import { computed } from 'vue';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Link, useForm } from '@inertiajs/vue3';
+import PageHead from '@/Components/PageHead.vue';
 
 const props = defineProps({
     status: {
@@ -21,7 +22,10 @@ const verificationLinkSent = computed(() => props.status === 'verification-link-
 
 <template>
     <GuestLayout>
-        <Head title="Email Verification" />
+        <PageHead
+            title="Подтверждение email"
+            description="Подтвердите адрес электронной почты для полного доступа к функциям портала КИИСА."
+        />
 
         <div class="mb-4 text-sm text-gray-600">
             Thanks for signing up! Before getting started, could you verify your email address by clicking on the link

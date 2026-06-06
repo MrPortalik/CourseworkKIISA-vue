@@ -23,3 +23,10 @@ Disallow: /articles/content-images
 Disallow: /articles/*/edit
 Disallow: /users/search
 Disallow: /coauthors/
+Disallow: /subscriptions
+Disallow: /admin/reports
+Disallow: /admin/users
+
+Host: kiisa.ru
+
+Sitemap: http://kiisa.ru/sitemap.xml

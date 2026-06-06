@@ -85,6 +85,13 @@ class Article extends Model
         return $this->hasMany(Comment::class);
     }
 
+    public function scopeWithRatingStats($query)
+    {
+        return $query
+            ->withAvg('votes as average_rating', 'vote')
+            ->withCount('votes as ratings_count');
+    }
+
     public function scopePublished($query)
     {
         return $query->where('is_published', true);
