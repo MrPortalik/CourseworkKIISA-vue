@@ -24,10 +24,21 @@ const formatDate = (d) =>
     d ? new Date(d).toLocaleDateString('ru-RU', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''
 
 const isAdmin = computed(() => ['admin', 'owner'].includes(page.props.auth?.user?.role))
+const canModerate = computed(() => ['admin', 'owner', 'moderator'].includes(page.props.auth?.user?.role))
+
+const isCoauthor = computed(() =>
+    props.article.coauthors?.some((c) => c.id === page.props.auth?.user?.id),
+)
+
+const canModerateThis = computed(() => {
+    if (!canModerate.value) return false
+    if (isAdmin.value) return true
+    return props.article.is_publishable || props.article.is_published
+})
 
 const canEdit = computed(() => {
     const u = page.props.auth?.user
-    return u && (u.id === props.article.user_id || isAdmin.value)
+    return u && (u.id === props.article.user_id || isCoauthor.value || canModerateThis.value)
 })
 
 const pendingModeration = computed(
@@ -85,6 +96,10 @@ const canReport = computed(() => isLoggedIn.value && props.article.is_published)
 
     <PageWithSidebar>
         <article class="article-show">
+            <div v-if="article.hero_banner" class="article-hero">
+                <img :src="article.hero_banner" :alt="article.title" class="article-hero-img" />
+            </div>
+
             <header class="article-header">
                 <h1>{{ article.title }}</h1>
                 <div class="byline">
@@ -127,7 +142,7 @@ const canReport = computed(() => isLoggedIn.value && props.article.is_published)
                 </div>
             </header>
 
-            <div v-if="isAdmin && pendingModeration" class="moderation-bar">
+            <div v-if="canModerateThis && pendingModeration" class="moderation-bar">
                 <span class="moderation-label">Статья ожидает публикации</span>
                 <div class="moderation-actions">
                     <button type="button" class="mod-btn mod-btn--approve" @click="approveArticle">Принять</button>
@@ -192,6 +207,18 @@ const canReport = computed(() => isLoggedIn.value && props.article.is_published)
 .article-show {
     width: 100%;
     max-width: none;
+}
+.article-hero {
+    margin: -0.5rem 0 1.5rem;
+    border-radius: 10px;
+    overflow: hidden;
+    line-height: 0;
+}
+.article-hero-img {
+    display: block;
+    width: 100%;
+    max-height: 320px;
+    object-fit: cover;
 }
 .article-header { margin-bottom: 1.25rem; }
 .article-header h1 {
@@ -304,7 +331,6 @@ const canReport = computed(() => isLoggedIn.value && props.article.is_published)
 .article-content {
     line-height: 1.8;
     margin-bottom: 1.5rem;
-    font-size: 1.05rem;
     max-width: 100%;
     overflow-wrap: anywhere;
     word-break: break-word;
@@ -316,6 +342,7 @@ const canReport = computed(() => isLoggedIn.value && props.article.is_published)
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     word-break: break-word;
+    font-size: inherit;
 }
 .article-content :deep(hr.article-content-divider) {
     border: none;
@@ -381,6 +408,22 @@ const canReport = computed(() => isLoggedIn.value && props.article.is_published)
 }
 .edit-btn { background: #4a90e2; }
 .delete-btn { background: #f44336; }
+[data-theme="dark"] .edit-btn {
+    background: transparent;
+    color: #4a90e2;
+    border: 2px solid #4a90e2;
+}
+[data-theme="dark"] .delete-btn {
+    background: transparent;
+    color: #f44336;
+    border: 2px solid #f44336;
+}
+[data-theme="dark"] .edit-btn:hover {
+    background: rgba(74, 144, 226, 0.12);
+}
+[data-theme="dark"] .delete-btn:hover {
+    background: rgba(244, 67, 54, 0.12);
+}
 .article-footer {
     display: flex;
     flex-wrap: wrap;
@@ -403,8 +446,31 @@ const canReport = computed(() => isLoggedIn.value && props.article.is_published)
 }
 .back-link { color: #4299e1; }
 .back-link:hover { color: #3182ce; }
-.report-link { color: #e53e3e; }
-.report-link:hover { color: #c53030; text-decoration: underline; }
+.report-link {
+    background: #e53e3e;
+    color: #ffffff;
+    border: 2px solid #e53e3e;
+    border-radius: 18px;
+    padding: 0.45rem 1rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+.report-link:hover {
+    background: #c53030;
+    border-color: #c53030;
+    color: #ffffff;
+    text-decoration: none;
+}
+[data-theme="dark"] .report-link {
+    background: #e53e3e;
+    color: #ffffff;
+    border-color: #e53e3e;
+}
+[data-theme="dark"] .report-link:hover {
+    background: #c53030;
+    border-color: #c53030;
+    color: #ffffff;
+}
 .reject-overlay {
     position: fixed;
     inset: 0;
@@ -444,9 +510,28 @@ const canReport = computed(() => isLoggedIn.value && props.article.is_published)
 [data-theme="dark"] .moderation-label { color: #fde047; }
 [data-theme="dark"] .reject-modal { background: #141414; color: #f0f0f0; }
 [data-theme="dark"] .reject-textarea { background: #1a1a1a; border-color: #404040; color: #f0f0f0; }
-[data-theme="dark"] .mod-btn { background: #2a2a2a; color: #f0f0f0; }
+[data-theme="dark"] .mod-btn:not(.mod-btn--approve):not(.mod-btn--reject) {
+    background: #2a2a2a;
+    color: #f0f0f0;
+}
+[data-theme="dark"] .mod-btn--approve {
+    background: #48bb78;
+    color: #ffffff;
+}
+[data-theme="dark"] .mod-btn--reject {
+    background: #f56565;
+    color: #ffffff;
+}
 
 @media (max-width: 768px) {
+    .article-content :deep(.content-image-figure),
+    .article-content :deep(.content-image-float) {
+        float: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 0 1rem 0 !important;
+    }
+
     .byline {
         flex-direction: column;
         align-items: stretch;

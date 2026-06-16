@@ -1,0 +1,38 @@
+flowchart TB
+ subgraph NOTIFY["Уведомления"]
+ NIDX["/notifications<br/>Notifications/Index.vue"]
+ NREAD["POST notifications/{id}/read"]
+ NALL["POST notifications/read-all"]
+ NDEL["DELETE notifications/{id}"]
+ end
+
+ subgraph SUBS["Подписки на авторов"]
+ SUB["POST /authors/{user}/subscribe"]
+ UNSUB["DELETE /authors/{user}/subscribe"]
+ REDIR["/subscriptions → /notifications"]
+ end
+
+ subgraph TYPES["Типы уведомлений"]
+ PUB["ArticlePublished"]
+ MOD_OK["PublicationApproved"]
+ MOD_NO["PublicationRejected"]
+ COINV["CoauthorInvitation"]
+ BLOCK_N["AccountBlocked"]
+ EDIT_N["ArticleEdited"]
+ ADMIN_M["AdminMessage"]
+ end
+
+ AUTH_SHOW["Authors/Show.vue"] --> SUB
+ AUTH_SHOW --> UNSUB
+ SUB --> NIDX
+ REDIR --> NIDX
+ PUB --> NIDX
+ MOD_OK --> NIDX
+ MOD_NO --> NIDX
+ COINV --> NIDX
+ BLOCK_N --> NIDX
+ EDIT_N --> NIDX
+ ADMIN_M --> NIDX
+ NIDX --> NREAD
+ NIDX --> NALL
+ NIDX --> NDEL

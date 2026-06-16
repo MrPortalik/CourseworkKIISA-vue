@@ -6,6 +6,8 @@ use App\Models\Article;
 use App\Models\User;
 use App\Models\UserMessage;
 use App\Notifications\AdminMessageNotification;
+use App\Support\UserBlocking;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -22,7 +24,7 @@ class AdminUserController extends Controller
                         ->orWhere('id', $q);
                 });
             })
-            ->orderBy('name')
+            ->orderBy('id')
             ->paginate(20)
             ->withQueryString();
 
@@ -48,7 +50,7 @@ class AdminUserController extends Controller
             ->get();
 
         return Inertia::render('Admin/UserShow', [
-            'profileUser' => $user->only(['id', 'name', 'email', 'bio', 'avatar', 'role', 'is_blocked', 'created_at']),
+            'profileUser' => $user->only(['id', 'name', 'email', 'bio', 'avatar', 'role', 'is_blocked', 'block_reason', 'blocked_until', 'created_at']),
             'articlesCount' => $articlesCount,
             'messages' => $messages,
             'canManageRoles' => $request->user()->isOwner(),
@@ -60,9 +62,20 @@ class AdminUserController extends Controller
     {
         abort_unless($request->user()->isOwner(), 403);
         abort_if($user->isOwner(), 422);
-        abort_if($user->isAdmin(), 422);
+        abort_if($user->isAdmin() || $user->isModerator(), 422);
 
         $user->update(['role' => 'admin']);
+
+        return back();
+    }
+
+    public function promoteModerator(Request $request, User $user)
+    {
+        abort_unless($request->user()->isOwner(), 403);
+        abort_if($user->isOwner(), 422);
+        abort_if($user->isAdmin() || $user->isModerator(), 422);
+
+        $user->update(['role' => 'moderator']);
 
         return back();
     }
@@ -78,12 +91,35 @@ class AdminUserController extends Controller
         return back();
     }
 
+    public function demoteModerator(Request $request, User $user)
+    {
+        abort_unless($request->user()->isOwner(), 403);
+        abort_if($user->isOwner(), 422);
+        abort_unless($user->role === 'moderator', 422);
+
+        $user->update(['role' => 'user']);
+
+        return back();
+    }
+
     public function block(Request $request, User $user)
     {
         abort_unless($request->user()->canManageUser($user), 403);
-        abort_if($user->isAdmin() && ! $request->user()->isOwner(), 403);
+        abort_if(($user->isAdmin() || $user->isModerator()) && ! $request->user()->isOwner(), 403);
 
-        $user->update(['is_blocked' => true]);
+        $validated = $request->validate([
+            'reason' => 'required|string|min:5|max:2000',
+            'is_permanent' => 'boolean',
+            'duration_days' => 'nullable|integer|min:1|max:365',
+        ]);
+
+        $until = null;
+        if (! $request->boolean('is_permanent')) {
+            $days = $validated['duration_days'] ?? 1;
+            $until = Carbon::now()->addDays($days);
+        }
+
+        UserBlocking::block($user, $validated['reason'], $until);
 
         return back();
     }
@@ -92,7 +128,7 @@ class AdminUserController extends Controller
     {
         abort_unless($request->user()->canManageUser($user), 403);
 
-        $user->update(['is_blocked' => false]);
+        UserBlocking::unblock($user);
 
         return back();
     }

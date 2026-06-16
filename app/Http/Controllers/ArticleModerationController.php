@@ -11,6 +11,8 @@ class ArticleModerationController extends Controller
 {
     public function approve(Request $request, Article $article)
     {
+        abort_unless($request->user()->canModerateArticle($article), 403);
+
         if (! $article->is_publishable) {
             return back()->withErrors(['moderation' => 'Статья не отправлена на публикацию.']);
         }
@@ -37,6 +39,8 @@ class ArticleModerationController extends Controller
 
     public function reject(Request $request, Article $article)
     {
+        abort_unless($request->user()->canModerateArticle($article), 403);
+
         $request->validate([
             'reason' => 'required|string|max:2000',
         ]);

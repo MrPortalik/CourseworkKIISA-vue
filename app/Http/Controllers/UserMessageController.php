@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\UserMessage;
 use App\Notifications\AdminMessageNotification;
+use App\Support\NotificationState;
 use Illuminate\Http\Request;
 
 class UserMessageController extends Controller
@@ -30,6 +31,16 @@ class UserMessageController extends Controller
         if (! $message->read_at) {
             $message->update(['read_at' => now()]);
         }
+
+        $request->user()
+            ->notifications()
+            ->where('data->message_id', $message->id)
+            ->where('data->type', 'admin_message')
+            ->get()
+            ->each(function ($notification) {
+                NotificationState::setAction($notification, 'replied');
+                $notification->markAsRead();
+            });
 
         return back()->with('status', 'Ответ отправлен.');
     }

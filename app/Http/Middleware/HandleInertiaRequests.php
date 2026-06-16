@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Article;
 use App\Models\Category;
 use App\Models\PlatformReport;
 use App\Support\ObjectNumberParser;
@@ -45,6 +46,9 @@ class HandleInertiaRequests extends Middleware
             'objectRanges' => $objectRanges,
             'pendingReportsCount' => $user && $user->isStaff()
                 ? PlatformReport::where('status', PlatformReport::STATUS_PENDING)->count()
+                : 0,
+            'pendingModerationCount' => $user && $user->canAccessAdminPanel()
+                ? Article::where('is_publishable', true)->where('is_published', false)->count()
                 : 0,
         ];
     }

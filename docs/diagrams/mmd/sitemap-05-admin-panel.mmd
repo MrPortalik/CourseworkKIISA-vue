@@ -1,0 +1,58 @@
+flowchart TB
+ subgraph ACCESS["Доступ admin / owner"]
+ GUARD["middleware admin"]
+ NAV["AdminNav.vue"]
+ end
+
+ subgraph MOD["Модерация — Admin/Index.vue"]
+ ADMIN["GET /admin"]
+ APPR["POST approve"]
+ REJ["POST reject + reason"]
+ end
+
+ subgraph TAX["Таксономия"]
+ CATS["GET /admin/categories<br/>Admin/Categories.vue"]
+ TAGS["GET /admin/tags<br/>Admin/Taxonomy.vue"]
+ CRUD_C["POST/PUT/DELETE categories"]
+ CRUD_T["POST/PUT/DELETE tags"]
+ end
+
+ subgraph REPORTS["Жалобы — Admin/Reports.vue"]
+ REP_IDX["GET /admin/reports"]
+ REP_RSP["POST reports/{id}/respond"]
+ FB["feedback, site_complaint"]
+ ART_REP["article_complaint"]
+ USER_REP["user_complaint"]
+ end
+
+ subgraph USERS["Пользователи"]
+ USR_IDX["GET /admin/users<br/>Admin/Users.vue"]
+ USR_SHOW["GET /admin/users/{user}<br/>Admin/UserShow.vue"]
+ PROMOTE["POST promote / demote"]
+ BLOCK["POST block + reason + until"]
+ UNBLOCK["POST unblock"]
+ MSG["POST message → AdminMessage"]
+ DESTROY["DELETE user"]
+ end
+
+ GUARD --> NAV
+ NAV --> ADMIN
+ NAV --> REP_IDX
+ NAV --> USR_IDX
+ NAV --> CATS
+ NAV --> TAGS
+ ADMIN --> APPR
+ ADMIN --> REJ
+ CATS --> CRUD_C
+ TAGS --> CRUD_T
+ REP_IDX --> REP_RSP
+ REP_IDX --> FB
+ REP_IDX --> ART_REP
+ REP_IDX --> USER_REP
+ USR_IDX --> USR_SHOW
+ USR_SHOW --> PROMOTE
+ USR_SHOW --> BLOCK
+ USR_SHOW --> UNBLOCK
+ USR_SHOW --> MSG
+ USR_SHOW --> DESTROY
+ BLOCK --> BL_N["AccountBlockedNotification"]

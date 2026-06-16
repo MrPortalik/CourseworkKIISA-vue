@@ -9,9 +9,18 @@ const props = defineProps({
 
 const emit = defineEmits(['toggle-all-articles'])
 
-const CARD_STEP = 200 + 16
-
 const scrollState = ref({})
+
+const getScrollStep = (track) => {
+    const card = track.querySelector('.article-card')
+    if (!card) return 216
+
+    const gap = parseFloat(getComputedStyle(track).gap) || 16
+    const cardWidth = card.offsetWidth
+    const cardsPerView = Math.max(1, Math.floor((track.clientWidth + gap) / (cardWidth + gap)))
+
+    return cardsPerView * (cardWidth + gap)
+}
 
 const trackId = (categoryId) => `slider-track-${categoryId}`
 
@@ -38,8 +47,18 @@ const scroll = (categoryId, dir) => {
     const track = document.getElementById(trackId(categoryId))
     if (!track) return
 
+    const step = getScrollStep(track)
+    const maxScroll = track.scrollWidth - track.clientWidth
+    let target = track.scrollLeft + dir * step
+
+    if (dir > 0) {
+        target = Math.min(target, maxScroll)
+    } else {
+        target = Math.max(target, 0)
+    }
+
     track.scrollTo({
-        left: track.scrollLeft + dir * CARD_STEP,
+        left: target,
         behavior: 'smooth',
     })
 }
@@ -98,7 +117,7 @@ onUnmounted(() => {
             <div class="slider-wrap">
                 <button
                     type="button"
-                    class="slider-nav"
+                    class="slider-nav slider-nav--side"
                     aria-label="Назад"
                     :disabled="!scrollState[row.category.id]?.canPrev"
                     @click="scroll(row.category.id, -1)"
@@ -123,7 +142,7 @@ onUnmounted(() => {
                 </div>
                 <button
                     type="button"
-                    class="slider-nav"
+                    class="slider-nav slider-nav--side"
                     aria-label="Вперёд"
                     :disabled="!scrollState[row.category.id]?.canNext"
                     @click="scroll(row.category.id, 1)"
@@ -305,7 +324,7 @@ onUnmounted(() => {
 
 @media (max-width: 768px) {
     .category-sliders {
-        --slider-card-width: 160px;
+        --slider-gap: 0.75rem;
         --slider-visible-count: 2;
     }
 
@@ -319,10 +338,26 @@ onUnmounted(() => {
         font-size: 1.25rem;
     }
 
-    .slider-nav {
-        width: 32px;
-        height: 32px;
-        font-size: 1.1rem;
+    .slider-wrap {
+        gap: 0;
+    }
+
+    .slider-nav--side {
+        display: none;
+    }
+
+    .slider-viewport {
+        max-width: 100%;
+        --slider-card-width: calc((100% - var(--slider-gap)) / var(--slider-visible-count));
+    }
+
+    .slider-track {
+        scroll-snap-type: x mandatory;
+        width: 100%;
+    }
+
+    .slider-track :deep(.article-card) {
+        height: 320px;
     }
 }
 </style>

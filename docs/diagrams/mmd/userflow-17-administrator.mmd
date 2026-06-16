@@ -1,0 +1,56 @@
+flowchart TB
+ subgraph ACCESS["Доступ"]
+ LOGIN["Вход role=admin/owner"]
+ GUARD["middleware admin"]
+ NAV["AdminNav.vue"]
+ end
+
+ subgraph PANEL["Admin/Index.vue"]
+ ADMIN["GET /admin"]
+ PENDING["Ожидают публикации"]
+ APPROVE["POST approve"]
+ REJECT["POST reject"]
+ end
+
+ subgraph TAXONOMY["Таксономия"]
+ CATS["GET /admin/categories"]
+ TAGS["GET /admin/tags"]
+ CRUD["CRUD категорий и тегов"]
+ end
+
+ subgraph REPORTS["Жалобы"]
+ REP["GET /admin/reports"]
+ RESP["POST respond"]
+ end
+
+ subgraph USERS["Пользователи"]
+ USERS_IDX["GET /admin/users"]
+ USER_SHOW["GET /admin/users/{user}"]
+ BLOCK["block / unblock"]
+ ROLES["promote / demote owner"]
+ end
+
+ subgraph ARTICLE_POWER["Права на статьи"]
+ DIRECT["is_published напрямую"]
+ FLAGS["is_hit, is_editors_choice, is_new"]
+ MOD_ON_SHOW["Модерация на Show.vue"]
+ end
+
+ LOGIN --> GUARD
+ GUARD --> NAV
+ NAV --> ADMIN
+ NAV --> REP
+ NAV --> USERS_IDX
+ NAV --> CATS
+ NAV --> TAGS
+ ADMIN --> PENDING
+ PENDING --> APPROVE
+ PENDING --> REJECT
+ REP --> RESP
+ USERS_IDX --> USER_SHOW
+ USER_SHOW --> BLOCK
+ USER_SHOW --> ROLES
+ GUARD --> DIRECT
+ GUARD --> MOD_ON_SHOW
+ CATS --> CRUD
+ TAGS --> CRUD

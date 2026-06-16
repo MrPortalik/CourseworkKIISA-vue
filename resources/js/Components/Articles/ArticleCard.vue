@@ -201,6 +201,9 @@ const formatDate = (dateString) => {
     background: rgba(20, 20, 20, 0.92);
     color: #f0f0f0;
 }
+[data-theme="dark"] .card-rating-star {
+    color: #ffffff;
+}
 [data-theme="dark"] .article-card { background: var(--theme_black); border-color: #333; }
 [data-theme="dark"] .card-title { color: #f0f0f0; }
 </style>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\UserBlocking;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,12 +14,18 @@ class EnsureUserIsNotBlocked
     {
         $user = $request->user();
 
-        if ($user && $user->is_blocked) {
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
+        if ($user) {
+            $user = UserBlocking::refreshStatus($user);
 
-            return redirect()->route('login')->with('status', 'Доступ к порталу заблокирован администрацией.');
+            if (UserBlocking::isActive($user)) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return redirect()
+                    ->route('login')
+                    ->with('block_error', UserBlocking::info($user));
+            }
         }
 
         return $next($request);

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Support\UserBlocking;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -49,6 +50,18 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        $user = Auth::user();
+        UserBlocking::refreshStatus($user);
+
+        if (UserBlocking::isActive($user)) {
+            $info = UserBlocking::info($user);
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => self::blockedLoginMessage($info),
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 
@@ -81,5 +94,26 @@ class LoginRequest extends FormRequest
     public function throttleKey(): string
     {
         return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+    }
+
+    /**
+     * @param  array{reason: string, permanent: bool, blocked_until: ?string}  $info
+     */
+    private static function blockedLoginMessage(array $info): string
+    {
+        $message = 'Аккаунт заблокирован. Причина: '.$info['reason'];
+
+        if ($info['permanent']) {
+            return $message.' Блокировка перманентная.';
+        }
+
+        if ($info['blocked_until']) {
+            $until = \Carbon\Carbon::parse($info['blocked_until'])->timezone(config('app.timezone'))
+                ->format('d.m.Y H:i');
+
+            return $message.' Разблокировка: '.$until.'.';
+        }
+
+        return $message;
     }
 }

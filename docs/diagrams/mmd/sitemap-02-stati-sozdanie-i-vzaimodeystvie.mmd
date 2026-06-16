@@ -1,0 +1,40 @@
+flowchart TB
+ subgraph AUTH_REQ["Требуется auth"]
+ DRAFTS["/articles/drafts<br/>Articles/Drafts.vue"]
+ CREATE["/articles/create<br/>Articles/Create.vue"]
+ EDIT["/articles/{slug}/edit<br/>Articles/Edit.vue"]
+ SEARCH["/articles/search-preview<br/>JSON автодополнение"]
+ end
+
+ subgraph ACTIONS["Действия на Show.vue"]
+ RATE["POST rate / DELETE unrate<br/>1–5 звёзд"]
+ COMMENT["POST comments"]
+ VOTE["POST comments/{id}/vote"]
+ DEL_C["DELETE comments/{id}"]
+ REPORT["POST /reports<br/>жалоба на статью"]
+ end
+
+ subgraph COAUTH["Соавторы"]
+ USR_SRCH["GET /users/search"]
+ INVITE["POST coauthors invite"]
+ ACCEPT["POST coauthors/accept"]
+ DECLINE["POST coauthors/decline"]
+ end
+
+ subgraph FILES["Загрузка контента"]
+ IMG["POST /articles/content-images"]
+ end
+
+ DRAFTS --> EDIT
+ CREATE --> IMG
+ EDIT --> IMG
+ CREATE --> INVITE
+ EDIT --> INVITE
+ INVITE --> USR_SRCH
+ SHOW["Articles/Show.vue"] --> RATE
+ SHOW --> COMMENT
+ SHOW --> VOTE
+ SHOW --> DEL_C
+ SHOW --> REPORT
+ SHOW --> EDIT
+ CREATE --> DRAFTS

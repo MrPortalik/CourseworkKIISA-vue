@@ -10,7 +10,7 @@ class EnsureUserIsAdmin
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (! $request->user()?->isStaff()) {
+        if (! $request->user()?->canAccessAdminPanel()) {
             abort(403);
         }
 

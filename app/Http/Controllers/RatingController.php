@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Article;
 use App\Models\ArticleVote;
+use App\Support\PlatformSettings;
 use Illuminate\Http\Request;
 
 class RatingController extends Controller
@@ -30,6 +31,8 @@ class RatingController extends Controller
                 ['article_id' => $article->id, 'user_id' => $request->user()->id],
                 ['vote' => $rating]
             );
+
+            PlatformSettings::evaluateHitStatus($article->fresh());
         }
 
         return back();

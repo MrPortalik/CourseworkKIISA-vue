@@ -5,8 +5,7 @@ import SettingsPanel from '@/Components/SettingsPanel.vue'
 import MobileDrawer from '@/Components/MobileDrawer.vue'
 
 const page = usePage()
-const isAdmin = computed(() => ['admin', 'owner'].includes(page.props.auth?.user?.role))
-const pendingReportsCount = computed(() => page.props.pendingReportsCount ?? 0)
+const canAccessAdmin = computed(() => ['admin', 'owner', 'moderator'].includes(page.props.auth?.user?.role))
 const unreadCount = computed(() => page.props.unreadNotificationsCount ?? 0)
 const pageUrl = computed(() => page.url)
 const navOpen = ref(false)
@@ -46,7 +45,7 @@ watch(() => page.url, closeNav)
 
             <figure class="header-logo">
                 <Link :href="route('/')" class="logo" @click="closeNav">
-                    <img src="/Assets/logoWhite.png" alt="Лого" />
+                    <img src="/public/Assets/logoWhite.png" alt="Лого" />
                 </Link>
             </figure>
         </div>
@@ -56,9 +55,8 @@ watch(() => page.url, closeNav)
                 <Link :href="route('articles.index')" class="header-link" :class="{ 'header-link--active': isArticlesSection }">Статьи</Link>
                 <Link :href="route('aboutus')" class="header-link" :class="{ 'header-link--active': isActive(['aboutus', 'faq.index']) }">О нас</Link>
                 <Link v-if="$page.props.auth?.user" :href="route('dashboard')" class="header-link" :class="{ 'header-link--active': isActive(['dashboard', 'authors.show']) }">Личный кабинет</Link>
-                <Link v-if="isAdmin" :href="route('admin.index')" class="header-link" :class="{ 'header-link--active': route().current()?.startsWith('admin.') }">
+                <Link v-if="canAccessAdmin" :href="route('admin.index')" class="header-link" :class="{ 'header-link--active': route().current()?.startsWith('admin.') }">
                     Админ-панель
-                    <span v-if="pendingReportsCount > 0" class="badge badge--inline">{{ pendingReportsCount }}</span>
                 </Link>
             </div>
 
@@ -88,9 +86,8 @@ watch(() => page.url, closeNav)
                 <Link :href="route('articles.index')" class="mobile-nav-link" :class="{ 'mobile-nav-link--active': isArticlesSection }" @click="closeNav">Статьи</Link>
                 <Link :href="route('aboutus')" class="mobile-nav-link" :class="{ 'mobile-nav-link--active': isActive(['aboutus', 'faq.index']) }" @click="closeNav">О нас</Link>
                 <Link v-if="$page.props.auth?.user" :href="route('dashboard')" class="mobile-nav-link" :class="{ 'mobile-nav-link--active': isActive(['dashboard', 'authors.show']) }" @click="closeNav">Личный кабинет</Link>
-                <Link v-if="isAdmin" :href="route('admin.index')" class="mobile-nav-link" :class="{ 'mobile-nav-link--active': route().current()?.startsWith('admin.') }" @click="closeNav">
+                <Link v-if="canAccessAdmin" :href="route('admin.index')" class="mobile-nav-link" :class="{ 'mobile-nav-link--active': route().current()?.startsWith('admin.') }" @click="closeNav">
                     Админ-панель
-                    <span v-if="pendingReportsCount > 0" class="badge badge--inline">{{ pendingReportsCount }}</span>
                 </Link>
 
                 <div class="mobile-nav-divider" />

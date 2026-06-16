@@ -79,16 +79,37 @@ if (diagrams.length === 0) {
     throw new Error(`No diagrams found in ${flowsPath}`)
 }
 
+const readmePath = join(root, 'docs', 'diagrams', 'README.md')
+let preservedSitemapSection = ''
+
+if (existsSync(readmePath)) {
+    const existing = readFileSync(readmePath, 'utf8')
+    const markerStart = '## SiteMap (карта сайта)'
+    const markerEnd = '## TaskFlow'
+
+    if (existing.includes(markerStart)) {
+        const afterStart = existing.split(markerStart)[1]
+        preservedSitemapSection = afterStart.includes(markerEnd)
+            ? `${markerStart}${afterStart.split(markerEnd)[0].trimEnd()}\n\n`
+            : `${markerStart}${afterStart.trimEnd()}\n\n`
+    }
+}
+
 const indexLines = [
     '# SVG-диаграммы потоков — портал КИИСА',
     '',
     'Файлы для вставки в Word: **Вставка → Рисунки → Этот устройство** и выберите нужный `.svg` из папки `svg/`.',
     '',
-    'Перегенерация: `node scripts/generate-flow-diagrams.mjs`',
-    '',
-    '## TaskFlow',
+    'Перегенерация TaskFlow/UserFlow: `node scripts/generate-flow-diagrams.mjs`',
+    'Перегенерация SiteMap: `node scripts/generate-sitemap-diagrams.mjs`',
     '',
 ]
+
+if (preservedSitemapSection) {
+    indexLines.push(preservedSitemapSection.trimEnd(), '')
+}
+
+indexLines.push('## TaskFlow', '')
 
 let currentSection = 'TaskFlow'
 
@@ -120,6 +141,6 @@ for (const diagram of diagrams) {
     indexLines.push('')
 }
 
-writeFileSync(join(root, 'docs', 'diagrams', 'README.md'), indexLines.join('\n'), 'utf8')
+writeFileSync(readmePath, indexLines.join('\n'), 'utf8')
 
 console.log(`Generated ${diagrams.length} SVG diagrams in docs/diagrams/svg/`)

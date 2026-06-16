@@ -215,13 +215,4 @@ const pageDescription = computed(() => {
 }
 .section-heading { font-size: 1.5rem; margin: 0 0 1rem; }
 .empty-state { text-align: center; color: #718096; padding: 3rem; }
-.pagination { display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; }
-.page-link {
-    padding: 0.5rem 1rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.375rem;
-    text-decoration: none;
-    color: #4a5568;
-}
-.page-link.active { background: #4299e1; color: white; }
 </style>

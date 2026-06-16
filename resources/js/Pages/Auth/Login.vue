@@ -7,7 +7,19 @@ import PageHead from '@/Components/PageHead.vue'
 defineProps({
     canResetPassword: { type: Boolean },
     status: { type: String },
+    blockError: { type: Object, default: null },
 })
+
+const formatBlockUntil = (iso) => {
+    if (!iso) return ''
+    return new Date(iso).toLocaleString('ru-RU', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    })
+}
 
 const form = useForm({
     email: '',
@@ -33,6 +45,15 @@ const submit = () => {
         <p class="auth-subtitle">Войдите в аккаунт на портале КИИСА</p>
 
         <div v-if="status" class="auth-status">{{ status }}</div>
+
+        <div v-if="blockError" class="auth-block">
+            <p class="auth-block-title">Аккаунт заблокирован</p>
+            <p class="auth-block-reason">{{ blockError.reason }}</p>
+            <p v-if="blockError.permanent" class="auth-block-until">Перманентная блокировка</p>
+            <p v-else-if="blockError.blocked_until" class="auth-block-until">
+                Разблокировка: {{ formatBlockUntil(blockError.blocked_until) }}
+            </p>
+        </div>
 
         <form class="auth-form" @submit.prevent="submit">
             <div class="form-group">
@@ -100,6 +121,23 @@ const submit = () => {
     color: #22543d;
     font-size: 0.9rem;
 }
+.auth-block {
+    margin-bottom: 1rem;
+    padding: 0.85rem 1rem;
+    border-radius: 8px;
+    background: #fed7d7;
+    color: #742a2a;
+    font-size: 0.9rem;
+}
+.auth-block-title {
+    margin: 0 0 0.35rem;
+    font-weight: 700;
+}
+.auth-block-reason,
+.auth-block-until {
+    margin: 0.25rem 0 0;
+    line-height: 1.45;
+}
 .auth-form { display: flex; flex-direction: column; }
 .form-group { margin-bottom: 1rem; }
 .form-label {
@@ -157,6 +195,10 @@ const submit = () => {
 [data-theme="dark"] .auth-subtitle,
 [data-theme="dark"] .auth-footer,
 [data-theme="dark"] .remember-row { color: #aaa; }
+[data-theme="dark"] .auth-block {
+    background: rgba(229, 62, 62, 0.15);
+    color: #feb2b2;
+}
 [data-theme="dark"] .form-input {
     background: #1a1a1a;
     border-color: #404040;

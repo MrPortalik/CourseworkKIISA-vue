@@ -2,20 +2,32 @@
 import { Link, router, useForm } from '@inertiajs/vue3'
 import PageHead from '@/Components/PageHead.vue'
 import HeaderComponent from '@/Layouts/HeaderComponent.vue'
+import AdminNav from '@/Components/Admin/AdminNav.vue'
+import UserAvatar from '@/Components/User/UserAvatar.vue'
 import { ref } from 'vue'
 
-defineProps({
+const props = defineProps({
     reports: Object,
     pendingCount: Number,
+    filters: { type: Object, default: () => ({}) },
 })
 
-const showModal = ref(true)
 const respondTarget = ref(null)
 const respondForm = useForm({ admin_reply: '' })
+const typeFilter = ref(props.filters?.type || '')
 
-const close = () => {
-    showModal.value = false
-    router.visit(route('admin.index'))
+const reportTypes = [
+    { value: '', label: 'Все типы' },
+    { value: 'feedback', label: 'Обратная связь' },
+    { value: 'site_complaint', label: 'Жалоба на сайт' },
+    { value: 'article_complaint', label: 'Жалоба на статью' },
+    { value: 'user_complaint', label: 'Жалоба на пользователя' },
+]
+
+const applyTypeFilter = () => {
+    router.get(route('admin.reports.index'), {
+        type: typeFilter.value || undefined,
+    }, { preserveState: true, preserveScroll: true })
 }
 
 const openRespond = (report) => {
@@ -36,7 +48,13 @@ const submitRespond = () => {
     })
 }
 
-const typeLabel = (type) => (type === 'article_complaint' ? 'Жалоба на статью' : 'Обратная связь')
+const typeLabel = (type) => {
+    if (type === 'article_complaint') return 'Жалоба на статью'
+    if (type === 'user_complaint') return 'Жалоба на пользователя'
+    if (type === 'site_complaint') return 'Жалоба на сайт'
+    return 'Обратная связь'
+}
+
 const formatDate = (d) => (d ? new Date(d).toLocaleString('ru-RU') : '')
 </script>
 
@@ -47,39 +65,102 @@ const formatDate = (d) => (d ? new Date(d).toLocaleString('ru-RU') : '')
     />
     <HeaderComponent />
 
-    <div v-if="showModal" class="modal-overlay">
-        <div class="modal-window modal-window--wide" role="dialog" aria-modal="true">
-            <div class="modal-header">
-                <h2>Жалобы и предложения</h2>
-                <button type="button" class="close-x" aria-label="Закрыть" @click="close">×</button>
+    <section class="admin-panel content-area">
+        <div class="admin-top">
+            <h1>Админ-панель</h1>
+            <AdminNav />
+        </div>
+
+        <div class="section">
+            <h2>Жалобы и предложения</h2>
+
+            <div class="filters">
+                <label class="filter-label" for="report-type-filter">Тип</label>
+                <select
+                    id="report-type-filter"
+                    v-model="typeFilter"
+                    class="filter-select"
+                    @change="applyTypeFilter"
+                >
+                    <option v-for="option in reportTypes" :key="option.value" :value="option.value">
+                        {{ option.label }}
+                    </option>
+                </select>
             </div>
 
             <p class="summary">Ожидают рассмотрения: {{ pendingCount }}</p>
 
             <div v-if="reports.data.length" class="reports-list">
                 <article v-for="report in reports.data" :key="report.id" class="report-row">
-                    <div class="report-head">
-                        <span class="badge" :class="report.status === 'pending' ? 'badge--pending' : 'badge--resolved'">
-                            {{ report.status === 'pending' ? 'Новое' : 'Рассмотрено' }}
-                        </span>
-                        <span class="type">{{ typeLabel(report.type) }}</span>
-                        <span class="meta">{{ report.user?.name }} · {{ formatDate(report.created_at) }}</span>
+                    <div class="report-layout">
+                        <div class="report-main">
+                            <div class="report-head">
+                                <span class="badge" :class="report.status === 'pending' ? 'badge--pending' : 'badge--resolved'">
+                                    {{ report.status === 'pending' ? 'Новое' : 'Рассмотрено' }}
+                                </span>
+                                <span class="type">{{ typeLabel(report.type) }}</span>
+                            </div>
+
+                            <div class="reporter-line">
+                                <UserAvatar
+                                    v-if="report.user"
+                                    :src="report.user.avatar"
+                                    :alt="report.user.name"
+                                    :size="28"
+                                />
+                                <span class="meta">
+                                    <template v-if="report.user">
+                                        <span class="reporter-prefix">Жалоба от</span>
+                                        <Link
+                                            :href="route('authors.show', report.user.id)"
+                                            class="reporter-link"
+                                        >
+                                            {{ report.user.name }}
+                                        </Link>
+                                    </template>
+                                    <span v-else>Неизвестный</span>
+                                    · {{ formatDate(report.created_at) }}
+                                </span>
+                            </div>
+
+                            <p class="message">{{ report.message }}</p>
+
+                            <div v-if="report.admin_reply" class="reply-block">
+                                <p class="reply-label">Ответ ({{ report.responded_by?.name }})</p>
+                                <p>{{ report.admin_reply }}</p>
+                            </div>
+
+                            <div class="report-footer">
+                                <button type="button" class="btn-row" @click="openRespond(report)">
+                                    {{ report.admin_reply ? 'Изменить ответ' : 'Ответить' }}
+                                </button>
+                                <Link
+                                    v-if="report.article"
+                                    :href="route('articles.show', report.article.slug)"
+                                    class="subject-link subject-link--inline"
+                                >
+                                    Статья: {{ report.article.title }}
+                                </Link>
+                            </div>
+                        </div>
+
+                        <aside v-if="report.reported_user" class="reported-user-card">
+                            <UserAvatar
+                                :src="report.reported_user.avatar"
+                                :alt="report.reported_user.name"
+                                :size="40"
+                            />
+                            <div class="reported-user-info">
+                                <p class="reported-user-label">На пользователя</p>
+                                <Link
+                                    :href="route('authors.show', report.reported_user.id)"
+                                    class="reported-user-name"
+                                >
+                                    {{ report.reported_user.name }}
+                                </Link>
+                            </div>
+                        </aside>
                     </div>
-                    <p class="message">{{ report.message }}</p>
-                    <Link
-                        v-if="report.article"
-                        :href="route('articles.show', report.article.slug)"
-                        class="article-link"
-                    >
-                        Статья: {{ report.article.title }}
-                    </Link>
-                    <div v-if="report.admin_reply" class="reply-block">
-                        <p class="reply-label">Ответ ({{ report.responded_by?.name }})</p>
-                        <p>{{ report.admin_reply }}</p>
-                    </div>
-                    <button type="button" class="btn-row" @click="openRespond(report)">
-                        {{ report.admin_reply ? 'Изменить ответ' : 'Ответить' }}
-                    </button>
                 </article>
             </div>
             <p v-else class="empty">Жалоб и предложений пока нет</p>
@@ -94,10 +175,8 @@ const formatDate = (d) => (d ? new Date(d).toLocaleString('ru-RU') : '')
                     v-html="link.label"
                 />
             </nav>
-
-            <button type="button" class="btn-close" @click="close">Закрыть</button>
         </div>
-    </div>
+    </section>
 
     <div v-if="respondTarget" class="modal-overlay modal-overlay--nested" @click.self="closeRespond">
         <div class="modal-window modal-window--reply" role="dialog">
@@ -118,6 +197,134 @@ const formatDate = (d) => (d ? new Date(d).toLocaleString('ru-RU') : '')
 </template>
 
 <style scoped>
+.admin-panel { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem 3rem; }
+.admin-panel h1 { margin: 0 0 0.75rem; }
+.admin-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+}
+.section { margin-bottom: 2.5rem; }
+.section h2 { margin: 0 0 0.75rem; }
+.filters {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-bottom: 1rem;
+}
+.filter-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+.filter-select {
+    flex: 1;
+    max-width: 320px;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid #cbd5e0;
+    border-radius: 8px;
+    font: inherit;
+    background: #fff;
+}
+.summary { color: #718096; margin: 0 0 1rem; font-size: 0.9rem; }
+.reports-list { display: grid; gap: 0.75rem; margin-bottom: 1rem; }
+.report-row {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+}
+.report-layout {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+.report-main { flex: 1; min-width: 0; }
+.report-head { display: flex; flex-wrap: wrap; gap: 0.4rem 0.75rem; align-items: center; margin-bottom: 0.5rem; }
+.badge { font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 999px; }
+.badge--pending { background: #fef9c3; color: #a16207; }
+.badge--resolved { background: #dcfce7; color: #166534; }
+.type { font-weight: 600; font-size: 0.9rem; }
+.reporter-line {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+.meta { color: #718096; font-size: 0.8rem; }
+.reporter-prefix { margin-right: 0.25rem; }
+.reporter-link {
+    color: #0db7ff;
+    font-weight: 600;
+    text-decoration: none;
+}
+.reporter-link:hover { text-decoration: underline; }
+.message { margin: 0 0 0.5rem; white-space: pre-wrap; line-height: 1.5; font-size: 0.95rem; }
+.reply-block {
+    background: #f7fafc;
+    border-radius: 8px;
+    padding: 0.65rem;
+    margin: 0.5rem 0 0.75rem;
+    font-size: 0.9rem;
+    max-width: min(420px, 100%);
+}
+.reply-label { font-weight: 600; margin: 0 0 0.25rem; color: #4a5568; font-size: 0.8rem; }
+.report-footer {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.35rem;
+}
+.subject-link {
+    color: #0db7ff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+.subject-link:hover { text-decoration: underline; }
+.reported-user-card {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.65rem 0.85rem;
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    max-width: 220px;
+}
+.reported-user-info { min-width: 0; }
+.reported-user-label {
+    margin: 0 0 0.15rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+.reported-user-name {
+    color: #0db7ff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    word-break: break-word;
+}
+.reported-user-name:hover { text-decoration: underline; }
+.btn-row {
+    flex-shrink: 0;
+    background: #0db7ff;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.45rem 0.85rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+.empty { text-align: center; color: #718096; padding: 2rem; background: #f7fafc; border-radius: 8px; }
 .modal-overlay {
     position: fixed;
     inset: 0;
@@ -128,19 +335,14 @@ const formatDate = (d) => (d ? new Date(d).toLocaleString('ru-RU') : '')
     justify-content: center;
     padding: 1rem;
 }
-.modal-overlay--nested { z-index: 220; }
 .modal-window {
     background: #fff;
     border-radius: 14px;
     width: 100%;
-    max-width: 560px;
-    max-height: 85vh;
-    overflow-y: auto;
+    max-width: 480px;
     padding: 1.5rem;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
 }
-.modal-window--wide { max-width: 640px; }
-.modal-window--reply { max-width: 480px; }
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -156,38 +358,6 @@ const formatDate = (d) => (d ? new Date(d).toLocaleString('ru-RU') : '')
     line-height: 1;
     padding: 0 0.25rem;
 }
-.summary { color: #718096; margin: 0 0 1rem; font-size: 0.9rem; }
-.reports-list { display: grid; gap: 0.75rem; margin-bottom: 1rem; }
-.report-row {
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 0.85rem 1rem;
-}
-.report-head { display: flex; flex-wrap: wrap; gap: 0.4rem 0.75rem; align-items: center; margin-bottom: 0.5rem; }
-.badge { font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 999px; }
-.badge--pending { background: #fef9c3; color: #a16207; }
-.badge--resolved { background: #dcfce7; color: #166534; }
-.type { font-weight: 600; font-size: 0.9rem; }
-.meta { color: #718096; font-size: 0.8rem; }
-.message { margin: 0 0 0.5rem; white-space: pre-wrap; line-height: 1.5; font-size: 0.95rem; }
-.article-link { color: #0db7ff; font-weight: 600; font-size: 0.9rem; text-decoration: none; display: inline-block; margin-bottom: 0.5rem; }
-.reply-block { background: #f7fafc; border-radius: 8px; padding: 0.65rem; margin: 0.5rem 0; font-size: 0.9rem; }
-.reply-label { font-weight: 600; margin: 0 0 0.25rem; color: #4a5568; font-size: 0.8rem; }
-.btn-row {
-    margin-top: 0.35rem;
-    background: #0db7ff;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 0.45rem 0.85rem;
-    font-weight: 600;
-    font-size: 0.85rem;
-    cursor: pointer;
-}
-.empty { color: #718096; margin-bottom: 1rem; }
-.pagination { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 1rem; }
-.page-link { padding: 0.4rem 0.7rem; border: 1px solid #e2e8f0; border-radius: 0.25rem; text-decoration: none; color: #4a5568; font-size: 0.85rem; }
-.page-link.active { background: #4299e1; color: #fff; }
 .reply-input {
     width: 100%;
     padding: 0.75rem;
@@ -209,7 +379,7 @@ const formatDate = (d) => (d ? new Date(d).toLocaleString('ru-RU') : '')
     font-weight: 600;
 }
 .btn-close {
-    width: 100%;
+    flex: 1;
     padding: 0.65rem;
     background: #edf2f7;
     border: none;
@@ -217,11 +387,25 @@ const formatDate = (d) => (d ? new Date(d).toLocaleString('ru-RU') : '')
     cursor: pointer;
     font-weight: 600;
 }
-.reply-actions .btn-close { width: auto; flex: 1; }
 .error { color: #c53030; font-size: 0.875rem; margin: 0 0 0.5rem; }
-[data-theme="dark"] .modal-window { background: #141414; border: 1px solid #333; color: #f0f0f0; }
+[data-theme="dark"] .admin-panel { color: #f0f0f0; }
+[data-theme="dark"] .filter-select { background: #1a1a1a; border-color: #404040; color: #f0f0f0; }
 [data-theme="dark"] .report-row { border-color: #333; }
-[data-theme="dark"] .reply-block { background: #1f1f1f; }
+[data-theme="dark"] .reply-block,
+[data-theme="dark"] .reported-user-card { background: #1f1f1f; border-color: #333; }
+[data-theme="dark"] .reply-label { color: #ccc; }
+[data-theme="dark"] .reporter-link,
+[data-theme="dark"] .subject-link,
+[data-theme="dark"] .reported-user-name { color: #90cdf4; }
 [data-theme="dark"] .reply-input { background: #1a1a1a; border-color: #404040; color: #f0f0f0; }
 [data-theme="dark"] .btn-close { background: #2a2a2a; color: #f0f0f0; }
+[data-theme="dark"] .empty { background: #141414; border: 1px solid #333; color: #aaa; }
+[data-theme="dark"] .modal-window { background: #141414; border: 1px solid #333; color: #f0f0f0; }
+
+@media (max-width: 768px) {
+    .admin-panel { margin: 1rem auto; padding: 0 1rem 2rem; }
+    .admin-top { flex-direction: column; align-items: flex-start; }
+    .report-layout { flex-direction: column; }
+    .reported-user-card { max-width: 100%; width: 100%; }
+}
 </style>

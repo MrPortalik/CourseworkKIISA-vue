@@ -8,7 +8,8 @@ const props = defineProps({
 })
 
 const isOwner = computed(() => props.user?.role === 'owner')
-const isAdmin = computed(() => ['admin', 'owner'].includes(props.user?.role))
+const isAdminRole = computed(() => props.user?.role === 'admin')
+const isModerator = computed(() => props.user?.role === 'moderator')
 const isArticleAuthor = computed(
     () => props.articleAuthorId != null && props.user?.id === props.articleAuthorId,
 )
@@ -16,13 +17,14 @@ const isArticleAuthor = computed(
 
 <template>
     <span
-        v-if="isArticleAuthor || isAdmin"
+        v-if="isArticleAuthor || isOwner || isAdminRole || isModerator"
         class="role-badges-wrap"
         :class="{ 'role-badges-wrap--profile': variant === 'profile' }"
     >
         <span v-if="isArticleAuthor" class="role-badge role-badge--author">Автор статьи</span>
         <span v-if="isOwner" class="role-badge role-badge--owner">Владелец</span>
-        <span v-else-if="isAdmin" class="role-badge role-badge--admin">Администратор</span>
+        <span v-else-if="isAdminRole" class="role-badge role-badge--admin">Администратор</span>
+        <span v-else-if="isModerator" class="role-badge role-badge--moderator">Модератор</span>
     </span>
 </template>
 
@@ -64,6 +66,11 @@ const isArticleAuthor = computed(
     background: #ede9fe;
     color: #6d28d9;
     border: 1px solid #ddd6fe;
+}
+.role-badge--moderator {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #bbf7d0;
 }
 [data-theme="dark"] .role-badge--author {
     background: rgba(254, 249, 195, 0.2);

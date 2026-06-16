@@ -137,7 +137,7 @@ header strong { color: var(--page-text, inherit); }
 }
 .comment-text {
     margin: 0 0 0.5rem;
-    font-size: 0.95rem;
+    font-size: calc(0.95rem * var(--font-scale, 1));
     line-height: 1.5;
     color: var(--page-text, inherit);
     word-break: break-word;

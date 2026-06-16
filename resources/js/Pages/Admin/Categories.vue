@@ -2,13 +2,11 @@
 import { router, useForm } from '@inertiajs/vue3'
 import PageHead from '@/Components/PageHead.vue'
 import HeaderComponent from '@/Layouts/HeaderComponent.vue'
-import { ref } from 'vue'
+import AdminNav from '@/Components/Admin/AdminNav.vue'
 
 defineProps({
     categories: Array,
 })
-
-const showModal = ref(true)
 
 const newCategory = useForm({ name: '', description: '' })
 
@@ -29,11 +27,6 @@ const deleteCategory = (cat) => {
     if (!confirm(`Удалить категорию «${cat.name}»?`)) return
     router.delete(route('admin.categories.destroy', cat.id), { preserveScroll: true })
 }
-
-const close = () => {
-    showModal.value = false
-    router.visit(route('admin.index'))
-}
 </script>
 
 <template>
@@ -43,12 +36,14 @@ const close = () => {
     />
     <HeaderComponent />
 
-    <div v-if="showModal" class="modal-overlay">
-        <div class="modal-window" role="dialog" aria-modal="true">
-            <div class="modal-header">
-                <h2>Управление категориями</h2>
-                <button type="button" class="close-x" aria-label="Закрыть" @click="close">×</button>
-            </div>
+    <section class="admin-panel content-area">
+        <div class="admin-top">
+            <h1>Админ-панель</h1>
+            <AdminNav />
+        </div>
+
+        <div class="section">
+            <h2>Управление категориями</h2>
 
             <form class="add-form" @submit.prevent="addCategory">
                 <div class="split-field split-field--new">
@@ -92,48 +87,23 @@ const close = () => {
                     </button>
                 </li>
             </ul>
-
-            <button type="button" class="btn-close" @click="close">Закрыть</button>
         </div>
-    </div>
+    </section>
 </template>
 
 <style scoped>
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.55);
-    z-index: 200;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-}
-.modal-window {
-    background: #fff;
-    border-radius: 14px;
-    width: 100%;
-    max-width: 560px;
-    max-height: 85vh;
-    overflow-y: auto;
-    padding: 1.5rem;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
-}
-.modal-header {
+.admin-panel { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem 3rem; }
+.admin-panel h1 { margin: 0 0 0.75rem; }
+.admin-top {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.25rem;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
 }
-.modal-header h2 { margin: 0; font-size: 1.35rem; }
-.close-x {
-    background: none;
-    border: none;
-    font-size: 1.75rem;
-    cursor: pointer;
-    line-height: 1;
-    padding: 0 0.25rem;
-}
+.section { margin-bottom: 2.5rem; }
+.section h2 { margin: 0 0 0.75rem; }
 .add-form {
     display: flex;
     flex-direction: column;
@@ -201,22 +171,7 @@ const close = () => {
     cursor: pointer;
     font-weight: 600;
 }
-.btn-close {
-    width: 100%;
-    padding: 0.65rem;
-    background: #edf2f7;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-}
-[data-theme="dark"] .modal-window {
-    background: #141414;
-    border: 1px solid #333;
-    color: #f0f0f0;
-}
-[data-theme="dark"] .modal-header h2,
-[data-theme="dark"] .close-x { color: #f0f0f0; }
+[data-theme="dark"] .admin-panel { color: #f0f0f0; }
 [data-theme="dark"] .split-field {
     background: #1a1a1a;
     border-color: #404040;
@@ -232,8 +187,9 @@ const close = () => {
     border-color: #553333;
     color: #fc8181;
 }
-[data-theme="dark"] .btn-close {
-    background: #2a2a2a;
-    color: #f0f0f0;
+
+@media (max-width: 768px) {
+    .admin-panel { margin: 1rem auto; padding: 0 1rem 2rem; }
+    .admin-top { flex-direction: column; align-items: flex-start; }
 }
 </style>

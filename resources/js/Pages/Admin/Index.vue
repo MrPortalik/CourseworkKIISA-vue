@@ -2,11 +2,13 @@
 import { Link, router, useForm } from '@inertiajs/vue3'
 import PageHead from '@/Components/PageHead.vue'
 import HeaderComponent from '@/Layouts/HeaderComponent.vue'
+import AdminNav from '@/Components/Admin/AdminNav.vue'
 import { ref } from 'vue'
 
 defineProps({
     pendingArticles: Object,
     allDrafts: Object,
+    canViewAllDrafts: { type: Boolean, default: true },
 })
 
 const formatDate = (d) => (d ? new Date(d).toLocaleDateString('ru-RU') : '')
@@ -47,14 +49,7 @@ const approve = (article) => {
     <section class="admin-panel content-area">
         <div class="admin-top">
             <h1>Админ-панель</h1>
-            <nav class="admin-nav">
-                <Link :href="route('admin.reports.index')" class="admin-tab btn-accent">
-                    Жалобы и предложения
-                </Link>
-                <Link :href="route('admin.users.index')" class="admin-tab btn-accent">Пользователи</Link>
-                <Link :href="route('admin.categories')" class="admin-tab btn-accent">Категории</Link>
-                <Link :href="route('admin.taxonomy')" class="admin-tab btn-accent">Теги</Link>
-            </nav>
+            <AdminNav />
         </div>
 
         <div class="section">
@@ -81,7 +76,7 @@ const approve = (article) => {
             <p v-else class="empty">Нет статей на модерации</p>
         </div>
 
-        <div class="section">
+        <div v-if="canViewAllDrafts && allDrafts" class="section">
             <h2>Все неопубликованные</h2>
             <div v-if="allDrafts.data.length" class="articles-list">
                 <article v-for="article in allDrafts.data" :key="article.id" class="admin-card">
@@ -126,12 +121,6 @@ const approve = (article) => {
     flex-wrap: wrap;
     gap: 0.5rem;
     margin-bottom: 2rem;
-}
-.admin-nav { display: flex; gap: 0.75rem; align-items: center; }
-.admin-tab {
-    text-decoration: none;
-    font-weight: 600;
-    color: #4a5568;
 }
 .section { margin-bottom: 2.5rem; }
 .section h2 { margin: 0 0 0.75rem; }
@@ -201,7 +190,26 @@ const approve = (article) => {
 [data-theme="dark"] .admin-card { background: var(--theme_black); border-color: #333; }
 [data-theme="dark"] .admin-card h3 { color: #f0f0f0; }
 [data-theme="dark"] .meta { color: #aaa; }
-[data-theme="dark"] .btn { background: #2a2a2a; color: #f0f0f0; border: 1px solid #404040; }
+[data-theme="dark"] .btn:not(.btn--success):not(.btn--danger):not(.btn--primary) {
+    background: #2a2a2a;
+    color: #f0f0f0;
+    border: 1px solid #404040;
+}
+[data-theme="dark"] .btn--success {
+    background: #48bb78;
+    color: #ffffff;
+    border: none;
+}
+[data-theme="dark"] .btn--danger {
+    background: #f56565;
+    color: #ffffff;
+    border: none;
+}
+[data-theme="dark"] .btn--primary {
+    background: #4299e1;
+    color: #ffffff;
+    border: none;
+}
 [data-theme="dark"] .empty { background: #141414; border: 1px solid #333; color: #aaa; }
 [data-theme="dark"] .reject-modal { background: #141414; color: #f0f0f0; }
 [data-theme="dark"] .reject-textarea { background: #1a1a1a; border-color: #404040; color: #f0f0f0; }

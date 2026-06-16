@@ -532,6 +532,88 @@ flowchart TB
 
 ---
 
+## TaskFlow: Жалобы и обратная связь
+
+```mermaid
+flowchart TB
+ subgraph UI["Интерфейс"]
+ FB_MODAL["FeedbackModal.vue<br/>Обратная связь в сайдбаре"]
+ ART_REP["Жалоба на статью<br/>Articles/Show.vue"]
+ USER_REP["Жалоба на пользователя<br/>Authors/Show.vue"]
+ end
+
+ subgraph API["PlatformReportController"]
+ STORE["POST /reports"]
+ end
+
+ subgraph TYPES["type"]
+ T1["feedback"]
+ T2["site_complaint"]
+ T3["article_complaint + article_id"]
+ T4["user_complaint + reported_user_id"]
+ end
+
+ subgraph ADMIN["Admin/Reports.vue"]
+ LIST["GET /admin/reports"]
+ RESPOND["POST /admin/reports/{report}/respond"]
+ end
+
+ FB_MODAL --> STORE
+ ART_REP --> STORE
+ USER_REP --> STORE
+ STORE --> T1
+ STORE --> T2
+ STORE --> T3
+ STORE --> T4
+ LIST --> RESPOND
+ STORE --> LIST
+```
+
+---
+
+## TaskFlow: Админ — пользователи и блокировка
+
+```mermaid
+flowchart TB
+ subgraph LIST["Admin/Users.vue"]
+ INDEX["GET /admin/users<br/>поиск q"]
+ SHOW["GET /admin/users/{user}<br/>Admin/UserShow.vue"]
+ end
+
+ subgraph ROLES["Роли owner"]
+ PROMOTE["POST promote → admin"]
+ DEMOTE["POST demote → user"]
+ end
+
+ subgraph BLOCK["Блокировка"]
+ BLOCK_BTN["BlockUserModal.vue"]
+ BLOCK_POST["POST /admin/users/{user}/block<br/>reason + blocked_until"]
+ UNBLOCK["POST /admin/users/{user}/unblock"]
+ NOTIFY["AccountBlockedNotification"]
+ MID["EnsureUserIsNotBlocked<br/>logout + block_error"]
+ end
+
+ subgraph MSG["Сообщения"]
+ SEND["POST /admin/users/{user}/message"]
+ ADMIN_N["AdminMessageNotification"]
+ REPLY["POST /messages/{message}/reply"]
+ end
+
+ INDEX --> SHOW
+ SHOW --> PROMOTE
+ SHOW --> DEMOTE
+ SHOW --> BLOCK_BTN
+ BLOCK_BTN --> BLOCK_POST
+ SHOW --> UNBLOCK
+ BLOCK_POST --> NOTIFY
+ BLOCK_POST --> MID
+ SHOW --> SEND
+ SEND --> ADMIN_N
+ SHOW --> REPLY
+```
+
+---
+
 ## UserFlow: Гость (неавторизованный)
 
 ```mermaid
@@ -752,58 +834,60 @@ flowchart TB
 ```mermaid
 flowchart TB
  subgraph ACCESS["Доступ"]
- LOGIN["Вход role=admin"]
+ LOGIN["Вход role=admin/owner"]
  GUARD["middleware admin"]
+ NAV["AdminNav.vue"]
  end
 
  subgraph PANEL["Admin/Index.vue"]
  ADMIN["GET /admin"]
- PENDING["Ожидают публикации<br/>is_publishable && !is_published"]
- ALL_DRAFTS["Все неопубликованные"]
- APPROVE["POST /admin/articles/{article}/approve"]
- REJECT["POST /admin/articles/{article}/reject"]
+ PENDING["Ожидают публикации"]
+ APPROVE["POST approve"]
+ REJECT["POST reject"]
  end
 
  subgraph TAXONOMY["Таксономия"]
- CATS["Admin/Categories.vue<br/>GET /admin/categories"]
- TAGS["Admin/Taxonomy.vue<br/>GET /admin/tags"]
- CRUD["POST/PUT/DELETE категорий и тегов"]
+ CATS["GET /admin/categories"]
+ TAGS["GET /admin/tags"]
+ CRUD["CRUD категорий и тегов"]
  end
 
- subgraph ARTICLE_POWER["Расширенные права на статьи"]
- DIRECT["Create/Edit: is_published напрямую"]
+ subgraph REPORTS["Жалобы"]
+ REP["GET /admin/reports"]
+ RESP["POST respond"]
+ end
+
+ subgraph USERS["Пользователи"]
+ USERS_IDX["GET /admin/users"]
+ USER_SHOW["GET /admin/users/{user}"]
+ BLOCK["block / unblock"]
+ ROLES["promote / demote owner"]
+ end
+
+ subgraph ARTICLE_POWER["Права на статьи"]
+ DIRECT["is_published напрямую"]
  FLAGS["is_hit, is_editors_choice, is_new"]
- ALL_DRAFTS_LIST["Articles/Drafts.vue — все черновики"]
- MOD_ON_SHOW["Articles/Show.vue — модерация на странице"]
- EDIT_ANY["Редактирование/удаление любой статьи"]
- end
-
- subgraph EFFECT["Эффекты действий"]
- PUB["Публикация + published_at"]
- N1["ArticlePublicationApprovedNotification"]
- N2["ArticlePublishedNotification → подписчики"]
- N3["ArticlePublicationRejectedNotification"]
+ MOD_ON_SHOW["Модерация на Show.vue"]
  end
 
  LOGIN --> GUARD
- GUARD --> ADMIN
+ GUARD --> NAV
+ NAV --> ADMIN
+ NAV --> REP
+ NAV --> USERS_IDX
+ NAV --> CATS
+ NAV --> TAGS
  ADMIN --> PENDING
- ADMIN --> ALL_DRAFTS
  PENDING --> APPROVE
  PENDING --> REJECT
- ADMIN --> CATS
- ADMIN --> TAGS
+ REP --> RESP
+ USERS_IDX --> USER_SHOW
+ USER_SHOW --> BLOCK
+ USER_SHOW --> ROLES
+ GUARD --> DIRECT
+ GUARD --> MOD_ON_SHOW
  CATS --> CRUD
  TAGS --> CRUD
- GUARD --> DIRECT
- DIRECT --> FLAGS
- GUARD --> ALL_DRAFTS_LIST
- GUARD --> MOD_ON_SHOW
- GUARD --> EDIT_ANY
- APPROVE --> PUB
- APPROVE --> N1
- APPROVE --> N2
- REJECT --> N3
 ```
 
 ---
@@ -814,8 +898,11 @@ flowchart TB
 |--------|----------|------------------------|
 | Статьи | `/articles`, `/articles/{slug}`, `/articles/create`, `/articles/drafts` | `ArticleController`, `Articles/*` |
 | Модерация | `/admin`, `/admin/articles/{article}/approve\|reject` | `AdminController`, `ArticleModerationController`, `Admin/Index.vue` |
+| Жалобы | `POST /reports`, `/admin/reports` | `PlatformReportController`, `AdminReportController`, `FeedbackModal` |
+| Пользователи | `/admin/users`, block/unblock, promote/demote | `AdminUserController`, `BlockUserModal` |
 | Комментарии | `POST/DELETE comments` | `CommentController`, `CommentThread` |
 | Рейтинг | `POST/DELETE /articles/{slug}/rate` | `RatingController`, `StarRating` |
 | Auth | `/login`, `/register`, `/verify-email`, `/profile` | `Auth/*`, `Profile/Edit.vue` |
 | Подписки | `/authors/{user}/subscribe`, `/notifications` | `SubscriptionController`, `NotificationController` |
 | Соавторы | `/users/search`, `/coauthors/{id}/accept\|decline` | `CoauthorController`, `CoauthorInvitePanel` |
+| Карта сайта | `docs/sitemap.md`, `public/sitemap.xml` | `docs/diagrams/svg/sitemap-*.svg` |

@@ -1,0 +1,36 @@
+flowchart TB
+ subgraph LIST["Admin/Users.vue"]
+ INDEX["GET /admin/users<br/>поиск q"]
+ SHOW["GET /admin/users/{user}<br/>Admin/UserShow.vue"]
+ end
+
+ subgraph ROLES["Роли owner"]
+ PROMOTE["POST promote → admin"]
+ DEMOTE["POST demote → user"]
+ end
+
+ subgraph BLOCK["Блокировка"]
+ BLOCK_BTN["BlockUserModal.vue"]
+ BLOCK_POST["POST /admin/users/{user}/block<br/>reason + blocked_until"]
+ UNBLOCK["POST /admin/users/{user}/unblock"]
+ NOTIFY["AccountBlockedNotification"]
+ MID["EnsureUserIsNotBlocked<br/>logout + block_error"]
+ end
+
+ subgraph MSG["Сообщения"]
+ SEND["POST /admin/users/{user}/message"]
+ ADMIN_N["AdminMessageNotification"]
+ REPLY["POST /messages/{message}/reply"]
+ end
+
+ INDEX --> SHOW
+ SHOW --> PROMOTE
+ SHOW --> DEMOTE
+ SHOW --> BLOCK_BTN
+ BLOCK_BTN --> BLOCK_POST
+ SHOW --> UNBLOCK
+ BLOCK_POST --> NOTIFY
+ BLOCK_POST --> MID
+ SHOW --> SEND
+ SEND --> ADMIN_N
+ SHOW --> REPLY

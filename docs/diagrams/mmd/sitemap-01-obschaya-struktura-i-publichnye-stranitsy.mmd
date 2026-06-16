@@ -1,0 +1,36 @@
+flowchart TB
+ ROOT["Портал КИИСА<br/>kiisa.ru"]
+
+ subgraph PUBLIC["Публичные страницы"]
+ HOME["/ — Welcome.vue<br/>Главная"]
+ ABOUT["/aboutus — AboutUs.vue<br/>О нас"]
+ FAQ["/faq — Faq/Index.vue<br/>FAQ"]
+ end
+
+ subgraph ARTICLES_PUB["Каталог статей"]
+ INDEX["/articles — Articles/Index.vue"]
+ HITS["?section=hits — Хиты"]
+ EDITORS["?section=editors_choice<br/>Выбор редакции"]
+ NEW["?section=new — Новинки"]
+ CAT["?category={id}<br/>По категории"]
+ OBJ["/articles/objects/{range}<br/>По объёму объекта"]
+ SHOW["/articles/{slug}<br/>Articles/Show.vue"]
+ end
+
+ subgraph GUEST_NAV["Навигация гостя"]
+ LOGIN["/login"]
+ REG["/register"]
+ end
+
+ ROOT --> HOME
+ ROOT --> ABOUT
+ ROOT --> FAQ
+ ROOT --> INDEX
+ INDEX --> HITS
+ INDEX --> EDITORS
+ INDEX --> NEW
+ INDEX --> CAT
+ INDEX --> OBJ
+ INDEX --> SHOW
+ HOME --> LOGIN
+ HOME --> REG

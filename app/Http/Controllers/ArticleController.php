@@ -10,11 +10,15 @@ use App\Models\Tag;
 use App\Notifications\ArticlePublicationApprovedNotification;
 use App\Services\ArticleSearchService;
 use App\Services\CoauthorInvitationService;
+use App\Support\ArticleSpamGuard;
 use App\Support\ArticlesListingPaginator;
 use App\Support\ImageUploadRules;
 use App\Support\ObjectNumberParser;
 use App\Support\Seo;
+use App\Support\UserBlocking;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -29,9 +33,17 @@ class ArticleController extends Controller
 
     public function validateUser(Request $request, Article $article): void
     {
-        if ($request->user()->id !== $article->user_id && ! $request->user()->isAdmin()) {
-            abort(403);
+        $user = $request->user();
+
+        if ($user->id === $article->user_id || $user->canModerateArticle($article)) {
+            return;
         }
+
+        if ($article->coauthors()->where('users.id', $user->id)->exists()) {
+            return;
+        }
+
+        abort(403);
     }
 
     public function index(Request $request)
@@ -82,15 +94,17 @@ class ArticleController extends Controller
 
     public function drafts(Request $request)
     {
+        $scope = $request->query('scope', 'all');
         $query = Article::with(['user', 'category'])->withRatingStats()->unpublished()->latest();
 
-        if (! $request->user()->isAdmin()) {
+        if (! $request->user()->isAdmin() || $scope === 'mine') {
             $query->currentAuthor($request->user());
         }
 
         return Inertia::render('Articles/Drafts', [
-            'articles' => $query->paginate(21),
+            'articles' => $query->paginate(21)->withQueryString(),
             'isAdmin' => $request->user()->isAdmin(),
+            'scope' => $request->user()->isAdmin() ? $scope : 'mine',
         ]);
     }
 
@@ -98,7 +112,7 @@ class ArticleController extends Controller
     {
         if (! $article->is_published) {
             $user = $request->user();
-            if (! $user || ($user->id !== $article->user_id && ! $user->isAdmin())) {
+            if (! $user || ($user->id !== $article->user_id && ! $user->canModerateArticle($article))) {
                 abort(404);
             }
         }
@@ -172,6 +186,13 @@ class ArticleController extends Controller
         $slug = $this->makeUniqueSlug($request->title);
         $isAdmin = $request->user()->isAdmin();
 
+        if (! $isAdmin && $request->boolean('is_publishable', false)) {
+            $spamRedirect = $this->enforceSpamPolicy($request);
+            if ($spamRedirect) {
+                return $spamRedirect;
+            }
+        }
+
         $article = new Article([
             'title' => $request->title,
             'content' => $this->normalizeContent($request->content),
@@ -181,6 +202,11 @@ class ArticleController extends Controller
             'is_publishable' => $request->boolean('is_publishable', false),
             'is_published' => $isAdmin ? $request->boolean('is_published', false) : false,
         ]);
+
+        if ($isAdmin) {
+            $article->is_hit = $request->boolean('is_hit');
+            $article->is_editors_choice = $request->boolean('is_editors_choice');
+        }
 
         if ($request->hasFile('banner')) {
             $article->banner = $this->publicStorageUrl($request->file('banner')->store('banners', 'public'));
@@ -241,12 +267,19 @@ class ArticleController extends Controller
         }
 
         $wasPublished = $article->is_published;
+        $wasPublishable = $article->is_publishable;
+        $editor = $request->user();
+        $isAuthor = $editor->id === $article->user_id;
+        $isCoauthor = ! $isAuthor && $article->coauthors()->where('users.id', $editor->id)->exists();
 
         $data = [
             'title' => $request->title,
             'content' => $this->normalizeContent($request->content),
             'category_id' => $request->category_id,
         ];
+
+        $contentChanged = $article->title !== $request->title
+            || $article->content !== $data['content'];
 
         if ($request->hasFile('banner')) {
             $this->deleteStoredFile($article->banner);
@@ -257,13 +290,39 @@ class ArticleController extends Controller
             $data['hero_banner'] = $this->publicStorageUrl($request->file('hero_banner')->store('hero_banners', 'public'));
         }
 
-        if ($request->user()->isAdmin()) {
+        if ($editor->isAdmin()) {
             $data['is_published'] = $request->boolean('is_published');
             $data['is_hit'] = $request->boolean('is_hit');
             $data['is_editors_choice'] = $request->boolean('is_editors_choice');
             $data['is_new'] = $request->boolean('is_new');
-        } elseif ($request->user()->id === $article->user_id) {
+
+            if (! $request->boolean('is_published')) {
+                $data['is_publishable'] = $isAuthor
+                    ? $request->boolean('is_publishable')
+                    : false;
+            } elseif ($isAuthor) {
+                $data['is_publishable'] = $request->boolean('is_publishable');
+            }
+        } elseif ($editor->isModerator()) {
+            $data['is_published'] = $request->boolean('is_published');
+        } elseif ($isAuthor || $isCoauthor) {
             $data['is_publishable'] = $request->boolean('is_publishable');
+
+            if ($wasPublished) {
+                $data['is_published'] = false;
+            }
+        }
+
+        if (
+            ! $editor->isAdmin()
+            && $isAuthor
+            && ! $wasPublishable
+            && ($data['is_publishable'] ?? false)
+        ) {
+            $spamRedirect = $this->enforceSpamPolicy($request);
+            if ($spamRedirect) {
+                return $spamRedirect;
+            }
         }
 
         $article->fill($data);
@@ -273,7 +332,12 @@ class ArticleController extends Controller
         $this->syncArticleCategories($article, $request);
         $article->tags()->sync($request->input('tag_ids', []));
 
-        if ($request->user()->isAdmin() && ! $wasPublished && $article->is_published) {
+        if ($contentChanged) {
+            $article->load(['user', 'coauthors']);
+            $article->notifyAuthorsOfEdit($editor);
+        }
+
+        if (($editor->isAdmin() || $editor->isModerator()) && ! $wasPublished && $article->is_published) {
             $article->notifySubscribersOfPublication();
             $article->user?->notify(new ArticlePublicationApprovedNotification($article));
         }
@@ -588,11 +652,13 @@ class ArticleController extends Controller
 
         if ($request->user()->isAdmin()) {
             $rules['is_published'] = 'boolean';
+            $rules['is_hit'] = 'boolean';
+            $rules['is_editors_choice'] = 'boolean';
             if ($article) {
-                $rules['is_hit'] = 'boolean';
-                $rules['is_editors_choice'] = 'boolean';
                 $rules['is_new'] = 'boolean';
             }
+        } elseif ($request->user()->isModerator()) {
+            $rules['is_published'] = 'boolean';
         }
 
         return $rules;
@@ -685,6 +751,25 @@ class ArticleController extends Controller
     private function publicStorageUrl(string $path): string
     {
         return '/storage/'.ltrim($path, '/');
+    }
+
+    private function enforceSpamPolicy(Request $request): ?RedirectResponse
+    {
+        $user = $request->user();
+        $guard = app(ArticleSpamGuard::class);
+
+        if (! $guard->shouldBlockForSubmission($user)) {
+            return null;
+        }
+
+        $guard->blockForSpam($user);
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()
+            ->route('login')
+            ->with('block_error', UserBlocking::info($user->fresh()));
     }
 
     private function deleteStoredFile(?string $url): void

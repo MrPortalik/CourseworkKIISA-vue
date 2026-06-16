@@ -8,8 +8,8 @@ import { Link } from '@inertiajs/vue3'
     <div class="auth-page content-area">
         <div class="auth-card">
             <Link :href="route('/')" class="auth-logo">
-                <img src="/Assets/logoBlack.png" alt="КИИСА" class="auth-logo-light" />
-                <img src="/Assets/logoWhite.png" alt="КИИСА" class="auth-logo-dark" />
+                <img src="/public/Assets/logoBlack.png" alt="КИИСА" class="auth-logo-light" />
+                <img src="/public/Assets/logoWhite.png" alt="КИИСА" class="auth-logo-dark" />
             </Link>
             <slot />
         </div>

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminModeratorSettingsController;
 use App\Http\Controllers\AdminReportController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\PlatformReportController;
@@ -90,16 +91,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::middleware(['auth', 'verified', 'admin'])->group(function () {
+Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/admin/articles/{article}/approve', [ArticleModerationController::class, 'approve'])->name('admin.articles.approve');
     Route::post('/admin/articles/{article}/reject', [ArticleModerationController::class, 'reject'])->name('admin.articles.reject');
     Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
+});
+
+Route::middleware(['auth', 'staff'])->group(function () {
     Route::get('/admin/categories', [AdminTaxonomyController::class, 'categories'])->name('admin.categories');
     Route::get('/admin/tags', [AdminTaxonomyController::class, 'tags'])->name('admin.taxonomy');
     Route::post('/admin/categories', [AdminTaxonomyController::class, 'storeCategory'])->name('admin.categories.store');
@@ -108,12 +113,16 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
     Route::post('/admin/tags', [AdminTaxonomyController::class, 'storeTag'])->name('admin.tags.store');
     Route::put('/admin/tags/{tag}', [AdminTaxonomyController::class, 'updateTag'])->name('admin.tags.update');
     Route::delete('/admin/tags/{tag}', [AdminTaxonomyController::class, 'destroyTag'])->name('admin.tags.destroy');
+    Route::get('/admin/moderator-settings', [AdminModeratorSettingsController::class, 'index'])->name('admin.moderator-settings');
+    Route::put('/admin/moderator-settings', [AdminModeratorSettingsController::class, 'update'])->name('admin.moderator-settings.update');
     Route::get('/admin/reports', [AdminReportController::class, 'index'])->name('admin.reports.index');
     Route::post('/admin/reports/{report}/respond', [AdminReportController::class, 'respond'])->name('admin.reports.respond');
     Route::get('/admin/users', [AdminUserController::class, 'index'])->name('admin.users.index');
     Route::get('/admin/users/{user}', [AdminUserController::class, 'show'])->name('admin.users.show');
     Route::post('/admin/users/{user}/promote', [AdminUserController::class, 'promoteAdmin'])->name('admin.users.promote');
+    Route::post('/admin/users/{user}/promote-moderator', [AdminUserController::class, 'promoteModerator'])->name('admin.users.promote-moderator');
     Route::post('/admin/users/{user}/demote', [AdminUserController::class, 'demoteAdmin'])->name('admin.users.demote');
+    Route::post('/admin/users/{user}/demote-moderator', [AdminUserController::class, 'demoteModerator'])->name('admin.users.demote-moderator');
     Route::post('/admin/users/{user}/block', [AdminUserController::class, 'block'])->name('admin.users.block');
     Route::post('/admin/users/{user}/unblock', [AdminUserController::class, 'unblock'])->name('admin.users.unblock');
     Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy'])->name('admin.users.destroy');

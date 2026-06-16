@@ -101,6 +101,13 @@ const onEditorInput = () => {
                     <span class="structure-text">{{ block.text }}</span>
                 </div>
                 <div
+                    v-else-if="block.type === 'divider'"
+                    class="structure-divider"
+                    aria-label="Разделитель"
+                >
+                    ———
+                </div>
+                <div
                     v-else
                     class="image-marker-badge"
                     :title="imageLabels[block.imageId] || block.imageId"
@@ -205,6 +212,21 @@ const onEditorInput = () => {
     box-sizing: border-box;
     font-family: inherit;
     line-height: 1.6;
+}
+.structure-divider {
+    align-self: flex-start;
+    margin-bottom: 5px;
+    padding: 0.2rem 0.65rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: #718096;
+    border: 1px dashed #cbd5e0;
+    border-radius: 4px;
+}
+[data-theme="dark"] .structure-divider {
+    color: #aaa;
+    border-color: #404040;
 }
 [data-theme="dark"] .content-structure {
     background: #141414;

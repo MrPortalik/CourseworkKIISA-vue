@@ -2,7 +2,37 @@
 
 Файлы для вставки в Word: **Вставка → Рисунки → Этот устройство** и выберите нужный `.svg` из папки `svg/`.
 
-Перегенерация: `node scripts/generate-flow-diagrams.mjs`
+Перегенерация TaskFlow/UserFlow: `node scripts/generate-flow-diagrams.mjs`
+Перегенерация SiteMap: `node scripts/generate-sitemap-diagrams.mjs`
+
+## SiteMap (карта сайта)
+
+Источник: `docs/sitemap.md`. Перегенерация: `node scripts/generate-sitemap-diagrams.mjs`
+
+### SiteMap:Общая структура и публичные страницы
+
+- Mermaid: `mmd/sitemap-01-obschaya-struktura-i-publichnye-stranitsy.mmd`
+- SVG: `svg/sitemap-01-obschaya-struktura-i-publichnye-stranitsy.svg`
+
+### SiteMap:Статьи — создание и взаимодействие
+
+- Mermaid: `mmd/sitemap-02-stati-sozdanie-i-vzaimodeystvie.mmd`
+- SVG: `svg/sitemap-02-stati-sozdanie-i-vzaimodeystvie.svg`
+
+### SiteMap:Аутентификация и личный кабинет
+
+- Mermaid: `mmd/sitemap-03-autentifikatsiya-i-lichnyy-kabinet.mmd`
+- SVG: `svg/sitemap-03-autentifikatsiya-i-lichnyy-kabinet.svg`
+
+### SiteMap:Уведомления и подписки
+
+- Mermaid: `mmd/sitemap-04-uvedomleniya-i-podpiski.mmd`
+- SVG: `svg/sitemap-04-uvedomleniya-i-podpiski.svg`
+
+### SiteMap:Админ-панель
+
+- Mermaid: `mmd/sitemap-05-admin-panel.mmd`
+- SVG: `svg/sitemap-05-admin-panel.svg`
 
 ## TaskFlow
 
@@ -56,30 +86,40 @@
 - Mermaid: `mmd/taskflow-10-uvedomleniya-i-podpiski-na-avtorov.mmd`
 - SVG: `svg/taskflow-10-uvedomleniya-i-podpiski-na-avtorov.svg`
 
+### TaskFlow: Жалобы и обратная связь
+
+- Mermaid: `mmd/taskflow-11-zhaloby-i-obratnaya-svyaz.mmd`
+- SVG: `svg/taskflow-11-zhaloby-i-obratnaya-svyaz.svg`
+
+### TaskFlow: Админ — пользователи и блокировка
+
+- Mermaid: `mmd/taskflow-12-admin-polzovateli-i-blokirovka.mmd`
+- SVG: `svg/taskflow-12-admin-polzovateli-i-blokirovka.svg`
+
 
 ## UserFlow
 
 ### UserFlow: Гость (неавторизованный)
 
-- Mermaid: `mmd/userflow-11-gost-neavtorizovannyy.mmd`
-- SVG: `svg/userflow-11-gost-neavtorizovannyy.svg`
+- Mermaid: `mmd/userflow-13-gost-neavtorizovannyy.mmd`
+- SVG: `svg/userflow-13-gost-neavtorizovannyy.svg`
 
 ### UserFlow: Зарегистрированный автор
 
-- Mermaid: `mmd/userflow-12-zaregistrirovannyy-avtor.mmd`
-- SVG: `svg/userflow-12-zaregistrirovannyy-avtor.svg`
+- Mermaid: `mmd/userflow-14-zaregistrirovannyy-avtor.mmd`
+- SVG: `svg/userflow-14-zaregistrirovannyy-avtor.svg`
 
 ### UserFlow: Авторизованный читатель
 
-- Mermaid: `mmd/userflow-13-avtorizovannyy-chitatel.mmd`
-- SVG: `svg/userflow-13-avtorizovannyy-chitatel.svg`
+- Mermaid: `mmd/userflow-15-avtorizovannyy-chitatel.mmd`
+- SVG: `svg/userflow-15-avtorizovannyy-chitatel.svg`
 
 ### UserFlow: Соавтор
 
-- Mermaid: `mmd/userflow-14-soavtor.mmd`
-- SVG: `svg/userflow-14-soavtor.svg`
+- Mermaid: `mmd/userflow-16-soavtor.mmd`
+- SVG: `svg/userflow-16-soavtor.svg`
 
 ### UserFlow: Администратор
 
-- Mermaid: `mmd/userflow-15-administrator.mmd`
-- SVG: `svg/userflow-15-administrator.svg`
+- Mermaid: `mmd/userflow-17-administrator.mmd`
+- SVG: `svg/userflow-17-administrator.svg`

@@ -11,7 +11,6 @@ const props = defineProps({
 })
 
 const tab = ref('notifications')
-
 const inertiaOpts = { preserveScroll: true }
 
 const markAllRead = () => {
@@ -22,6 +21,10 @@ const markRead = (id) => {
     router.post(route('notifications.read', id), {}, inertiaOpts)
 }
 
+const deleteNotification = (id) => {
+    router.delete(route('notifications.destroy', id), inertiaOpts)
+}
+
 const openArticle = (notification) => {
     if (!notification.read_at) {
         markRead(notification.id)
@@ -30,25 +33,37 @@ const openArticle = (notification) => {
 
 const respondCoauthor = (notification, action) => {
     const coauthorId = notification.data.coauthor_id
-    if (!coauthorId) return
-    router.post(route(`coauthors.${action}`, coauthorId), {}, {
-        ...inertiaOpts,
-        onSuccess: () => {
-            if (!notification.read_at) {
-                markRead(notification.id)
-            }
-        },
-    })
+    if (!coauthorId || hasCoauthorAction(notification)) return
+    router.post(route(`coauthors.${action}`, coauthorId), {}, inertiaOpts)
 }
 
 const isCoauthorInvite = (n) => n.data?.type === 'coauthor_invitation'
 const isAdminMessage = (n) => n.data?.type === 'admin_message'
 const isReportResponse = (n) => n.data?.type === 'report_response'
+const isAccountBlocked = (n) => n.data?.type === 'account_blocked'
+
+const formatBlockUntil = (iso) => {
+    if (!iso) return ''
+    return new Date(iso).toLocaleString('ru-RU', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    })
+}
+
+const hasCoauthorAction = (n) => ['accepted', 'declined'].includes(n.data?.user_action)
+const hasReadAction = (n) => !!n.data?.user_action || !!n.read_at
+const hasReplyAction = (n) => n.data?.user_action === 'replied'
+
+const actionLabel = (n) => n.action_label || null
 
 const replyBodies = ref({})
 const replyProcessing = ref({})
 
 const submitReply = (notification) => {
+    if (hasReplyAction(notification)) return
     const messageId = notification.data.message_id
     const body = replyBodies.value[notification.id]?.trim()
     if (!messageId || !body) return
@@ -56,10 +71,6 @@ const submitReply = (notification) => {
     replyProcessing.value[notification.id] = true
     router.post(route('messages.reply', messageId), { body }, {
         preserveScroll: true,
-        onSuccess: () => {
-            replyBodies.value[notification.id] = ''
-            markRead(notification.id)
-        },
         onFinish: () => {
             replyProcessing.value[notification.id] = false
         },
@@ -111,20 +122,36 @@ const submitReply = (notification) => {
                     class="notification-item"
                     :class="{ unread: !notification.read_at }"
                 >
+                    <button
+                        type="button"
+                        class="delete-btn"
+                        aria-label="Удалить уведомление"
+                        @click="deleteNotification(notification.id)"
+                    >
+                        ×
+                    </button>
+
                     <template v-if="isCoauthorInvite(notification)">
                         <p class="notification-text">{{ notification.data.message }}</p>
                         <div class="notification-actions">
                             <Link
-                                v-if="notification.data.article_slug"
+                                v-if="notification.data.article_slug && notification.data.article_available !== false"
                                 :href="route('articles.show', notification.data.article_slug)"
                                 class="link"
                                 @click="openArticle(notification)"
                             >
                                 Открыть статью
                             </Link>
+                            <span
+                                v-else-if="notification.data.article_slug && notification.data.article_available === false"
+                                class="unavailable-link"
+                            >
+                                Статья удалена
+                            </span>
                             <button
                                 type="button"
                                 class="accept-btn"
+                                :disabled="hasCoauthorAction(notification)"
                                 @click="respondCoauthor(notification, 'accept')"
                             >
                                 Да
@@ -132,18 +159,27 @@ const submitReply = (notification) => {
                             <button
                                 type="button"
                                 class="decline-btn"
+                                :disabled="hasCoauthorAction(notification)"
                                 @click="respondCoauthor(notification, 'decline')"
                             >
                                 Нет
                             </button>
+                            <span v-if="actionLabel(notification)" class="action-status">
+                                {{ actionLabel(notification) }}
+                            </span>
                         </div>
                     </template>
+
                     <template v-else-if="isAdminMessage(notification)">
                         <p class="notification-text">
                             <strong>{{ notification.data.sender_name }}:</strong>
                             {{ notification.data.message }}
                         </p>
-                        <form class="reply-form" @submit.prevent="submitReply(notification)">
+                        <form
+                            v-if="!hasReplyAction(notification)"
+                            class="reply-form"
+                            @submit.prevent="submitReply(notification)"
+                        >
                             <textarea
                                 v-model="replyBodies[notification.id]"
                                 rows="3"
@@ -155,7 +191,11 @@ const submitReply = (notification) => {
                                 Ответить
                             </button>
                         </form>
+                        <p v-else class="action-status action-status--solo">
+                            {{ actionLabel(notification) }}
+                        </p>
                     </template>
+
                     <template v-else-if="isReportResponse(notification)">
                         <p class="notification-text">
                             <strong>Ответ администрации ({{ notification.data.admin_name }}):</strong>
@@ -163,27 +203,70 @@ const submitReply = (notification) => {
                         </p>
                         <div class="notification-actions">
                             <Link
-                                v-if="notification.data.article_slug"
+                                v-if="notification.data.article_slug && notification.data.article_available !== false"
                                 :href="route('articles.show', notification.data.article_slug)"
                                 class="link"
                                 @click="openArticle(notification)"
                             >
                                 Открыть статью
                             </Link>
-                            <button v-if="!notification.read_at" class="read-btn" @click="markRead(notification.id)">
+                            <span
+                                v-else-if="notification.data.article_slug && notification.data.article_available === false"
+                                class="unavailable-link"
+                            >
+                                Статья удалена
+                            </span>
+                            <button
+                                type="button"
+                                class="read-btn"
+                                :disabled="hasReadAction(notification)"
+                                @click="markRead(notification.id)"
+                            >
+                                Прочитано
+                            </button>
+                            <span v-if="actionLabel(notification)" class="action-status">
+                                {{ actionLabel(notification) }}
+                            </span>
+                        </div>
+                    </template>
+
+                    <template v-else-if="isAccountBlocked(notification)">
+                        <p class="notification-text notification-text--warning">
+                            {{ notification.data.message }}
+                        </p>
+                        <p v-if="notification.data.reason" class="block-reason">
+                            Причина: {{ notification.data.reason }}
+                        </p>
+                        <p v-if="notification.data.permanent" class="block-until">Перманентная блокировка</p>
+                        <p v-else-if="notification.data.blocked_until" class="block-until">
+                            Разблокировка: {{ formatBlockUntil(notification.data.blocked_until) }}
+                        </p>
+                        <div class="notification-actions">
+                            <button
+                                type="button"
+                                class="read-btn"
+                                :disabled="hasReadAction(notification)"
+                                @click="markRead(notification.id)"
+                            >
                                 Прочитано
                             </button>
                         </div>
                     </template>
+
                     <template v-else-if="notification.data.article_slug">
                         <div class="notification-body">
                             <Link
+                                v-if="notification.data.article_available !== false"
                                 :href="route('articles.show', notification.data.article_slug)"
                                 class="notification-link"
                                 @click="openArticle(notification)"
                             >
                                 {{ notification.data.message }}
                             </Link>
+                            <p v-else class="notification-text unavailable-link">
+                                {{ notification.data.message }}
+                                <span class="unavailable-note">(статья удалена)</span>
+                            </p>
                             <p
                                 v-if="notification.data.type === 'publication_rejected' && notification.data.reason"
                                 class="rejection-reason"
@@ -192,24 +275,47 @@ const submitReply = (notification) => {
                             </p>
                         </div>
                         <div class="notification-actions">
-                            <button v-if="!notification.read_at" class="read-btn" @click="markRead(notification.id)">
+                            <button
+                                type="button"
+                                class="read-btn"
+                                :disabled="hasReadAction(notification)"
+                                @click="markRead(notification.id)"
+                            >
                                 Прочитано
                             </button>
+                            <span v-if="actionLabel(notification)" class="action-status">
+                                {{ actionLabel(notification) }}
+                            </span>
                         </div>
                     </template>
+
                     <template v-else>
                         <p class="notification-text">{{ notification.data.message }}</p>
                         <div class="notification-actions">
                             <Link
-                                v-if="notification.data.author_id"
+                                v-if="notification.data.author_id && notification.data.author_available !== false"
                                 :href="route('authors.show', notification.data.author_id)"
                                 class="link"
                             >
                                 Открыть профиль
                             </Link>
-                            <button v-if="!notification.read_at" class="read-btn" @click="markRead(notification.id)">
+                            <span
+                                v-else-if="notification.data.author_id && notification.data.author_available === false"
+                                class="unavailable-link"
+                            >
+                                Профиль недоступен
+                            </span>
+                            <button
+                                type="button"
+                                class="read-btn"
+                                :disabled="hasReadAction(notification)"
+                                @click="markRead(notification.id)"
+                            >
                                 Прочитано
                             </button>
+                            <span v-if="actionLabel(notification)" class="action-status">
+                                {{ actionLabel(notification) }}
+                            </span>
                         </div>
                     </template>
                 </li>
@@ -306,7 +412,8 @@ const submitReply = (notification) => {
 
 .notification-item,
 .author-item {
-    padding: 1rem;
+    position: relative;
+    padding: 1rem 2.25rem 1rem 1rem;
     border: 1px solid #e2e8f0;
     border-radius: 0.5rem;
     margin-bottom: 0.75rem;
@@ -315,6 +422,29 @@ const submitReply = (notification) => {
 
 .notification-item.unread {
     border-left: 4px solid #4299e1;
+}
+
+.delete-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: #e53e3e;
+    font-size: 1.35rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.delete-btn:hover {
+    background: #fee2e2;
 }
 
 .notification-link {
@@ -333,6 +463,19 @@ const submitReply = (notification) => {
 .notification-body {
     flex: 1;
     min-width: 0;
+}
+
+.notification-text--warning {
+    color: #c53030;
+    font-weight: 600;
+}
+
+.block-reason,
+.block-until {
+    margin: 0.35rem 0 0;
+    font-size: 0.9rem;
+    color: #718096;
+    line-height: 1.45;
 }
 
 .rejection-reason {
@@ -355,13 +498,35 @@ const submitReply = (notification) => {
     align-items: center;
 }
 
+.action-status {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #718096;
+    font-style: italic;
+}
+
+.action-status--solo {
+    margin: 0.5rem 0 0;
+}
+
 .link {
     color: #4299e1;
     text-decoration: none;
     font-weight: 600;
 }
 
-.read-btn,
+.unavailable-link,
+.unavailable-note {
+    color: #a0aec0;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+.unavailable-note {
+    display: block;
+    margin-top: 0.25rem;
+    font-weight: 500;
+}
+
 .reply-form {
     display: grid;
     gap: 0.5rem;
@@ -377,20 +542,22 @@ const submitReply = (notification) => {
     resize: vertical;
 }
 
-[data-theme="dark"] .reply-input {
-    background: #141414;
-    color: #f0f0f0;
-    border-color: #404040;
-}
-
 .accept-btn,
-.decline-btn {
+.decline-btn,
+.read-btn {
     border: none;
     padding: 0.4rem 0.85rem;
     border-radius: 0.375rem;
     cursor: pointer;
     font-size: 0.875rem;
     font-weight: 600;
+}
+
+.accept-btn:disabled,
+.decline-btn:disabled,
+.read-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 
 .read-btn {
@@ -442,26 +609,6 @@ const submitReply = (notification) => {
     padding: 3rem;
 }
 
-.pagination {
-    display: flex;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-top: 2rem;
-}
-
-.page-link {
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.25rem;
-    text-decoration: none;
-    color: #4a5568;
-}
-
-.page-link.active {
-    background: #4299e1;
-    color: white;
-}
-
 [data-theme="dark"] .notifications-page {
     color: #f0f0f0;
 }
@@ -495,15 +642,37 @@ const submitReply = (notification) => {
     border: 1px solid #404040;
 }
 
+[data-theme="dark"] .reply-input {
+    background: #141414;
+    color: #f0f0f0;
+    border-color: #404040;
+}
+
+[data-theme="dark"] .action-status {
+    color: #aaa;
+}
+
+[data-theme="dark"] .delete-btn:hover {
+    background: #3a1515;
+}
+
 [data-theme="dark"] .meta,
 [data-theme="dark"] .empty {
     color: #aaa;
 }
 
 [data-theme="dark"] .profile-link {
+    background: #ffffff;
+    color: #0a0a0a;
+    border: 2px solid #ffffff;
     border-radius: 20px;
     font-weight: 600;
     padding: 0.5rem 1.25rem;
+}
+[data-theme="dark"] .profile-link:hover {
+    background: #f0f0f0;
+    border-color: #f0f0f0;
+    color: #0a0a0a;
 }
 
 @media (max-width: 768px) {

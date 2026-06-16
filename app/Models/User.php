@@ -21,6 +21,8 @@ class User extends Authenticatable
         'avatar',
         'role',
         'is_blocked',
+        'block_reason',
+        'blocked_until',
     ];
 
     protected $hidden = [
@@ -32,6 +34,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'is_blocked' => 'boolean',
+        'blocked_until' => 'datetime',
     ];
 
     public function articles(): HasMany
@@ -60,6 +63,11 @@ class User extends Authenticatable
         return $this->role === 'owner';
     }
 
+    public function isModerator(): bool
+    {
+        return $this->role === 'moderator';
+    }
+
     public function isAdmin(): bool
     {
         return in_array($this->role, ['admin', 'owner'], true);
@@ -68,6 +76,29 @@ class User extends Authenticatable
     public function isStaff(): bool
     {
         return $this->isAdmin();
+    }
+
+    public function canAccessAdminPanel(): bool
+    {
+        return $this->isAdmin() || $this->isModerator();
+    }
+
+    public function canModerateArticles(): bool
+    {
+        return $this->isAdmin() || $this->isModerator();
+    }
+
+    public function canModerateArticle(Article $article): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        if ($this->isModerator()) {
+            return $article->is_publishable || $article->is_published;
+        }
+
+        return false;
     }
 
     public function canManageUser(User $target): bool
@@ -84,7 +115,7 @@ class User extends Authenticatable
             return true;
         }
 
-        return $this->isAdmin() && ! $target->isAdmin();
+        return $this->isAdmin() && ! $target->isAdmin() && ! $target->isModerator();
     }
 
     public function isSubscribedTo(User $author): bool

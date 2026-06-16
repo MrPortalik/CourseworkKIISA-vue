@@ -6,6 +6,7 @@ use App\Models\Article;
 use App\Models\ArticleCoauthor;
 use App\Models\User;
 use App\Services\CoauthorInvitationService;
+use App\Support\NotificationState;
 use Illuminate\Http\Request;
 
 class CoauthorController extends Controller
@@ -65,6 +66,7 @@ class CoauthorController extends Controller
         }
 
         $coauthor->update(['status' => ArticleCoauthor::STATUS_ACCEPTED]);
+        $this->resolveCoauthorNotification($request, $coauthor, 'accepted');
 
         return back()->with('success', 'Вы приняли приглашение стать со-автором.');
     }
@@ -76,6 +78,7 @@ class CoauthorController extends Controller
         }
 
         $coauthor->update(['status' => ArticleCoauthor::STATUS_DECLINED]);
+        $this->resolveCoauthorNotification($request, $coauthor, 'declined');
 
         return back()->with('success', 'Приглашение отклонено.');
     }
@@ -85,5 +88,17 @@ class CoauthorController extends Controller
         if ($request->user()->id !== $article->user_id && ! $request->user()->isAdmin()) {
             abort(403);
         }
+    }
+
+    private function resolveCoauthorNotification(Request $request, ArticleCoauthor $coauthor, string $action): void
+    {
+        $request->user()
+            ->notifications()
+            ->where('data->coauthor_id', $coauthor->id)
+            ->get()
+            ->each(function ($notification) use ($action) {
+                NotificationState::setAction($notification, $action);
+                $notification->markAsRead();
+            });
     }
 }

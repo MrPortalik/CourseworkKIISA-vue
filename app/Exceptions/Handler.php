@@ -45,6 +45,13 @@ class Handler extends ExceptionHandler
         }
 
         $status = $response->getStatusCode();
+
+        if ($status === 405 && $request->isMethod('GET')) {
+            return Inertia::render('Errors/Show', ['status' => 404])
+                ->toResponse($request)
+                ->setStatusCode(404);
+        }
+
         if (! in_array($status, [403, 404, 500, 503], true)) {
             return $response;
         }

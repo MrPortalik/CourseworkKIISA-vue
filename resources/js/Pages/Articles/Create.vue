@@ -38,6 +38,8 @@ const form = useForm({
     content: '',
     is_publishable: false,
     is_published: false,
+    is_hit: false,
+    is_editors_choice: false,
     category_ids: [],
     tag_ids: [],
     coauthor_user_ids: [],
@@ -177,8 +179,11 @@ const submit = () => form
             <ArticleTaxonomyPickers
                 :categories="categories"
                 :tags="tags"
+                :is-admin="isAdmin"
                 v-model:category-ids="form.category_ids"
                 v-model:tag-ids="form.tag_ids"
+                v-model:is-hit="form.is_hit"
+                v-model:is-editors-choice="form.is_editors_choice"
             />
 
             <div class="form-group">

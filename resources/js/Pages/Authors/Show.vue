@@ -4,6 +4,9 @@ import ArticleCard from '@/Components/Articles/ArticleCard.vue'
 import EditPencilIcon from '@/Components/EditPencilIcon.vue'
 import UserAvatar from '@/Components/User/UserAvatar.vue'
 import UserRoleBadge from '@/Components/UI/UserRoleBadge.vue'
+import ProfileAccountSettings from '@/Components/Profile/ProfileAccountSettings.vue'
+import FeedbackModal from '@/Components/FeedbackModal.vue'
+import BlockUserModal from '@/Components/Admin/BlockUserModal.vue'
 import { Link, router, useForm, usePage } from '@inertiajs/vue3'
 import { imageAccept, validateImageFile } from '@/lib/imageUpload'
 import PageHead from '@/Components/PageHead.vue'
@@ -14,6 +17,13 @@ const props = defineProps({
     articles: Object,
     isSubscribed: Boolean,
     isOwnProfile: Boolean,
+    mustVerifyEmail: { type: Boolean, default: false },
+    status: { type: String, default: null },
+    canManageRoles: { type: Boolean, default: false },
+    canManageUser: { type: Boolean, default: false },
+    articlesCount: { type: Number, default: 0 },
+    subscribersCount: { type: Number, default: 0 },
+    subscriptionsCount: { type: Number, default: 0 },
 })
 
 const page = usePage()
@@ -56,7 +66,9 @@ const saveBio = () => {
     saveProfile()
 }
 
-const subscribeOpts = { preserveScroll: true, only: ['articles', 'isSubscribed'] }
+const subscribeOpts = { preserveScroll: true, only: ['articles', 'isSubscribed', 'subscribersCount'] }
+
+const showSettingsModal = ref(false)
 
 const toggleSubscribe = () => {
     if (props.isSubscribed) {
@@ -65,6 +77,38 @@ const toggleSubscribe = () => {
         router.post(route('authors.subscribe', props.author.id), {}, subscribeOpts)
     }
 }
+
+const showReportModal = ref(false)
+const showBlockModal = ref(false)
+const canReport = computed(() => isLoggedIn.value && !props.isOwnProfile)
+
+const promote = () => router.post(route('admin.users.promote', props.author.id), {}, { preserveScroll: true })
+const demote = () => router.post(route('admin.users.demote', props.author.id), {}, { preserveScroll: true })
+const unblock = () => router.post(route('admin.users.unblock', props.author.id), {}, { preserveScroll: true })
+
+const formatBlockUntil = (value) => {
+    if (!value) return ''
+    return new Date(value).toLocaleString('ru-RU', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    })
+}
+const destroyUser = () => {
+    if (confirm('Удалить пользователя безвозвратно?')) {
+        router.delete(route('admin.users.destroy', props.author.id))
+    }
+}
+
+const roleLabel = (role) => {
+    if (role === 'owner') return 'Владелец'
+    if (role === 'admin') return 'Администратор'
+    return 'Пользователь'
+}
+
+const showModeration = computed(() => props.canManageRoles || props.canManageUser)
 </script>
 
 <template>
@@ -103,13 +147,37 @@ const toggleSubscribe = () => {
             </figure>
 
             <button
-                v-if="isLoggedIn && !isOwnProfile"
+                v-if="isOwnProfile"
+                type="button"
+                class="actionBtn actionBtn--edit"
+                @click="showSettingsModal = true"
+            >
+                <span class="actionBtn-text">Изменить данные</span>
+            </button>
+
+            <button
+                v-else-if="isLoggedIn"
                 class="actionBtn"
                 :class="{ subscribed: isSubscribed }"
                 @click="toggleSubscribe"
             >
                 <span class="actionBtn-text">{{ isSubscribed ? 'Отписаться' : 'Подписаться' }}</span>
             </button>
+
+            <button
+                v-if="canReport"
+                type="button"
+                class="actionBtn actionBtn--report"
+                @click="showReportModal = true"
+            >
+                <span class="actionBtn-text">Пожаловаться</span>
+            </button>
+
+            <p class="subscription-stats">
+                <span>Подписчиков: {{ subscribersCount }}</span>
+                <span class="stats-sep">|</span>
+                <span>Подписок: {{ subscriptionsCount }}</span>
+            </p>
         </div>
 
         <div class="right">
@@ -147,6 +215,43 @@ const toggleSubscribe = () => {
             </div>
             <p v-else-if="author.bio" class="txt">{{ author.bio }}</p>
 
+            <div v-if="showModeration" class="moderation-panel">
+                <h3 class="moderation-heading">Модерация</h3>
+                <p class="moderation-meta">
+                    {{ author.email }} · {{ roleLabel(author.role) }} · Статей: {{ articlesCount }}
+                </p>
+                <template v-if="author.is_blocked">
+                    <p class="moderation-blocked">Заблокирован</p>
+                    <p v-if="author.block_reason" class="moderation-block-reason">{{ author.block_reason }}</p>
+                    <p v-if="!author.blocked_until" class="moderation-block-meta">Перманентная блокировка</p>
+                    <p v-else class="moderation-block-meta">До: {{ formatBlockUntil(author.blocked_until) }}</p>
+                </template>
+                <div class="moderation-actions">
+                    <Link :href="route('admin.users.show', author.id)" class="mod-btn mod-btn--link">
+                        Админ-панель пользователя
+                    </Link>
+                    <template v-if="canManageRoles">
+                        <button v-if="author.role === 'user'" type="button" class="mod-btn mod-btn--promote" @click="promote">
+                            Назначить администратором
+                        </button>
+                        <button v-if="author.role === 'admin'" type="button" class="mod-btn mod-btn--warn" @click="demote">
+                            Снять права администратора
+                        </button>
+                        <button v-if="author.role !== 'owner'" type="button" class="mod-btn mod-btn--danger" @click="destroyUser">
+                            Удалить
+                        </button>
+                    </template>
+                    <template v-if="canManageUser">
+                        <button v-if="!author.is_blocked" type="button" class="mod-btn mod-btn--danger" @click="showBlockModal = true">
+                            Заблокировать
+                        </button>
+                        <button v-else type="button" class="mod-btn" @click="unblock">
+                            Разблокировать
+                        </button>
+                    </template>
+                </div>
+            </div>
+
             <p class="works-label">Работы:</p>
 
             <div v-if="articles.data?.length" class="cards articles-grid articles-grid--6">
@@ -172,6 +277,28 @@ const toggleSubscribe = () => {
             </nav>
         </div>
     </section>
+
+    <ProfileAccountSettings
+        v-if="isOwnProfile"
+        :open="showSettingsModal"
+        :must-verify-email="mustVerifyEmail"
+        :status="status"
+        @close="showSettingsModal = false"
+    />
+
+    <FeedbackModal
+        :open="showReportModal"
+        type="user_complaint"
+        :reported-user-id="author.id"
+        @close="showReportModal = false"
+    />
+
+    <BlockUserModal
+        v-if="canManageUser"
+        :open="showBlockModal"
+        :user-id="author.id"
+        @close="showBlockModal = false"
+    />
 </template>
 
 <style scoped>
@@ -252,13 +379,13 @@ const toggleSubscribe = () => {
 .bio-actions { display: flex; gap: 0.75rem; margin-top: 0.75rem; }
 .cancel-bio { background: #edf2f7; color: #2d3748; border: none; padding: 0.6rem 1.25rem; border-radius: 8px; cursor: pointer; font-weight: 600; }
 [data-theme="dark"] .cancel-bio { background: #2a2a2a; color: #f0f0f0; }
-.txt { max-width: 100%; margin-bottom: 20px; font-size: 1.1rem; line-height: 1.6; }
+.txt { max-width: 100%; margin-bottom: 20px; font-size: calc(1.1rem * var(--font-scale, 1)); line-height: 1.6; }
 .works-label { font-weight: 600; margin-bottom: 1rem; }
 .actionBtn {
-    background: #ffffff;
-    color: #151515;
+    background: #0db7ff;
+    color: #ffffff;
     border-radius: 20px;
-    border: 2px solid #ffffff;
+    border: 2px solid #0db7ff;
     width: min(356px, 100%);
     min-width: min(356px, 100%);
     height: 60px;
@@ -279,11 +406,16 @@ const toggleSubscribe = () => {
     text-align: center;
 }
 .actionBtn.subscribed {
-    background: #0db7ff;
-    color: #ffffff;
+    background: #ffffff;
+    color: #0db7ff;
     border-color: #0db7ff;
 }
 [data-theme="dark"] .actionBtn {
+    background: #ffffff;
+    color: #0a0a0a;
+    border-color: #ffffff;
+}
+[data-theme="dark"] .actionBtn:not(.subscribed):not(.actionBtn--edit):not(.actionBtn--report) {
     background: #ffffff;
     color: #0a0a0a;
     border-color: #ffffff;
@@ -292,6 +424,61 @@ const toggleSubscribe = () => {
     background: #b0b0b0;
     color: #1a1a1a;
     border-color: #b0b0b0;
+}
+.actionBtn--edit {
+    background: var(--theme_black, #151515);
+    color: #ffffff;
+    border-color: var(--theme_black, #151515);
+}
+.actionBtn--edit:hover {
+    background: #2d2d2d;
+    border-color: #2d2d2d;
+}
+[data-theme="dark"] .actionBtn--edit {
+    background: #ffffff;
+    color: #0a0a0a;
+    border-color: #ffffff;
+}
+[data-theme="dark"] .actionBtn--edit:hover {
+    background: #f0f0f0;
+    border-color: #f0f0f0;
+}
+.actionBtn--report {
+    background: #e53e3e;
+    color: #ffffff;
+    border-color: #e53e3e;
+    margin-top: 1rem;
+}
+.actionBtn--report:hover {
+    background: #c53030;
+    color: #ffffff;
+    border-color: #c53030;
+}
+[data-theme="dark"] .actionBtn--report {
+    background: #e53e3e;
+    color: #ffffff;
+    border-color: #e53e3e;
+}
+[data-theme="dark"] .actionBtn--report:hover {
+    background: #c53030;
+    color: #ffffff;
+    border-color: #c53030;
+}
+.subscription-stats {
+    margin-top: 1rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #718096;
+    text-align: center;
+    width: min(356px, 100%);
+    line-height: 1.4;
+}
+.stats-sep {
+    margin: 0 0.5rem;
+    color: #a0aec0;
+}
+[data-theme="dark"] .subscription-stats {
+    color: #aaa;
 }
 .cards {
     margin-bottom: 4rem;
@@ -322,14 +509,111 @@ const toggleSubscribe = () => {
         margin-top: 1.5rem;
         min-width: 0;
     }
+    .actionBtn--report {
+        margin-top: 1rem;
+    }
 }
 @media (max-width: 520px) {
     .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+.moderation-panel {
+    margin-bottom: 1.75rem;
+    padding: 1rem 1.15rem;
+    border: 1px solid #fde68a;
+    border-radius: 10px;
+    background: #fffbeb;
+    max-width: 800px;
+}
+.moderation-heading {
+    margin: 0 0 0.5rem;
+    font-size: 1.15rem;
+    font-weight: 600;
+}
+.moderation-meta {
+    margin: 0 0 0.75rem;
+    color: #718096;
+    font-size: 0.9rem;
+}
+.moderation-blocked {
+    color: #c53030;
+    font-weight: 700;
+    margin: 0 0 0.35rem;
+}
+.moderation-block-reason,
+.moderation-block-meta {
+    color: #c53030;
+    margin: 0 0 0.35rem;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+.moderation-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.mod-btn {
+    padding: 0.5rem 0.9rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    font-family: inherit;
+    background: #0db7ff;
+    color: #fff;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+}
+.mod-btn--promote { background: #48bb78; color: #fff; }
+.mod-btn--warn { background: #f59e0b; }
+.mod-btn--danger { background: #e53e3e; }
+.mod-btn--link { background: #edf2f7; color: #2d3748; }
+[data-theme="dark"] .moderation-panel {
+    background: rgba(254, 249, 195, 0.08);
+    border-color: rgba(253, 224, 71, 0.35);
+}
+[data-theme="dark"] .mod-btn {
+    background: transparent;
+    border: 2px solid #ffffff;
+    color: #ffffff;
+}
+[data-theme="dark"] .mod-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .mod-btn--danger {
+    background: transparent;
+    color: #fc8181;
+    border-color: #e53e3e;
+}
+[data-theme="dark"] .mod-btn--danger:hover {
+    background: rgba(229, 62, 62, 0.12);
+}
+[data-theme="dark"] .mod-btn--promote {
+    background: transparent;
+    color: #9ae6b4;
+    border-color: #68d391;
+}
+[data-theme="dark"] .mod-btn--promote:hover {
+    background: rgba(104, 211, 145, 0.12);
+}
+[data-theme="dark"] .mod-btn--warn {
+    background: transparent;
+    color: #fbd38d;
+    border-color: #f59e0b;
+}
+[data-theme="dark"] .mod-btn--warn:hover {
+    background: rgba(245, 158, 11, 0.12);
+}
+[data-theme="dark"] .mod-btn--link {
+    background: transparent;
+    color: #ffffff;
+    border-color: #ffffff;
+}
+[data-theme="dark"] .mod-btn--link:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
 .empty-state h3 { color: #718096; text-align: center; margin-top: 2rem; }
-.pagination { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-.page-link { padding: 0.5rem 1rem; border: 1px solid #e2e8f0; border-radius: 0.25rem; text-decoration: none; color: #4a5568; }
-.page-link.active { background: #4299e1; color: white; }
 [data-theme="dark"] .user { color: #f0f0f0; }
 [data-theme="dark"] .bio-edit textarea {
     background: #141414;

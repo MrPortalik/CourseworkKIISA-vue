@@ -1,0 +1,39 @@
+flowchart TB
+ subgraph GUEST["Гость"]
+ L["/login — Login.vue"]
+ R["/register — Register.vue"]
+ FP["/forgot-password"]
+ RP["/reset-password/{token}"]
+ end
+
+ subgraph VERIFIED["auth + verified"]
+ DASH["/dashboard — Dashboard.vue<br/>Личный кабинет автора"]
+ AUTH_SHOW["/authors/{user}<br/>Authors/Show.vue"]
+ PROF["/profile — Profile/Edit.vue<br/>Настройки аккаунта"]
+ OUT["GET /logout"]
+ end
+
+ subgraph PROFILE_ACT["Настройки профиля"]
+ BIO["POST /profile/dashboard<br/>bio, аватар"]
+ UPD["PATCH /profile"]
+ DEL["DELETE /profile"]
+ end
+
+ subgraph BLOCK["Блокировка пользователя"]
+ MID["EnsureUserIsNotBlocked"]
+ BL["is_blocked → logout"]
+ BL_MSG["block_error на login"]
+ end
+
+ L --> DASH
+ R --> VE["/verify-email"]
+ VE --> DASH
+ DASH --> AUTH_SHOW
+ DASH --> PROF
+ PROF --> BIO
+ PROF --> UPD
+ PROF --> DEL
+ DASH --> OUT
+ MID --> BL
+ BL --> BL_MSG
+ BL_MSG --> L

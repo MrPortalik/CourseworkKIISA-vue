@@ -9,7 +9,11 @@ class PlatformReport extends Model
 {
     public const TYPE_ARTICLE_COMPLAINT = 'article_complaint';
 
+    public const TYPE_USER_COMPLAINT = 'user_complaint';
+
     public const TYPE_FEEDBACK = 'feedback';
+
+    public const TYPE_SITE_COMPLAINT = 'site_complaint';
 
     public const STATUS_PENDING = 'pending';
 
@@ -19,6 +23,7 @@ class PlatformReport extends Model
         'user_id',
         'type',
         'article_id',
+        'reported_user_id',
         'message',
         'status',
         'admin_reply',
@@ -38,6 +43,11 @@ class PlatformReport extends Model
     public function article(): BelongsTo
     {
         return $this->belongsTo(Article::class);
+    }
+
+    public function reportedUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reported_user_id');
     }
 
     public function respondedBy(): BelongsTo

@@ -150,7 +150,7 @@ watch(() => page.url, close)
         </div>
     </MobileDrawer>
 
-    <FeedbackModal :open="feedbackOpen" @close="feedbackOpen = false" />
+    <FeedbackModal :open="feedbackOpen" allow-type-select @close="feedbackOpen = false" />
 </template>
 
 <style scoped>

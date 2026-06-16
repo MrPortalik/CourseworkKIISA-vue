@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Notifications\ArticlePublishedNotification;
+use App\Notifications\ArticleEditedNotification;
 use App\Support\ObjectNumberParser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -154,6 +155,17 @@ class Article extends Model
 
         foreach ($followers as $follower) {
             $follower->notify(new ArticlePublishedNotification($this));
+        }
+    }
+
+    public function notifyAuthorsOfEdit(User $editor): void
+    {
+        $recipients = collect([$this->user])
+            ->merge($this->coauthors)
+            ->filter(fn ($user) => $user && $user->id !== $editor->id);
+
+        foreach ($recipients as $user) {
+            $user->notify(new ArticleEditedNotification($this, $editor));
         }
     }
 }

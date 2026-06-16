@@ -1,13 +1,33 @@
 <script setup>
-import { Link } from '@inertiajs/vue3'
+import { Link, router } from '@inertiajs/vue3'
 import PageHead from '@/Components/PageHead.vue'
 import PageWithSidebar from '@/Layouts/PageWithSidebar.vue'
 import ArticleCard from '@/Components/Articles/ArticleCard.vue'
 
-defineProps({
+const props = defineProps({
     articles: Object,
     isAdmin: Boolean,
+    scope: { type: String, default: 'mine' },
 })
+
+const setScope = (nextScope) => {
+    if (nextScope === props.scope) {
+        return
+    }
+
+    router.get(route('articles.drafts'), { scope: nextScope }, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+    })
+}
+
+const pageTitle = () => {
+    if (!props.isAdmin) {
+        return 'Ваши наброски'
+    }
+    return props.scope === 'all' ? 'Все наброски' : 'Свои наброски'
+}
 </script>
 
 <template>
@@ -18,7 +38,27 @@ defineProps({
 
     <PageWithSidebar>
         <div class="page-header">
-            <h1>{{ isAdmin ? 'Все наброски' : 'Ваши наброски' }}</h1>
+            <div class="title-block">
+                <h1>{{ pageTitle() }}</h1>
+                <nav v-if="isAdmin" class="scope-tabs" aria-label="Раздел набросков">
+                    <button
+                        type="button"
+                        class="scope-tab"
+                        :class="{ active: scope === 'all' }"
+                        @click="setScope('all')"
+                    >
+                        Все наброски
+                    </button>
+                    <button
+                        type="button"
+                        class="scope-tab"
+                        :class="{ active: scope === 'mine' }"
+                        @click="setScope('mine')"
+                    >
+                        Свои наброски
+                    </button>
+                </nav>
+            </div>
             <nav class="actions">
                 <Link :href="route('articles.create')" class="page-cta page-cta--primary">Создать статью</Link>
                 <Link :href="route('articles.index')" class="page-cta page-cta--primary">К статьям</Link>
@@ -51,10 +91,39 @@ defineProps({
 .page-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     flex-wrap: wrap;
     gap: 1rem;
     margin-bottom: 2rem;
+}
+
+.title-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.scope-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.scope-tab {
+    background: #edf2f7;
+    border: none;
+    padding: 0.45rem 0.9rem;
+    border-radius: 999px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #4a5568;
+    font-family: inherit;
+}
+
+.scope-tab.active {
+    background: var(--theme_black);
+    color: #ffffff;
 }
 
 .actions {
@@ -69,29 +138,16 @@ defineProps({
     color: #718096;
 }
 
-.pagination {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 3rem;
+[data-theme="dark"] .scope-tab {
+    background: #141414;
+    color: #ccc;
+    border: 1px solid #404040;
 }
 
-.page-link {
-    padding: 0.5rem 1rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.375rem;
-    text-decoration: none;
-    color: #4a5568;
-}
-
-.page-link.active {
-    background-color: #4299e1;
-    color: white;
-}
-
-.page-link.disabled {
-    opacity: 0.5;
-    pointer-events: none;
+[data-theme="dark"] .scope-tab.active {
+    background: transparent;
+    color: #ffffff;
+    box-shadow: 0 0 0 2px #ffffff;
+    border-color: transparent;
 }
 </style>

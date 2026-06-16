@@ -72,9 +72,15 @@ const removeLocal = (userId) => {
 
 <template>
     <div class="coauthor-panel">
-        <button type="button" class="picker-btn btn-accent" @click="open = true">
-            Добавить со-автора
-        </button>
+        <div class="coauthor-header">
+            <button type="button" class="picker-btn btn-accent" @click="open = true">
+                Добавить со-автора
+            </button>
+            <p class="coauthor-note">
+                <span class="required-mark" aria-hidden="true">*</span>
+                Со-авторы могут редактировать статью
+            </p>
+        </div>
         <p v-if="!articleSlug && localPendingUsers.length" class="hint">
             Приглашения будут отправлены после сохранения статьи.
         </p>
@@ -125,6 +131,21 @@ const removeLocal = (userId) => {
     cursor: pointer;
     font-weight: 600;
 }
+.coauthor-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.65rem 1rem;
+}
+.coauthor-note {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #718096;
+}
+.required-mark {
+    color: #e53e3e;
+    font-weight: 700;
+}
 .hint { font-size: 0.85rem; color: #718096; margin: 0.35rem 0 0; }
 .coauthor-list { margin: 0.5rem 0 0; padding-left: 1.25rem; font-size: 0.9rem; }
 .coauthor-list.pending { color: #718096; list-style: none; padding-left: 0; }
@@ -168,5 +189,6 @@ const removeLocal = (userId) => {
     color: #f0f0f0;
 }
 [data-theme="dark"] .results li { border-color: #333; }
-[data-theme="dark"] .hint { color: #aaa; }
+[data-theme="dark"] .hint,
+[data-theme="dark"] .coauthor-note { color: #aaa; }
 </style>

@@ -1,0 +1,32 @@
+flowchart TB
+ subgraph UI["Интерфейс"]
+ FB_MODAL["FeedbackModal.vue<br/>Обратная связь в сайдбаре"]
+ ART_REP["Жалоба на статью<br/>Articles/Show.vue"]
+ USER_REP["Жалоба на пользователя<br/>Authors/Show.vue"]
+ end
+
+ subgraph API["PlatformReportController"]
+ STORE["POST /reports"]
+ end
+
+ subgraph TYPES["type"]
+ T1["feedback"]
+ T2["site_complaint"]
+ T3["article_complaint + article_id"]
+ T4["user_complaint + reported_user_id"]
+ end
+
+ subgraph ADMIN["Admin/Reports.vue"]
+ LIST["GET /admin/reports"]
+ RESPOND["POST /admin/reports/{report}/respond"]
+ end
+
+ FB_MODAL --> STORE
+ ART_REP --> STORE
+ USER_REP --> STORE
+ STORE --> T1
+ STORE --> T2
+ STORE --> T3
+ STORE --> T4
+ LIST --> RESPOND
+ STORE --> LIST

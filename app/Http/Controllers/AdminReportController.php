@@ -11,7 +11,8 @@ class AdminReportController extends Controller
 {
     public function index(Request $request)
     {
-        $reports = PlatformReport::with(['user', 'article', 'respondedBy'])
+        $reports = PlatformReport::with(['user', 'article', 'reportedUser', 'respondedBy'])
+            ->when($request->type, fn ($query) => $query->where('type', $request->type))
             ->latest()
             ->paginate(20)
             ->withQueryString();
@@ -19,6 +20,7 @@ class AdminReportController extends Controller
         return Inertia::render('Admin/Reports', [
             'reports' => $reports,
             'pendingCount' => PlatformReport::where('status', PlatformReport::STATUS_PENDING)->count(),
+            'filters' => ['type' => $request->type],
         ]);
     }
 

@@ -28,8 +28,13 @@ const props = defineProps({
 
 const page = usePage()
 const isAdmin = computed(() => ['admin', 'owner'].includes(page.props.auth.user?.role))
+const canModerate = computed(() => ['admin', 'owner', 'moderator'].includes(page.props.auth.user?.role))
 const fileError = ref('')
 const isOwn = computed(() => page.props.auth.user?.id === props.article.user_id)
+const isCoauthor = computed(() =>
+    props.acceptedCoauthors.some((c) => c.id === page.props.auth.user?.id),
+)
+const canSetPublishable = computed(() => !canModerate.value || isOwn.value || isCoauthor.value)
 
 const bannerPreview = ref(props.article.banner || null)
 const heroPreview = ref(props.article.hero_banner || null)
@@ -190,8 +195,11 @@ const deleteArticle = () => {
             <ArticleTaxonomyPickers
                 :categories="categories"
                 :tags="tags"
+                :is-admin="isAdmin"
                 v-model:category-ids="form.category_ids"
                 v-model:tag-ids="form.tag_ids"
+                v-model:is-hit="form.is_hit"
+                v-model:is-editors-choice="form.is_editors_choice"
             />
 
             <div class="form-group">
@@ -227,19 +235,15 @@ const deleteArticle = () => {
             </div>
 
             <div class="form-group publish-options">
-                <label v-if="!isAdmin || isOwn" class="checkbox-label">
+                <label v-if="canSetPublishable" class="checkbox-label">
                     <input v-model="form.is_publishable" type="checkbox" />
                     <span>Предложить к публикации</span>
                 </label>
-                <template v-if="isAdmin">
+                <template v-if="canModerate">
                     <label class="checkbox-label">
                         <input v-model="form.is_published" type="checkbox" />
                         <span>Опубликовать <em class="admin-only">(Только для администрации)</em></span>
                     </label>
-                    <div class="admin-flags">
-                        <label class="checkbox-label"><input v-model="form.is_hit" type="checkbox" /> Хит</label>
-                        <label class="checkbox-label"><input v-model="form.is_editors_choice" type="checkbox" /> Выбор редакции</label>
-                    </div>
                 </template>
             </div>
 

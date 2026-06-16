@@ -27,7 +27,7 @@ const feedbackOpen = ref(false)
             <button type="button" class="feedback-link actionBtn" @click="feedbackOpen = true">Обратная связь</button>
         </div>
 
-        <FeedbackModal :open="feedbackOpen" @close="feedbackOpen = false" />
+        <FeedbackModal :open="feedbackOpen" allow-type-select @close="feedbackOpen = false" />
     </PageWithSidebar>
 </template>
 
@@ -49,6 +49,7 @@ h1 { margin-bottom: 0.5rem; }
 .feedback-link {
     border: none;
     cursor: pointer;
+    font-weight: 400;
 }
 
 .actionBtn {

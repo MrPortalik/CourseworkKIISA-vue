@@ -61,6 +61,8 @@ export function splitEditorContent(plainText) {
         if (block.type === 'paragraph') {
             paragraphs.push(block.text)
             paragraphIndex++
+        } else if (block.type === 'divider') {
+            paragraphs.push('---')
         } else {
             imagePlacements.push({
                 imageId: block.imageId,
@@ -141,13 +143,13 @@ export function getParagraphIndexAtPosition(plainText, position) {
         const trimmed = block.trim()
 
         if (pos >= searchFrom && pos <= blockEnd) {
-            if (trimmed && !isImageMarker(trimmed)) {
+            if (trimmed && !isImageMarker(trimmed) && !isDividerLine(trimmed)) {
                 return paragraphIndex
             }
             return Math.max(0, paragraphIndex - 1)
         }
 
-        if (trimmed && !isImageMarker(trimmed)) {
+        if (trimmed && !isImageMarker(trimmed) && !isDividerLine(trimmed)) {
             paragraphIndex++
         }
 
@@ -174,6 +176,11 @@ export function insertImageAfterParagraph(plainText, paragraphIndex, imageId) {
         if (!part.trim()) continue
 
         if (isImageMarker(part)) {
+            blocks.push(part.trim())
+            continue
+        }
+
+        if (isDividerLine(part)) {
             blocks.push(part.trim())
             continue
         }

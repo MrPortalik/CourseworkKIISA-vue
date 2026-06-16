@@ -6,6 +6,7 @@ use App\Models\Article;
 use App\Models\ArticleCoauthor;
 use App\Models\User;
 use App\Support\ImageUploadRules;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -43,11 +44,21 @@ class AuthorController extends Controller
             $isSubscribed = $request->user()->isSubscribedTo($user);
         }
 
+        $viewer = $request->user();
+        $isOwnProfile = $viewer?->id === $user->id;
+
         return Inertia::render('Authors/Show', [
-            'author' => $user->only(['id', 'name', 'email', 'bio', 'avatar', 'role']),
+            'author' => $user->only(['id', 'name', 'email', 'bio', 'avatar', 'role', 'is_blocked', 'block_reason', 'blocked_until']),
             'articles' => $articles,
             'isSubscribed' => $isSubscribed,
-            'isOwnProfile' => $request->user()?->id === $user->id,
+            'isOwnProfile' => $isOwnProfile,
+            'mustVerifyEmail' => $isOwnProfile && $viewer instanceof MustVerifyEmail,
+            'status' => $isOwnProfile ? session('status') : null,
+            'canManageRoles' => $viewer?->isOwner() && ! $isOwnProfile,
+            'canManageUser' => $viewer && ! $isOwnProfile && $viewer->canManageUser($user),
+            'articlesCount' => Article::where('user_id', $user->id)->count(),
+            'subscribersCount' => $user->subscribers()->count(),
+            'subscriptionsCount' => $user->subscriptions()->count(),
         ]);
     }
 

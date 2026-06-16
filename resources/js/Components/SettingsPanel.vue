@@ -36,7 +36,7 @@ const close = () => { open.value = false }
                 <input
                     type="range"
                     min="1"
-                    max="1.5"
+                    max="3"
                     step="0.05"
                     :value="fontScale"
                     @input="setFontScale(parseFloat($event.target.value))"

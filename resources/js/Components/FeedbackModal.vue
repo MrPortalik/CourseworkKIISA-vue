@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { Link, useForm, usePage } from '@inertiajs/vue3'
 import ModalPanel from '@/Components/ModalPanel.vue'
 
@@ -7,7 +7,9 @@ const props = defineProps({
     open: { type: Boolean, default: false },
     type: { type: String, default: 'feedback' },
     articleId: { type: Number, default: null },
+    reportedUserId: { type: Number, default: null },
     title: { type: String, default: 'Обратная связь' },
+    allowTypeSelect: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['close'])
@@ -15,23 +17,47 @@ const emit = defineEmits(['close'])
 const page = usePage()
 const isLoggedIn = computed(() => !!page.props.auth?.user)
 
+const selectableTypes = [
+    { value: 'feedback', label: 'Обратная связь' },
+    { value: 'site_complaint', label: 'Жалоба на сайт' },
+]
+
 const form = useForm({
     type: props.type,
     article_id: props.articleId,
+    reported_user_id: props.reportedUserId,
     message: '',
 })
 
-const modalTitle = computed(() =>
-    props.type === 'article_complaint' ? 'Пожаловаться на статью' : props.title,
-)
+watch(() => props.open, (isOpen) => {
+    if (isOpen) {
+        form.type = props.type
+        form.article_id = props.articleId
+        form.reported_user_id = props.reportedUserId
+    } else {
+        form.reset()
+        form.clearErrors()
+    }
+})
+
+const modalTitle = computed(() => {
+    if (props.type === 'article_complaint') return 'Пожаловаться на статью'
+    if (props.type === 'user_complaint') return 'Пожаловаться на пользователя'
+    if (props.type === 'site_complaint') return 'Жалоба на сайт'
+    return props.title
+})
+
+const showTypeSelect = computed(() => props.allowTypeSelect && !props.articleId && !props.reportedUserId)
 
 const submit = () => {
-    form.type = props.type
+    form.type = showTypeSelect.value ? form.type : props.type
     form.article_id = props.articleId
+    form.reported_user_id = props.reportedUserId
     form.post(route('reports.store'), {
         preserveScroll: true,
         onSuccess: () => {
             form.reset()
+            form.type = props.type
             emit('close')
         },
     })
@@ -45,6 +71,16 @@ const submit = () => {
             <Link :href="route('login')" class="login-link">Войти</Link>
         </div>
         <form v-else id="feedback-form" class="feedback-form" @submit.prevent="submit">
+            <div v-if="showTypeSelect" class="type-select">
+                <label class="form-label" for="report-type">Категория</label>
+                <select id="report-type" v-model="form.type" class="form-select" required>
+                    <option v-for="option in selectableTypes" :key="option.value" :value="option.value">
+                        {{ option.label }}
+                    </option>
+                </select>
+                <p v-if="form.errors.type" class="form-error">{{ form.errors.type }}</p>
+            </div>
+
             <label class="form-label" for="feedback-message">Сообщение</label>
             <textarea
                 id="feedback-message"
@@ -83,10 +119,16 @@ const submit = () => {
     gap: 0.75rem;
 }
 
+.type-select {
+    display: grid;
+    gap: 0.35rem;
+}
+
 .form-label {
     font-weight: 600;
 }
 
+.form-select,
 .form-textarea {
     width: 100%;
     padding: 0.75rem;
@@ -94,6 +136,7 @@ const submit = () => {
     border-radius: 8px;
     resize: vertical;
     font: inherit;
+    box-sizing: border-box;
 }
 
 .form-error {
@@ -121,7 +164,8 @@ const submit = () => {
     color: #2d3748;
 }
 
-[data-theme="dark"] .form-textarea {
+[data-theme="dark"] .form-textarea,
+[data-theme="dark"] .form-select {
     background: #141414;
     color: #f0f0f0;
     border-color: #404040;
