@@ -25,7 +25,7 @@ import PageHead from '@/Components/PageHead.vue'
     --landing-h1-offset: 306px;
     --landing-h1-left: 515px;
     --landing-p-right: 558px;
-    --landing-wide-shift: 0.1;
+    --landing-wide-shift: 0.115625;
     --content-bg: rgba(17, 0, 0);
     background-image: url('/public/Assets/landingBackground.png');
     background-color: var(--content-bg);
