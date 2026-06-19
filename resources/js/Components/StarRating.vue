@@ -67,23 +67,26 @@ const showInteractiveStars = computed(() => isLoggedIn.value && props.canRate)
                 <Link
                     v-if="previousArticleSlug"
                     :href="route('articles.show', previousArticleSlug)"
-                    class="article-nav-link content-link"
+                    class="article-nav-link article-nav-link--prev content-link"
                 >
-                    ← Открыть прошлую статью
+                    <span class="article-nav-arrow" aria-hidden="true">←</span>
+                    <span class="article-nav-text">Открыть прошлую статью</span>
                 </Link>
                 <Link
                     v-if="nextArticleSlug"
                     :href="route('articles.show', nextArticleSlug)"
-                    class="article-nav-link content-link"
+                    class="article-nav-link article-nav-link--next content-link"
                 >
-                    Открыть следующую статью →
+                    <span class="article-nav-text">Открыть следующую статью</span>
+                    <span class="article-nav-arrow" aria-hidden="true">→</span>
                 </Link>
                 <Link
                     v-if="randomArticleSlug"
                     :href="route('articles.show', randomArticleSlug)"
-                    class="article-nav-link content-link"
+                    class="article-nav-link article-nav-link--random content-link"
                 >
-                    Открыть случайную статью →
+                    <span class="article-nav-text">Открыть случайную статью</span>
+                    <span class="article-nav-arrow" aria-hidden="true">→</span>
                 </Link>
             </div>
         </div>
@@ -115,8 +118,9 @@ const showInteractiveStars = computed(() => isLoggedIn.value && props.canRate)
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 0.15rem;
+    gap: 0.2rem;
     flex: 0 1 auto;
+    --nav-link-width: 18.5rem;
 }
 .stars { display: inline-flex; gap: 0.15rem; }
 .star {
@@ -135,13 +139,47 @@ const showInteractiveStars = computed(() => isLoggedIn.value && props.canRate)
     font-size: 0.9rem;
 }
 .article-nav-link {
-    white-space: nowrap;
+    display: grid;
+    align-items: center;
+    width: var(--nav-link-width);
     font-size: 0.9rem;
     font-weight: 600;
+    line-height: 1.3;
     text-decoration: none;
 }
 .article-nav-link:hover {
+    text-decoration: none;
+}
+.article-nav-link:hover .article-nav-text {
     text-decoration: underline;
+}
+.article-nav-link--prev {
+    grid-template-columns: 1.1rem 1fr;
+    column-gap: 0.4rem;
+}
+.article-nav-link--prev .article-nav-arrow {
+    text-align: left;
+}
+.article-nav-link--prev .article-nav-text {
+    text-align: right;
+}
+.article-nav-link--next,
+.article-nav-link--random {
+    grid-template-columns: 1fr 1.1rem;
+    column-gap: 0.4rem;
+}
+.article-nav-link--next .article-nav-text,
+.article-nav-link--random .article-nav-text {
+    text-align: left;
+}
+.article-nav-link--next .article-nav-arrow,
+.article-nav-link--random .article-nav-arrow {
+    text-align: right;
+}
+.article-nav-arrow {
+    flex-shrink: 0;
+    font-size: 1em;
+    line-height: 1;
 }
 .hint {
     font-size: 0.85rem;
@@ -159,8 +197,9 @@ const showInteractiveStars = computed(() => isLoggedIn.value && props.canRate)
         flex-direction: column;
     }
     .star-rating__right {
-        align-items: flex-start;
+        align-items: stretch;
         width: 100%;
+        --nav-link-width: 100%;
     }
 }
 </style>

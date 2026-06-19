@@ -3,6 +3,7 @@ import PageWithSidebar from '@/Layouts/PageWithSidebar.vue'
 import StarRating from '@/Components/StarRating.vue'
 import CommentThread from '@/Components/Comments/CommentThread.vue'
 import TagWithTooltip from '@/Components/UI/TagWithTooltip.vue'
+import PartialStar from '@/Components/UI/PartialStar.vue'
 import { Link, router, useForm, usePage } from '@inertiajs/vue3'
 import PageHead from '@/Components/PageHead.vue'
 import FeedbackModal from '@/Components/FeedbackModal.vue'
@@ -80,11 +81,9 @@ const showReportModal = ref(false)
 const isLoggedIn = computed(() => !!page.props.auth?.user)
 const canReport = computed(() => isLoggedIn.value && props.article.is_published)
 
-const headerStarRating = computed(() => {
-    if (props.userRating != null) return props.userRating
-    if (props.article.ratings_count > 0) return Math.round(Number(props.article.average_rating))
-    return 0
-})
+const headerRatingValue = computed(() => (
+    props.article.ratings_count > 0 ? Number(props.article.average_rating) : 0
+))
 
 const scrollToRating = () => {
     document.getElementById('article-rating')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -124,19 +123,8 @@ const scrollToRating = () => {
                         <time class="article-date">{{ formatDate(article.created_at) }}</time>
                     </div>
                     <div class="byline-rating">
-                        <div class="header-stars" aria-label="Оценка статьи">
-                            <span
-                                v-for="n in 5"
-                                :key="n"
-                                class="header-star"
-                                :class="{ 'header-star--filled': headerStarRating >= n }"
-                            >
-                                ★
-                            </span>
-                        </div>
-                        <span v-if="article.ratings_count" class="header-rating-avg">
-                            {{ formatRating(article.average_rating) }}
-                        </span>
+                        <PartialStar :rating="headerRatingValue" size="1.75rem" />
+                        <span class="header-rating-avg">{{ formatRating(headerRatingValue) }}</span>
                         <button type="button" class="rate-link content-link" @click="scrollToRating">Оценить →</button>
                     </div>
                 </div>
@@ -263,22 +251,13 @@ const scrollToRating = () => {
     gap: 0.45rem;
     flex-shrink: 0;
 }
-.header-stars {
-    display: inline-flex;
-    gap: 0.15rem;
-    line-height: 1;
-}
-.header-star {
-    font-size: 1.75rem;
-    color: #cbd5e0;
-}
-.header-star--filled {
-    color: #f6ad55;
-}
 .header-rating-avg {
     font-size: 0.95rem;
-    font-weight: 600;
-    color: #718096;
+    font-weight: 700;
+    color: #4a5568;
+}
+[data-theme="dark"] .header-rating-avg {
+    color: #f0f0f0;
 }
 .rate-link {
     white-space: nowrap;

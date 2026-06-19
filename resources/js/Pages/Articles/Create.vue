@@ -156,7 +156,7 @@ const submit = () => form
     <div class="article-create content-area">
         <div class="page-header">
             <h1>Создание статьи</h1>
-            <Link :href="route('articles.index')" class="back-button">Назад</Link>
+            <Link :href="route('articles.index')" class="page-back-link content-link">← Назад</Link>
         </div>
 
         <PublicationRulesBanner />
@@ -285,7 +285,15 @@ const submit = () => form
 .content-toolbar { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
 .content-toolbar .form-label { margin-bottom: 0; flex: 1; }
 .content-toolbar .toolbar-btn { margin-left: auto; margin-top: 0.25rem; margin-bottom: 0.25rem; }
-.back-button { color: #4299e1; }
+.page-back-link {
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.page-back-link:hover {
+    text-decoration: underline;
+}
 [data-theme="dark"] .article-form {
     background: #141414;
     border-color: #333;

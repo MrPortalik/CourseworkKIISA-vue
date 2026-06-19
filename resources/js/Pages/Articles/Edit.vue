@@ -170,7 +170,7 @@ const deleteArticle = () => {
     <div class="article-edit content-area">
         <div class="page-header">
             <h1>Редактирование</h1>
-            <Link :href="route('articles.show', article.slug)" class="back-button">Назад</Link>
+            <Link :href="route('articles.show', article.slug)" class="page-back-link content-link">← Назад</Link>
         </div>
 
         <PublicationRulesBanner />
@@ -287,7 +287,15 @@ const deleteArticle = () => {
 .submit-button { background: #4299e1; color: #fff; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; }
 .delete-button { background: #fed7d7; color: #c53030; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; }
 .hidden { display: none; }
-.back-button { color: #3182ce; }
+.page-back-link {
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.page-back-link:hover {
+    text-decoration: underline;
+}
 .tag-label { display: inline-flex; gap: 0.35rem; margin-right: 1rem; }
 [data-theme="dark"] .article-form {
     background: #141414;
