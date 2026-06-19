@@ -77,4 +77,21 @@ class PasswordResetTest extends TestCase
             return true;
         });
     }
+
+    public function test_password_reset_backfills_encrypted_email_for_legacy_accounts(): void
+    {
+        Notification::fake();
+
+        $plainEmail = 'legacy@example.com';
+        $user = User::factory()->create([
+            'email' => User::hashEmail($plainEmail),
+            'email_encrypted' => null,
+        ]);
+
+        $this->post('/forgot-password', ['email' => $plainEmail])->assertSessionHasNoErrors();
+
+        $user->refresh();
+        $this->assertNotNull($user->getPlainEmail());
+        Notification::assertSentTo($user, ResetPasswordNotification::class);
+    }
 }

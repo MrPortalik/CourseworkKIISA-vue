@@ -90,10 +90,36 @@ class User extends Authenticatable
         return $this->getPlainEmail();
     }
 
+    public function ensureEncryptedEmail(string $plainEmail): bool
+    {
+        if ($this->getPlainEmail()) {
+            return true;
+        }
+
+        $plain = mb_strtolower(trim($plainEmail));
+        if ($plain === '' || ! filter_var($plain, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+
+        if (UserEmailHash::hash($plain) !== (string) ($this->attributes['email'] ?? '')) {
+            return false;
+        }
+
+        if (! \Illuminate\Support\Facades\Schema::hasColumn($this->getTable(), 'email_encrypted')) {
+            return false;
+        }
+
+        $this->forceFill(['email_encrypted' => encrypt($plain)]);
+        $this->save();
+        $this->refresh();
+
+        return $this->getPlainEmail() !== null;
+    }
+
     public function sendPasswordResetNotification($token): void
     {
         if (! $this->getPlainEmail()) {
-            return;
+            throw new \RuntimeException('Password reset mail skipped: plain email is unavailable for user #'.$this->id);
         }
 
         $this->notify(new ResetPasswordNotification($token));
