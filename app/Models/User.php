@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Notifications\Auth\ResetPasswordNotification;
 use App\Support\UserEmailHash;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -17,6 +18,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'email_encrypted',
         'password',
         'bio',
         'avatar',
@@ -29,6 +31,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'email_encrypted',
     ];
 
     protected $casts = [
@@ -42,13 +45,58 @@ class User extends Authenticatable
     {
         if ($value === null) {
             $this->attributes['email'] = null;
+            $this->attributes['email_encrypted'] = null;
 
             return;
         }
 
-        $this->attributes['email'] = UserEmailHash::isHashed($value)
-            ? $value
-            : UserEmailHash::hash($value);
+        if (UserEmailHash::isHashed($value)) {
+            $this->attributes['email'] = $value;
+
+            return;
+        }
+
+        if (UserEmailHash::isEncryptedPayload($value)) {
+            $this->attributes['email'] = $value;
+
+            return;
+        }
+
+        $plain = mb_strtolower(trim($value));
+        $this->attributes['email'] = UserEmailHash::hash($plain);
+        $this->attributes['email_encrypted'] = encrypt($plain);
+    }
+
+    public function getPlainEmail(): ?string
+    {
+        if (! empty($this->attributes['email_encrypted'])) {
+            try {
+                return decrypt($this->attributes['email_encrypted']);
+            } catch (\Throwable) {
+                // fall through
+            }
+        }
+
+        return UserEmailHash::resolvePlain($this->attributes['email'] ?? null);
+    }
+
+    public function getEmailForPasswordReset(): string
+    {
+        return $this->getPlainEmail() ?? '';
+    }
+
+    public function routeNotificationForMail($notification = null): ?string
+    {
+        return $this->getPlainEmail();
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        if (! $this->getPlainEmail()) {
+            return;
+        }
+
+        $this->notify(new ResetPasswordNotification($token));
     }
 
     public static function hashEmail(string $email): string

@@ -57,7 +57,7 @@ class HandleInertiaRequests extends Middleware
     private function serializeAuthUser($user): array
     {
         $data = $user->toArray();
-        $data['email'] = UserEmailHash::forDisplay($user->getAttributes()['email'] ?? '') ?? '';
+        $data['email'] = $user->getPlainEmail() ?? '';
 
         return $data;
     }

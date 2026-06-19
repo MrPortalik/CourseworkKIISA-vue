@@ -23,13 +23,24 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        $email = fake()->unique()->safeEmail();
+
         return [
             'name' => fake()->name(),
-            'email' => \App\Support\UserEmailHash::hash(fake()->unique()->safeEmail()),
+            'email' => \App\Support\UserEmailHash::hash($email),
+            'email_encrypted' => encrypt($email),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];
+    }
+
+    public function withPlainEmail(string $email): static
+    {
+        return $this->state(fn () => [
+            'email' => \App\Support\UserEmailHash::hash($email),
+            'email_encrypted' => encrypt($email),
+        ]);
     }
 
     /**

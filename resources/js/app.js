@@ -1,5 +1,6 @@
 import './bootstrap';
 import '../css/app.css';
+import '../css/auth-forms.css';
 import { useAppSettings } from './composables/useAppSettings';
 
 useAppSettings().applySettings();

@@ -3,7 +3,7 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
-use Illuminate\Auth\Notifications\ResetPassword;
+use App\Notifications\Auth\ResetPasswordNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -23,44 +23,51 @@ class PasswordResetTest extends TestCase
     {
         Notification::fake();
 
-        $user = User::factory()->create();
+        $plainEmail = 'reset-test@example.com';
+        $user = User::factory()->withPlainEmail($plainEmail)->create();
 
-        $this->post('/forgot-password', ['email' => $user->email]);
+        $this->post('/forgot-password', ['email' => $plainEmail]);
 
-        Notification::assertSentTo($user, ResetPassword::class);
+        Notification::assertSentTo($user, ResetPasswordNotification::class);
     }
 
     public function test_reset_password_screen_can_be_rendered(): void
     {
         Notification::fake();
 
-        $user = User::factory()->create();
+        $plainEmail = 'reset-screen@example.com';
+        User::factory()->withPlainEmail($plainEmail)->create();
 
-        $this->post('/forgot-password', ['email' => $user->email]);
+        $this->post('/forgot-password', ['email' => $plainEmail]);
 
-        Notification::assertSentTo($user, ResetPassword::class, function ($notification) {
-            $response = $this->get('/reset-password/'.$notification->token);
+        Notification::assertSentTo(
+            User::findByEmail($plainEmail),
+            ResetPasswordNotification::class,
+            function ($notification) use ($plainEmail) {
+                $response = $this->get('/reset-password/'.$notification->token.'?email='.urlencode($plainEmail));
 
-            $response->assertStatus(200);
+                $response->assertStatus(200);
 
-            return true;
-        });
+                return true;
+            },
+        );
     }
 
     public function test_password_can_be_reset_with_valid_token(): void
     {
         Notification::fake();
 
-        $user = User::factory()->create();
+        $plainEmail = 'reset-complete@example.com';
+        $user = User::factory()->withPlainEmail($plainEmail)->create();
 
-        $this->post('/forgot-password', ['email' => $user->email]);
+        $this->post('/forgot-password', ['email' => $plainEmail]);
 
-        Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
+        Notification::assertSentTo($user, ResetPasswordNotification::class, function ($notification) use ($plainEmail) {
             $response = $this->post('/reset-password', [
                 'token' => $notification->token,
-                'email' => $user->email,
-                'password' => 'password',
-                'password_confirmation' => 'password',
+                'email' => $plainEmail,
+                'password' => 'new-password',
+                'password_confirmation' => 'new-password',
             ]);
 
             $response

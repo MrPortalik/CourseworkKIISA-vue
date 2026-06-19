@@ -59,11 +59,20 @@ class NewPasswordController extends Controller
         // the application's home authenticated view. If there is an error we can
         // redirect them back to where they came from with their error message.
         if ($status == Password::PASSWORD_RESET) {
-            return redirect()->route('login')->with('status', __($status));
+            return redirect()->route('login')->with('status', 'Пароль успешно изменён. Теперь вы можете войти.');
         }
 
         throw ValidationException::withMessages([
-            'email' => [trans($status)],
+            'email' => [self::passwordResetErrorMessage($status)],
         ]);
+    }
+
+    private static function passwordResetErrorMessage(string $status): string
+    {
+        return match ($status) {
+            Password::INVALID_TOKEN => 'Ссылка для сброса пароля недействительна или устарела.',
+            Password::INVALID_USER => 'Пользователь с таким email не найден.',
+            default => 'Не удалось сбросить пароль.',
+        };
     }
 }

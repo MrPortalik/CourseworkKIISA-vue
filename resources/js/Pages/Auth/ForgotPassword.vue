@@ -1,25 +1,20 @@
 <script setup>
-import GuestLayout from '@/Layouts/GuestLayout.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
-import { useForm } from '@inertiajs/vue3';
-import PageHead from '@/Components/PageHead.vue';
+import GuestLayout from '@/Layouts/GuestLayout.vue'
+import InputError from '@/Components/InputError.vue'
+import { Link, useForm } from '@inertiajs/vue3'
+import PageHead from '@/Components/PageHead.vue'
 
 defineProps({
-    status: {
-        type: String,
-    },
-});
+    status: { type: String, default: null },
+})
 
 const form = useForm({
     email: '',
-});
+})
 
 const submit = () => {
-    form.post(route('password.email'));
-};
+    form.post(route('password.email'))
+}
 </script>
 
 <template>
@@ -29,37 +24,37 @@ const submit = () => {
             description="Восстановите доступ к аккаунту на портале КИИСА: укажите email для ссылки сброса пароля."
         />
 
-        <div class="mb-4 text-sm text-gray-600">
-            Forgot your password? No problem. Just let us know your email address and we will email you a password reset
-            link that will allow you to choose a new one.
-        </div>
+        <h1 class="auth-title">Сброс пароля</h1>
+        <p class="auth-subtitle">Восстановление доступа к аккаунту</p>
 
-        <div v-if="status" class="mb-4 font-medium text-sm text-green-600">
-            {{ status }}
-        </div>
+        <p class="auth-intro">
+            Укажите email, который вы использовали при регистрации. Мы отправим ссылку для создания нового пароля.
+        </p>
 
-        <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="email" value="Email" />
+        <div v-if="status" class="auth-status">{{ status }}</div>
 
-                <TextInput
+        <form class="auth-form" @submit.prevent="submit">
+            <div class="form-group">
+                <label for="email" class="form-label">Email</label>
+                <input
                     id="email"
-                    type="email"
-                    class="mt-1 block w-full"
                     v-model="form.email"
+                    type="email"
+                    class="form-input"
                     required
                     autofocus
                     autocomplete="username"
                 />
-
-                <InputError class="mt-2" :message="form.errors.email" />
+                <InputError :message="form.errors.email" />
             </div>
 
-            <div class="flex items-center justify-end mt-4">
-                <PrimaryButton :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
-                    Email Password Reset Link
-                </PrimaryButton>
-            </div>
+            <button type="submit" class="auth-submit" :disabled="form.processing">
+                Отправить ссылку
+            </button>
+
+            <p class="auth-footer">
+                <Link :href="route('login')" class="auth-link">← Вернуться ко входу</Link>
+            </p>
         </form>
     </GuestLayout>
 </template>

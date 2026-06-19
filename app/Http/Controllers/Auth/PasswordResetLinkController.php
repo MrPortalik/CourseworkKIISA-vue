@@ -41,11 +41,20 @@ class PasswordResetLinkController extends Controller
         );
 
         if ($status == Password::RESET_LINK_SENT) {
-            return back()->with('status', __($status));
+            return back()->with('status', 'Ссылка для сброса пароля отправлена на ваш email.');
         }
 
         throw ValidationException::withMessages([
-            'email' => [trans($status)],
+            'email' => [self::passwordResetErrorMessage($status)],
         ]);
+    }
+
+    private static function passwordResetErrorMessage(string $status): string
+    {
+        return match ($status) {
+            Password::INVALID_USER => 'Пользователь с таким email не найден.',
+            Password::RESET_THROTTLED => 'Подождите перед повторным запросом ссылки.',
+            default => 'Не удалось отправить ссылку для сброса пароля.',
+        };
     }
 }
