@@ -42,6 +42,18 @@ Route::get('/faq', function () {
     ]);
 })->name('faq.index');
 
+Route::get('/publication-rules', function () {
+    return Inertia::render('Legal/PublicationRules');
+})->name('publication-rules');
+
+Route::get('/terms-of-use', function () {
+    return Inertia::render('Legal/TermsOfUse');
+})->name('terms-of-use');
+
+Route::get('/privacy-policy', function () {
+    return Inertia::render('Legal/PrivacyPolicy');
+})->name('privacy-policy');
+
 Route::get('/articles', [ArticleController::class, 'index'])->name('articles.index');
 Route::get('/articles/search-preview', [ArticleController::class, 'searchPreview'])->name('articles.search-preview');
 Route::get('/articles/objects/{range}', [ArticleController::class, 'objects'])

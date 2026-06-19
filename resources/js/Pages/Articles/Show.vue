@@ -16,6 +16,9 @@ const props = defineProps({
     userRating: Number,
     userCommentVotes: Object,
     canRate: { type: Boolean, default: true },
+    previousArticleSlug: { type: String, default: null },
+    nextArticleSlug: { type: String, default: null },
+    randomArticleSlug: { type: String, default: null },
 })
 
 const page = usePage()
@@ -73,6 +76,10 @@ const deleteArticle = () => {
     if (confirm('Удалить статью?')) router.delete(route('articles.destroy', props.article.slug))
 }
 
+const showReportModal = ref(false)
+const isLoggedIn = computed(() => !!page.props.auth?.user)
+const canReport = computed(() => isLoggedIn.value && props.article.is_published)
+
 const headerStarRating = computed(() => {
     if (props.userRating != null) return props.userRating
     if (props.article.ratings_count > 0) return Math.round(Number(props.article.average_rating))
@@ -82,10 +89,6 @@ const headerStarRating = computed(() => {
 const scrollToRating = () => {
     document.getElementById('article-rating')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 }
-
-const showReportModal = ref(false)
-const isLoggedIn = computed(() => !!page.props.auth?.user)
-const canReport = computed(() => isLoggedIn.value && props.article.is_published)
 </script>
 
 <template>
@@ -165,6 +168,9 @@ const canReport = computed(() => isLoggedIn.value && props.article.is_published)
                 :average-rating="article.average_rating"
                 :ratings-count="article.ratings_count"
                 :can-rate="canRate"
+                :previous-article-slug="previousArticleSlug"
+                :next-article-slug="nextArticleSlug"
+                :random-article-slug="randomArticleSlug"
             />
 
             <CommentThread
@@ -230,6 +236,7 @@ const canReport = computed(() => isLoggedIn.value && props.article.is_published)
 .authors-line { display: inline; }
 .coauthors-prefix {
     margin-left: 0.15rem;
+    margin-right: 0.35rem;
     color: #718096;
     font-size: 0.95em;
 }
@@ -368,7 +375,7 @@ const canReport = computed(() => isLoggedIn.value && props.article.is_published)
     width: 100%;
     max-width: 100%;
     height: auto;
-    max-height: 280px;
+    max-height: calc(280px * var(--image-scale, 1));
     border-radius: 6px;
     float: none;
     margin: 0;
@@ -536,17 +543,6 @@ const canReport = computed(() => isLoggedIn.value && props.article.is_published)
         flex-direction: column;
         align-items: stretch;
         gap: 0.65rem;
-    }
-
-    .byline-rating {
-        width: 100%;
-        flex-wrap: wrap;
-        justify-content: flex-start;
-        gap: 0.35rem 0.5rem;
-    }
-
-    .header-star {
-        font-size: 1.25rem;
     }
 
     .author-link {

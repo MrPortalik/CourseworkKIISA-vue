@@ -7,6 +7,7 @@ import UserRoleBadge from '@/Components/UI/UserRoleBadge.vue'
 import ProfileAccountSettings from '@/Components/Profile/ProfileAccountSettings.vue'
 import FeedbackModal from '@/Components/FeedbackModal.vue'
 import BlockUserModal from '@/Components/Admin/BlockUserModal.vue'
+import RoleAssignMenu from '@/Components/Admin/RoleAssignMenu.vue'
 import { Link, router, useForm, usePage } from '@inertiajs/vue3'
 import { imageAccept, validateImageFile } from '@/lib/imageUpload'
 import PageHead from '@/Components/PageHead.vue'
@@ -20,6 +21,7 @@ const props = defineProps({
     mustVerifyEmail: { type: Boolean, default: false },
     status: { type: String, default: null },
     canManageRoles: { type: Boolean, default: false },
+    canPromoteModerator: { type: Boolean, default: false },
     canManageUser: { type: Boolean, default: false },
     articlesCount: { type: Number, default: 0 },
     subscribersCount: { type: Number, default: 0 },
@@ -82,7 +84,7 @@ const showReportModal = ref(false)
 const showBlockModal = ref(false)
 const canReport = computed(() => isLoggedIn.value && !props.isOwnProfile)
 
-const promote = () => router.post(route('admin.users.promote', props.author.id), {}, { preserveScroll: true })
+const promoteModerator = () => router.post(route('admin.users.promote-moderator', props.author.id), {}, { preserveScroll: true })
 const demote = () => router.post(route('admin.users.demote', props.author.id), {}, { preserveScroll: true })
 const unblock = () => router.post(route('admin.users.unblock', props.author.id), {}, { preserveScroll: true })
 
@@ -108,7 +110,7 @@ const roleLabel = (role) => {
     return 'Пользователь'
 }
 
-const showModeration = computed(() => props.canManageRoles || props.canManageUser)
+const showModeration = computed(() => props.canManageRoles || props.canPromoteModerator || props.canManageUser)
 </script>
 
 <template>
@@ -231,14 +233,17 @@ const showModeration = computed(() => props.canManageRoles || props.canManageUse
                         Админ-панель пользователя
                     </Link>
                     <template v-if="canManageRoles">
-                        <button v-if="author.role === 'user'" type="button" class="mod-btn mod-btn--promote" @click="promote">
-                            Назначить администратором
-                        </button>
+                        <RoleAssignMenu :user-id="author.id" :user-role="author.role" />
                         <button v-if="author.role === 'admin'" type="button" class="mod-btn mod-btn--warn" @click="demote">
                             Снять права администратора
                         </button>
                         <button v-if="author.role !== 'owner'" type="button" class="mod-btn mod-btn--danger" @click="destroyUser">
                             Удалить
+                        </button>
+                    </template>
+                    <template v-else-if="canPromoteModerator">
+                        <button v-if="author.role === 'user'" type="button" class="mod-btn mod-btn--promote" @click="promoteModerator">
+                            Назначить модератором
                         </button>
                     </template>
                     <template v-if="canManageUser">

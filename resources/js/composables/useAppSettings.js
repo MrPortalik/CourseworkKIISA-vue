@@ -6,6 +6,8 @@ const fontScale = ref(parseFloat(localStorage.getItem('app-font-scale') || '1'))
 function applySettings() {
     document.documentElement.dataset.theme = theme.value
     document.documentElement.style.setProperty('--font-scale', String(fontScale.value))
+    const imageScale = 1 + (fontScale.value - 1) / 2
+    document.documentElement.style.setProperty('--image-scale', String(imageScale))
     document.documentElement.dataset.fontScale = fontScale.value >= 1.75 ? 'large' : 'normal'
     document.documentElement.style.removeProperty('font-size')
 }

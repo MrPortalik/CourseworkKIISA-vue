@@ -3,6 +3,9 @@ Allow: /
 Allow: /articles
 Allow: /aboutus
 Allow: /faq
+Allow: /publication-rules
+Allow: /terms-of-use
+Allow: /privacy-policy
 Allow: /authors/
 
 Disallow: /admin

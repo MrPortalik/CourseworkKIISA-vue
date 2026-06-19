@@ -1,21 +1,25 @@
 <script setup>
 import { Link } from '@inertiajs/vue3'
+import { computed } from 'vue'
 import { formatRating } from '@/lib/formatRating'
+import CoauthorsMore from '@/Components/UI/CoauthorsMore.vue'
 
-defineProps({
+const props = defineProps({
     article: { type: Object, required: true },
     showAuthor: { type: Boolean, default: true },
+    compact: { type: Boolean, default: false },
 })
-
 
 const formatDate = (dateString) => {
     if (!dateString) return ''
     return new Date(dateString).toLocaleDateString('ru-RU')
 }
+
+const coauthors = computed(() => props.article.coauthors ?? [])
 </script>
 
 <template>
-    <article class="article-card">
+    <article class="article-card" :class="{ 'article-card--compact': compact }">
         <Link :href="route('articles.show', article.slug)" class="card-link">
             <div class="cover-wrap">
                 <img
@@ -35,7 +39,10 @@ const formatDate = (dateString) => {
             <h2 class="card-title">{{ article.title }}</h2>
 
             <div v-if="showAuthor" class="card-meta">
-                <span class="author">{{ article.user?.name }}</span>
+                <span class="author-line">
+                    <span class="author">{{ article.user?.name }}</span>
+                    <CoauthorsMore :coauthors="coauthors" />
+                </span>
                 <span class="date">{{ formatDate(article.created_at) }}</span>
             </div>
             <div v-else class="card-meta card-meta--publication">
@@ -65,6 +72,26 @@ const formatDate = (dateString) => {
     display: flex;
     flex-direction: column;
     transition: box-shadow 0.2s;
+    min-width: 0;
+}
+.article-card--compact {
+    width: 200px;
+    max-width: 200px;
+    height: 380px;
+    flex: none;
+}
+.article-card--compact .card-link {
+    min-height: 0;
+    height: 100%;
+}
+.article-card--compact .book-cover,
+.article-card--compact .book-cover--empty {
+    width: 130px;
+    max-width: 130px;
+    flex-shrink: 0;
+}
+.article-card--compact .cover-wrap {
+    justify-content: center;
 }
 .article-card:hover { box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08); }
 .card-link {
@@ -116,6 +143,14 @@ const formatDate = (dateString) => {
     margin-top: auto;
     min-height: 2.75rem;
 }
+.author-line {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    flex: 1;
+    min-width: 0;
+}
 .author {
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -123,9 +158,12 @@ const formatDate = (dateString) => {
     overflow: hidden;
     word-break: break-word;
     overflow-wrap: anywhere;
-    flex: 1;
-    min-width: 0;
     line-height: 1.3;
+}
+.author-line :deep(.coauthors-more) {
+    font-size: inherit;
+    font-weight: inherit;
+    color: inherit;
 }
 .date {
     flex-shrink: 0;
@@ -206,4 +244,18 @@ const formatDate = (dateString) => {
 }
 [data-theme="dark"] .article-card { background: var(--theme_black); border-color: #333; }
 [data-theme="dark"] .card-title { color: #f0f0f0; }
+
+@media (max-width: 768px) {
+    .article-card--compact {
+        width: 168px;
+        max-width: 168px;
+        height: 320px;
+    }
+
+    .article-card--compact .book-cover,
+    .article-card--compact .book-cover--empty {
+        width: 96px;
+        max-width: 96px;
+    }
+}
 </style>

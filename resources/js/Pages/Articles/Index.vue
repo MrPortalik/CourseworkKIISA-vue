@@ -40,6 +40,10 @@ const showCategorySliders = computed(() =>
     && !props.objectRange
 )
 
+const useCompactCards = computed(() =>
+    Boolean(props.filters?.section || props.filters?.category || props.objectRange),
+)
+
 const displayArticles = computed(() => {
     const list = props.articles?.data ?? []
     if (!previewOrder.value.length || props.filters?.search) {
@@ -175,8 +179,17 @@ const pageDescription = computed(() => {
                 class="all-articles-section"
             >
                 <h2 v-if="showCategorySliders" class="section-heading">Все статьи</h2>
-                <div v-if="displayArticles.length" class="articles-grid articles-grid--7">
-                    <ArticleCard v-for="article in displayArticles" :key="article.id" :article="article" />
+                <div
+                    v-if="displayArticles.length"
+                    class="articles-grid"
+                    :class="useCompactCards ? 'articles-grid--collections' : 'articles-grid--7'"
+                >
+                    <ArticleCard
+                        v-for="article in displayArticles"
+                        :key="article.id"
+                        :article="article"
+                        :compact="useCompactCards"
+                    />
                 </div>
                 <p v-else class="empty-state">Статей пока нет</p>
 

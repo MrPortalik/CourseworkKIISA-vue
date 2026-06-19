@@ -254,6 +254,12 @@ onUnmounted(() => {
     align-self: stretch;
     scroll-snap-align: start;
 }
+.slider-track :deep(.book-cover),
+.slider-track :deep(.book-cover--empty) {
+    width: 130px;
+    max-width: 130px;
+    flex-shrink: 0;
+}
 .slider-track :deep(.card-link) {
     min-height: 0;
     height: 100%;
@@ -326,6 +332,7 @@ onUnmounted(() => {
     .category-sliders {
         --slider-gap: 0.75rem;
         --slider-visible-count: 2;
+        --slider-card-width: 168px;
     }
 
     .slider-head {
@@ -347,17 +354,36 @@ onUnmounted(() => {
     }
 
     .slider-viewport {
-        max-width: 100%;
-        --slider-card-width: calc((100% - var(--slider-gap)) / var(--slider-visible-count));
+        max-width: calc(var(--slider-visible-count) * var(--slider-card-width) + (var(--slider-visible-count) - 1) * var(--slider-gap));
+        width: 100%;
+        margin: 0 auto;
+        overflow: hidden;
     }
 
     .slider-track {
         scroll-snap-type: x mandatory;
-        width: 100%;
+        width: max-content;
     }
 
     .slider-track :deep(.article-card) {
         height: 320px;
+    }
+
+    .slider-track :deep(.card-title) {
+        flex: 0 0 auto;
+        min-height: 2.5em;
+        font-size: 0.95rem;
+    }
+
+    .slider-track :deep(.card-link) {
+        min-height: 0;
+        padding-bottom: 2.25rem;
+    }
+
+    .slider-track :deep(.book-cover),
+    .slider-track :deep(.book-cover--empty) {
+        width: 96px;
+        max-width: 96px;
     }
 }
 </style>

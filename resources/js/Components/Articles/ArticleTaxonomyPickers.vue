@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import ModalPanel from '@/Components/ModalPanel.vue'
+import CatCheckbox from '@/Components/UI/CatCheckbox.vue'
 
 const SPECIAL_OPTIONS = [
     { key: 'is_hit', label: 'Хит' },
@@ -93,7 +94,7 @@ const isSpecialSelected = (key) => {
             </button>
         </div>
 
-        <div class="picker-row">
+        <div class="picker-row picker-row--tags">
             <label class="form-label">Теги</label>
             <button type="button" class="picker-btn" @click="tagsOpen = true">
                 {{ selectedTagNames.length ? selectedTagNames.join(', ') : 'Выбрать теги' }}
@@ -103,11 +104,7 @@ const isSpecialSelected = (key) => {
         <ModalPanel title="Категории" :open="categoriesOpen" @close="categoriesOpen = false">
             <p v-if="!categories.length" class="empty-hint">На данный момент нет категорий</p>
             <label v-for="cat in categories" :key="cat.id" class="check-row">
-                <input
-                    type="checkbox"
-                    :checked="categoryIds.includes(cat.id)"
-                    @change="toggleCategory(cat.id)"
-                />
+                <CatCheckbox :checked="categoryIds.includes(cat.id)" @change="() => toggleCategory(cat.id)" />
                 {{ cat.name }}
             </label>
             <template #footer>
@@ -118,11 +115,7 @@ const isSpecialSelected = (key) => {
         <ModalPanel title="Особые категории" :open="specialOpen" @close="specialOpen = false">
             <p class="special-hint">Доступно только администрации. Статья может попасть в «Хиты» автоматически по настройкам модерации.</p>
             <label v-for="option in SPECIAL_OPTIONS" :key="option.key" class="check-row">
-                <input
-                    type="checkbox"
-                    :checked="isSpecialSelected(option.key)"
-                    @change="toggleSpecial(option.key)"
-                />
+                <CatCheckbox :checked="isSpecialSelected(option.key)" @change="() => toggleSpecial(option.key)" />
                 {{ option.label }}
             </label>
             <template #footer>
@@ -133,11 +126,7 @@ const isSpecialSelected = (key) => {
         <ModalPanel title="Теги" :open="tagsOpen" @close="tagsOpen = false">
             <p v-if="!tags.length" class="empty-hint">На данный момент нет тегов</p>
             <label v-for="tag in tags" :key="tag.id" class="check-row">
-                <input
-                    type="checkbox"
-                    :checked="tagIds.includes(tag.id)"
-                    @change="toggleTag(tag.id)"
-                />
+                <CatCheckbox :checked="tagIds.includes(tag.id)" @change="() => toggleTag(tag.id)" />
                 {{ tag.name }}
             </label>
             <template #footer>
@@ -149,6 +138,7 @@ const isSpecialSelected = (key) => {
 
 <style scoped>
 .taxonomy-pickers { display: flex; flex-direction: column; gap: 1rem; }
+.picker-row--tags { margin-bottom: 0.75rem; }
 .picker-row { display: flex; flex-direction: column; gap: 0.4rem; }
 .special-section {
     padding: 0.85rem;

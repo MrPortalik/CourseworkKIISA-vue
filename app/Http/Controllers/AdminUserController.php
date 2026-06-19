@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\UserMessage;
 use App\Notifications\AdminMessageNotification;
 use App\Support\UserBlocking;
+use App\Support\UserEmailHash;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,13 +21,22 @@ class AdminUserController extends Controller
             ->when($request->q, function ($query, $q) {
                 $query->where(function ($inner) use ($q) {
                     $inner->where('name', 'like', "%{$q}%")
-                        ->orWhere('email', 'like', "%{$q}%")
                         ->orWhere('id', $q);
+
+                    if (filter_var($q, FILTER_VALIDATE_EMAIL)) {
+                        $inner->orWhere('email', User::hashEmail($q));
+                    }
                 });
             })
             ->orderBy('id')
             ->paginate(20)
-            ->withQueryString();
+            ->withQueryString()
+            ->through(function (User $user) {
+                $data = $user->toArray();
+                $data['email'] = UserEmailHash::displayLabel($user->getAttributes()['email'] ?? null);
+
+                return $data;
+            });
 
         return Inertia::render('Admin/Users', [
             'users' => $users,
@@ -50,10 +60,14 @@ class AdminUserController extends Controller
             ->get();
 
         return Inertia::render('Admin/UserShow', [
-            'profileUser' => $user->only(['id', 'name', 'email', 'bio', 'avatar', 'role', 'is_blocked', 'block_reason', 'blocked_until', 'created_at']),
+            'profileUser' => array_merge(
+                $user->only(['id', 'name', 'bio', 'avatar', 'role', 'is_blocked', 'block_reason', 'blocked_until', 'created_at']),
+                ['email' => UserEmailHash::displayLabel($user->getAttributes()['email'] ?? null)],
+            ),
             'articlesCount' => $articlesCount,
             'messages' => $messages,
             'canManageRoles' => $request->user()->isOwner(),
+            'canPromoteModerator' => $request->user()->isOwner() || $request->user()->isAdmin(),
             'canManageUser' => $request->user()->canManageUser($user),
         ]);
     }
@@ -71,7 +85,7 @@ class AdminUserController extends Controller
 
     public function promoteModerator(Request $request, User $user)
     {
-        abort_unless($request->user()->isOwner(), 403);
+        abort_unless($request->user()->isOwner() || $request->user()->isAdmin(), 403);
         abort_if($user->isOwner(), 422);
         abort_if($user->isAdmin() || $user->isModerator(), 422);
 

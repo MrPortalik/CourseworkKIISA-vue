@@ -6,6 +6,7 @@ use App\Models\Article;
 use App\Models\Category;
 use App\Models\PlatformReport;
 use App\Support\ObjectNumberParser;
+use App\Support\UserEmailHash;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -36,7 +37,7 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $user,
+                'user' => $user ? $this->serializeAuthUser($user) : null,
             ],
             'unreadNotificationsCount' => $user
                 ? $user->unreadNotifications()->count()
@@ -51,5 +52,13 @@ class HandleInertiaRequests extends Middleware
                 ? Article::where('is_publishable', true)->where('is_published', false)->count()
                 : 0,
         ];
+    }
+
+    private function serializeAuthUser($user): array
+    {
+        $data = $user->toArray();
+        $data['email'] = UserEmailHash::forDisplay($user->getAttributes()['email'] ?? '') ?? '';
+
+        return $data;
     }
 }

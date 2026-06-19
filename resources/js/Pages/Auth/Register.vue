@@ -1,15 +1,51 @@
 <script setup>
 import GuestLayout from '@/Layouts/GuestLayout.vue'
 import InputError from '@/Components/InputError.vue'
+import LegalDocumentModal from '@/Components/Legal/LegalDocumentModal.vue'
+import CatCheckbox from '@/Components/UI/CatCheckbox.vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import PageHead from '@/Components/PageHead.vue'
+import { ref, computed } from 'vue'
+import { privacyPolicySections, privacyPolicyTitle } from '@/content/legal/privacyPolicy'
+import { termsOfUseSections, termsOfUseTitle } from '@/content/legal/termsOfUse'
+import { legalStandaloneHref } from '@/lib/legalPages'
 
 const form = useForm({
     name: '',
     email: '',
     password: '',
     password_confirmation: '',
+    accept_terms: false,
+    accept_privacy: false,
 })
+
+const activeDocKey = ref(null)
+
+const docs = {
+    terms: {
+        title: termsOfUseTitle,
+        sections: termsOfUseSections,
+        crossLinks: [{ key: 'privacy', label: 'Политика конфиденциальности' }],
+    },
+    privacy: {
+        title: privacyPolicyTitle,
+        sections: privacyPolicySections,
+        crossLinks: [{ key: 'terms', label: 'Пользовательское соглашение' }],
+    },
+}
+
+const activeDoc = computed(() => (activeDocKey.value ? docs[activeDocKey.value] : null))
+const activeDocStandaloneHref = computed(() => (
+    activeDocKey.value ? legalStandaloneHref(activeDocKey.value) : null
+))
+
+const openDoc = (key) => {
+    activeDocKey.value = key
+}
+
+const closeDoc = () => {
+    activeDocKey.value = null
+}
 
 const submit = () => {
     form.post(route('register'), {
@@ -82,6 +118,26 @@ const submit = () => {
                 <InputError :message="form.errors.password_confirmation" />
             </div>
 
+            <div class="legal-checks">
+                <label class="legal-check">
+                    <CatCheckbox v-model="form.accept_terms" />
+                    <span>
+                        Я принимаю
+                        <button type="button" class="legal-inline-link" @click="openDoc('terms')">пользовательское соглашение</button>
+                    </span>
+                </label>
+                <InputError :message="form.errors.accept_terms" />
+
+                <label class="legal-check">
+                    <CatCheckbox v-model="form.accept_privacy" />
+                    <span>
+                        Я согласен с
+                        <button type="button" class="legal-inline-link" @click="openDoc('privacy')">политикой конфиденциальности</button>
+                    </span>
+                </label>
+                <InputError :message="form.errors.accept_privacy" />
+            </div>
+
             <button type="submit" class="auth-submit" :disabled="form.processing">
                 Зарегистрироваться
             </button>
@@ -91,6 +147,17 @@ const submit = () => {
                 <Link :href="route('login')" class="auth-link">Войти</Link>
             </p>
         </form>
+
+        <LegalDocumentModal
+            v-if="activeDoc"
+            :title="activeDoc.title"
+            :sections="activeDoc.sections"
+            :cross-links="activeDoc.crossLinks"
+            :standalone-href="activeDocStandaloneHref"
+            :open="!!activeDoc"
+            @close="closeDoc"
+            @navigate="openDoc"
+        />
     </GuestLayout>
 </template>
 
@@ -123,6 +190,29 @@ const submit = () => {
     box-sizing: border-box;
     background: #fff;
     color: inherit;
+}
+.legal-checks {
+    display: grid;
+    gap: 0.65rem;
+    margin: 0.5rem 0 0.75rem;
+}
+.legal-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    cursor: pointer;
+}
+.legal-inline-link {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #0db7ff;
+    font: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
 }
 .auth-submit {
     width: 100%;
@@ -167,5 +257,8 @@ const submit = () => {
 }
 [data-theme="dark"] .auth-submit:hover:not(:disabled) {
     background: #f0f0f0;
+}
+[data-theme="dark"] .legal-inline-link {
+    color: #67e8f9;
 }
 </style>

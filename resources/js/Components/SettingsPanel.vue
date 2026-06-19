@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useAppSettings } from '@/composables/useAppSettings'
+import CatCheckbox from '@/Components/UI/CatCheckbox.vue'
 
 const open = ref(false)
 const { theme, fontScale, setTheme, setFontScale } = useAppSettings()
@@ -24,8 +25,8 @@ const close = () => { open.value = false }
 
             <label class="setting-row">
                 <span>Тёмная тема</span>
-                <input
-                    type="checkbox"
+                <CatCheckbox
+                    variant="theme"
                     :checked="theme === 'dark'"
                     @change="setTheme($event.target.checked ? 'dark' : 'light')"
                 />

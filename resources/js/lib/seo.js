@@ -8,7 +8,7 @@ export function truncateSeoTitle(title, maxTotal = 60) {
         return value
     }
 
-    return `${value.slice(0, max - 1).trimEnd()}…`
+    return `${value.slice(0, max - 1).trimEnd()} ...`
 }
 
 export function truncateSeoDescription(description, max = 160) {
@@ -17,5 +17,5 @@ export function truncateSeoDescription(description, max = 160) {
         return value
     }
 
-    return `${value.slice(0, max - 1).trimEnd()}…`
+    return `${value.slice(0, max - 1).trimEnd()} ...`
 }

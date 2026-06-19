@@ -1,6 +1,7 @@
 <script setup>
-import { router } from '@inertiajs/vue3'
 import { ref, watch } from 'vue'
+import { router } from '@inertiajs/vue3'
+import CatCheckbox from '@/Components/UI/CatCheckbox.vue'
 
 const props = defineProps({
     filters: { type: Object, default: () => ({}) },
@@ -139,7 +140,7 @@ watch([selectedTags, selectedCategories, tagMatchMode], onFiltersChange, { deep:
         <form class="search-form" @submit.prevent="submit">
             <div class="search-input-wrap">
                 <span v-show="!q" class="search-hint" aria-hidden="true">
-                    Введите запрос, например название статьи или <span class="hint-accent">Автор:Имя автора</span>
+                    Введите запрос&nbsp;&nbsp;, например название статьи или <span class="hint-accent">Автор:Имя автора</span>
                 </span>
                 <input
                     ref="searchInput"
@@ -163,7 +164,7 @@ watch([selectedTags, selectedCategories, tagMatchMode], onFiltersChange, { deep:
                 <legend>Категории</legend>
                 <template v-if="categories.length">
                     <label v-for="cat in categories" :key="cat.id" class="tag-check">
-                        <input v-model="selectedCategories" type="checkbox" :value="String(cat.id)" />
+                        <CatCheckbox v-model="selectedCategories" :value="String(cat.id)" />
                         {{ cat.name }}
                     </label>
                 </template>
@@ -183,7 +184,7 @@ watch([selectedTags, selectedCategories, tagMatchMode], onFiltersChange, { deep:
                 </div>
                 <template v-if="tags.length">
                     <label v-for="tag in tags" :key="tag.id" class="tag-check tag-check--with-tip">
-                        <input v-model="selectedTags" type="checkbox" :value="String(tag.id)" />
+                        <CatCheckbox v-model="selectedTags" :value="String(tag.id)" />
                         <span class="tag-check-label">{{ tag.name }}</span>
                         <span v-if="tag.description" class="tag-filter-tooltip">{{ tag.description }}</span>
                     </label>
@@ -204,13 +205,18 @@ watch([selectedTags, selectedCategories, tagMatchMode], onFiltersChange, { deep:
     background: var(--search-bg, #fff);
     border: 1px solid #dfe1e5;
     border-radius: 9999px;
-    padding: 0.35rem 0.5rem 0.35rem 1.25rem;
+    padding: 0.35rem 0.5rem 0.35rem 0;
     box-shadow: 0 1px 6px rgba(32, 33, 36, 0.12);
+    overflow: hidden;
 }
 .search-input-wrap {
     position: relative;
     flex: 1;
     min-width: 0;
+    border-radius: 9999px 0 0 9999px;
+    padding-left: 1.25rem;
+    background: var(--search-bg, #fff);
+    overflow: hidden;
 }
 .search-hint {
     position: absolute;
@@ -225,6 +231,7 @@ watch([selectedTags, selectedCategories, tagMatchMode], onFiltersChange, { deep:
     overflow: hidden;
     text-overflow: ellipsis;
     padding-right: 0.5rem;
+    padding-left: 2rem;
 }
 .hint-accent { color: #5f6368; font-style: italic; }
 .search-input {
@@ -233,7 +240,7 @@ watch([selectedTags, selectedCategories, tagMatchMode], onFiltersChange, { deep:
     outline: none;
     box-shadow: none;
     font-size: 1rem;
-    padding: 0.65rem 0.5rem;
+    padding: 0.65rem 0.5rem 0.65rem 2rem;
     background: transparent;
     color: var(--page-text, #000);
 }
@@ -365,12 +372,14 @@ watch([selectedTags, selectedCategories, tagMatchMode], onFiltersChange, { deep:
     .search-form {
         flex-wrap: wrap;
         border-radius: 16px;
-        padding: 0.5rem 0.75rem;
+        padding: 0.5rem 0.75rem 0.5rem 0;
     }
 
     .search-input-wrap {
         flex: 1 1 100%;
         order: 1;
+        border-radius: 12px 0 0 12px;
+        padding-left: 0.75rem;
     }
 
     .filter-toggle {
@@ -391,6 +400,11 @@ watch([selectedTags, selectedCategories, tagMatchMode], onFiltersChange, { deep:
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
+        padding-left: 1.35rem;
+    }
+
+    .search-input {
+        padding-left: 1.35rem;
     }
 }
 </style>

@@ -10,6 +10,7 @@ use App\Models\Tag;
 use App\Notifications\ArticlePublicationApprovedNotification;
 use App\Services\ArticleSearchService;
 use App\Services\CoauthorInvitationService;
+use App\Support\ArticleNavigation;
 use App\Support\ArticleSpamGuard;
 use App\Support\ArticlesListingPaginator;
 use App\Support\ImageUploadRules;
@@ -161,6 +162,9 @@ class ArticleController extends Controller
             'userRating' => $userRating,
             'userCommentVotes' => $userCommentVotes,
             'canRate' => $canRate,
+            'previousArticleSlug' => ArticleNavigation::previousSlug($article),
+            'nextArticleSlug' => ArticleNavigation::nextSlug($article),
+            'randomArticleSlug' => ArticleNavigation::randomSlug($article),
         ]);
     }
 
@@ -169,11 +173,12 @@ class ArticleController extends Controller
         return redirect()->route('authors.show', $request->user());
     }
 
-    public function create()
+    public function create(Request $request)
     {
         return Inertia::render('Articles/Create', [
             'categories' => Category::orderBy('name')->get(),
             'tags' => Tag::orderBy('name')->get(),
+            'isFirstPublication' => ! $this->userHasPublishedOnPortal($request->user()),
         ]);
     }
 
@@ -181,7 +186,7 @@ class ArticleController extends Controller
     {
         $this->normalizeArticleRequest($request);
 
-        $request->validate($this->articleValidationRules($request));
+        $request->validate($this->articleValidationRules($request), $this->articleValidationMessages());
 
         $slug = $this->makeUniqueSlug($request->title);
         $isAdmin = $request->user()->isAdmin();
@@ -260,7 +265,7 @@ class ArticleController extends Controller
         $this->validateUser($request, $article);
         $this->normalizeArticleRequest($request);
 
-        $request->validate($this->articleValidationRules($request, $article));
+        $request->validate($this->articleValidationRules($request, $article), $this->articleValidationMessages());
 
         if ($article->title !== $request->title) {
             $article->slug = $this->makeUniqueSlug($request->title, $article->id);
@@ -348,7 +353,7 @@ class ArticleController extends Controller
     public function uploadContentImage(Request $request)
     {
         $request->validate([
-            ...ImageUploadRules::rule('image', 4096, required: true),
+            ...ImageUploadRules::rule('image', 4608, required: true),
         ]);
 
         $path = $request->file('image')->store('articles/content', 'public');
@@ -383,7 +388,7 @@ class ArticleController extends Controller
             $categorySliders = $this->buildCategorySlidersData($request);
         }
 
-        $baseQuery = Article::with(['user', 'category', 'categories', 'tags'])
+        $baseQuery = Article::with(['user', 'category', 'categories', 'tags', 'coauthors'])
             ->published()
             ->withRatingStats();
 
@@ -548,7 +553,7 @@ class ArticleController extends Controller
         $nominalPerPage = $page <= 1 ? self::LISTING_FIRST_PAGE : self::LISTING_OTHER_PAGE;
         $slice = $ids->slice($offset, $take)->values();
 
-        $articles = Article::with(['user', 'category', 'tags'])
+        $articles = Article::with(['user', 'category', 'tags', 'coauthors'])
             ->withRatingStats()
             ->whereIn('id', $slice)
             ->get()
@@ -628,6 +633,16 @@ class ArticleController extends Controller
         }
     }
 
+    private function userHasPublishedOnPortal($user): bool
+    {
+        return Article::where('user_id', $user->id)
+            ->where(function ($query) {
+                $query->where('is_publishable', true)
+                    ->orWhere('is_published', true);
+            })
+            ->exists();
+    }
+
     private function articleValidationRules(Request $request, ?Article $article = null): array
     {
         $rules = [
@@ -646,8 +661,8 @@ class ArticleController extends Controller
             'tag_ids.*' => 'exists:tags,id',
             'coauthor_user_ids' => 'nullable|array',
             'coauthor_user_ids.*' => 'exists:users,id',
-            ...ImageUploadRules::rule('banner', 5120),
-            ...ImageUploadRules::rule('hero_banner', 8192),
+            ...ImageUploadRules::rule('banner', 4608),
+            ...ImageUploadRules::rule('hero_banner', 4608),
         ];
 
         if ($request->user()->isAdmin()) {
@@ -661,7 +676,28 @@ class ArticleController extends Controller
             $rules['is_published'] = 'boolean';
         }
 
+        if (
+            ! $article
+            && $request->boolean('is_publishable')
+            && ! $this->userHasPublishedOnPortal($request->user())
+        ) {
+            $rules['accept_portal_rules'] = 'accepted';
+        }
+
         return $rules;
+    }
+
+    private function articleValidationMessages(): array
+    {
+        return [
+            'title.required' => 'Укажите заголовок статьи.',
+            'title.unique' => 'Статья с таким названием уже существует.',
+            'title.max' => 'Заголовок не должен превышать 255 символов.',
+            'content.required' => 'Добавьте содержание статьи.',
+            'banner.max' => 'Размер обложки не должен превышать 4,5 МБ.',
+            'hero_banner.max' => 'Размер баннера не должен превышать 4,5 МБ.',
+            'accept_portal_rules.accepted' => 'Подтвердите согласие с правилами портала перед первой публикацией.',
+        ];
     }
 
     private function syncArticleCategories(Article $article, Request $request): void
@@ -684,7 +720,7 @@ class ArticleController extends Controller
                 $query = Article::query()
                     ->published()
                     ->withRatingStats()
-                    ->with('user')
+                    ->with(['user', 'coauthors'])
                     ->where(function ($q) use ($cat) {
                         $q->where('category_id', $cat->id)
                             ->orWhereHas('categories', fn ($c) => $c->where('categories.id', $cat->id));

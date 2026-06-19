@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\UserEmailHash;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -36,6 +37,29 @@ class User extends Authenticatable
         'is_blocked' => 'boolean',
         'blocked_until' => 'datetime',
     ];
+
+    public function setEmailAttribute(?string $value): void
+    {
+        if ($value === null) {
+            $this->attributes['email'] = null;
+
+            return;
+        }
+
+        $this->attributes['email'] = UserEmailHash::isHashed($value)
+            ? $value
+            : UserEmailHash::hash($value);
+    }
+
+    public static function hashEmail(string $email): string
+    {
+        return UserEmailHash::hash($email);
+    }
+
+    public static function findByEmail(string $email): ?self
+    {
+        return static::where('email', UserEmailHash::hash($email))->first();
+    }
 
     public function articles(): HasMany
     {

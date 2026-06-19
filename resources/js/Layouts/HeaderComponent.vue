@@ -3,6 +3,7 @@ import { Link, usePage } from '@inertiajs/vue3'
 import { computed, ref, watch } from 'vue'
 import SettingsPanel from '@/Components/SettingsPanel.vue'
 import MobileDrawer from '@/Components/MobileDrawer.vue'
+import CookieConsent from '@/Components/Legal/CookieConsent.vue'
 
 const page = usePage()
 const canAccessAdmin = computed(() => ['admin', 'owner', 'moderator'].includes(page.props.auth?.user?.role))
@@ -45,7 +46,7 @@ watch(() => page.url, closeNav)
 
             <figure class="header-logo">
                 <Link :href="route('/')" class="logo" @click="closeNav">
-                    <img src="/public/Assets/logoWhite.png" alt="Лого" />
+                    <img src="/Assets/logoWhite.png" alt="Лого" />
                 </Link>
             </figure>
         </div>
@@ -98,6 +99,7 @@ watch(() => page.url, closeNav)
             </nav>
         </MobileDrawer>
     </header>
+    <CookieConsent />
 </template>
 
 <style>

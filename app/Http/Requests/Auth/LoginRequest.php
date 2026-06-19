@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
 use App\Support\UserBlocking;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
@@ -42,7 +43,9 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        $user = User::findByEmail($this->input('email'));
+
+        if (! $user || ! Auth::getProvider()->validateCredentials($user, $this->only('password'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
@@ -50,7 +53,7 @@ class LoginRequest extends FormRequest
             ]);
         }
 
-        $user = Auth::user();
+        Auth::login($user, $this->boolean('remember'));
         UserBlocking::refreshStatus($user);
 
         if (UserBlocking::isActive($user)) {

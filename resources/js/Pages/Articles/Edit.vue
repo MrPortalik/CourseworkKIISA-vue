@@ -5,6 +5,8 @@ import { computed, ref } from 'vue'
 import HeaderComponent from '@/Layouts/HeaderComponent.vue'
 import ArticleTaxonomyPickers from '@/Components/Articles/ArticleTaxonomyPickers.vue'
 import CoauthorInvitePanel from '@/Components/Articles/CoauthorInvitePanel.vue'
+import InputError from '@/Components/InputError.vue'
+import CatCheckbox from '@/Components/UI/CatCheckbox.vue'
 import PublicationRulesBanner from '@/Components/Articles/PublicationRulesBanner.vue'
 import { imageAccept, validateImageFile } from '@/lib/imageUpload'
 import { uploadArticleContentImage } from '@/lib/articleContentImage'
@@ -177,22 +179,26 @@ const deleteArticle = () => {
             <p v-if="fileError" class="file-error">{{ fileError }}</p>
             <div class="form-group">
                 <label class="form-label">Заголовок</label>
-                <input v-model="form.title" type="text" class="form-input" required />
+                <input v-model="form.title" type="text" class="form-input" :class="{ 'form-input--invalid': form.errors.title }" required />
+                <InputError :message="form.errors.title" class="field-error" />
             </div>
 
             <div class="form-group">
                 <label class="form-label">Обложка (книжная)</label>
                 <input type="file" :accept="imageAccept" @change="onBannerChange" />
+                <InputError :message="form.errors.banner" class="field-error" />
                 <img v-if="bannerPreview" :src="bannerPreview" class="preview-book" alt="" />
             </div>
 
             <div class="form-group">
                 <label class="form-label">Баннер над заголовком</label>
                 <input type="file" :accept="imageAccept" @change="onHeroChange" />
+                <InputError :message="form.errors.hero_banner" class="field-error" />
                 <img v-if="heroPreview" :src="heroPreview" class="preview-hero" alt="" />
             </div>
 
             <ArticleTaxonomyPickers
+                class="taxonomy-section"
                 :categories="categories"
                 :tags="tags"
                 :is-admin="isAdmin"
@@ -201,8 +207,9 @@ const deleteArticle = () => {
                 v-model:is-hit="form.is_hit"
                 v-model:is-editors-choice="form.is_editors_choice"
             />
+            <InputError :message="form.errors.category_ids || form.errors.tag_ids" class="field-error taxonomy-error" />
 
-            <div class="form-group">
+            <div class="form-group coauthors-section">
                 <label class="form-label">Со-авторы</label>
                 <CoauthorInvitePanel
                     :article-slug="article.slug"
@@ -232,18 +239,17 @@ const deleteArticle = () => {
                     required
                     @insert-at-paragraph="onInsertAtParagraph"
                 />
+                <InputError :message="form.errors.content" class="field-error" />
             </div>
 
             <div class="form-group publish-options">
-                <label v-if="canSetPublishable" class="checkbox-label">
-                    <input v-model="form.is_publishable" type="checkbox" />
-                    <span>Предложить к публикации</span>
-                </label>
+                <CatCheckbox v-if="canSetPublishable" v-model="form.is_publishable">
+                    Предложить к публикации
+                </CatCheckbox>
                 <template v-if="canModerate">
-                    <label class="checkbox-label">
-                        <input v-model="form.is_published" type="checkbox" />
-                        <span>Опубликовать <em class="admin-only">(Только для администрации)</em></span>
-                    </label>
+                    <CatCheckbox v-model="form.is_published">
+                        Опубликовать <em class="admin-only">(Только для администрации)</em>
+                    </CatCheckbox>
                 </template>
             </div>
 
@@ -262,6 +268,10 @@ const deleteArticle = () => {
 .form-group { margin-bottom: 1.25rem; }
 .form-label { display: block; font-weight: 600; margin-bottom: 0.5rem; }
 .form-input { width: 100%; padding: 0.75rem; border: 1px solid #cbd5e0; border-radius: 6px; }
+.form-input--invalid { border-color: #fc8181; }
+.field-error :deep(p) { color: #c53030; margin: 0.35rem 0 0; font-size: 0.875rem; font-weight: 600; }
+.coauthors-section { margin-top: 1.25rem; }
+.taxonomy-error { margin-top: -0.5rem; margin-bottom: 0.75rem; }
 .content-toolbar { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
 .content-toolbar .form-label { margin-bottom: 0; flex: 1; }
 .content-toolbar .toolbar-btn { margin-left: auto; margin-top: 0.25rem; margin-bottom: 0.25rem; }
@@ -269,10 +279,10 @@ const deleteArticle = () => {
 .preview-book { aspect-ratio: 9/16; max-width: 160px; object-fit: cover; margin-top: 0.5rem; }
 .preview-hero { width: 100%; max-height: 180px; object-fit: cover; margin-top: 0.5rem; border-radius: 6px; }
 .publish-options { display: flex; flex-direction: column; gap: 0.65rem; }
+.publish-options :deep(.cat-checkbox__label) { font-weight: 600; }
+.publish-options em.admin-only { font-style: normal; font-weight: 500; color: #718096; }
+[data-theme="dark"] .publish-options em.admin-only { color: #aaa; }
 .admin-flags { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.25rem; }
-.checkbox-label { display: flex; gap: 0.5rem; align-items: flex-start; font-weight: 600; }
-.checkbox-label em.admin-only { font-style: normal; font-weight: 500; color: #718096; }
-[data-theme="dark"] .checkbox-label em.admin-only { color: #aaa; }
 .form-actions { display: flex; gap: 1rem; margin-top: 1.5rem; }
 .submit-button { background: #4299e1; color: #fff; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; }
 .delete-button { background: #fed7d7; color: #c53030; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; }

@@ -24,6 +24,7 @@ const feedbackOpen = ref(false)
 
         <div class="about-actions">
             <Link :href="route('faq.index')" class="faq-link actionBtn">FAQ</Link>
+            <Link :href="route('publication-rules')" class="portal-rules-link actionBtn">Правила портала</Link>
             <button type="button" class="feedback-link actionBtn" @click="feedbackOpen = true">Обратная связь</button>
         </div>
 

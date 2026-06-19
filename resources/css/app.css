@@ -15,6 +15,7 @@
     --page-text: #000000;
     --content-bg: #f0f2f5;
     --font-scale: 1;
+    --image-scale: 1;
 }
 
 [data-theme="dark"] {
@@ -199,7 +200,7 @@ p {
     width: 100%;
     max-width: 100%;
     height: auto;
-    max-height: 280px;
+    max-height: calc(280px * var(--image-scale, 1));
     border-radius: 6px;
     float: none;
     margin: 0;
@@ -403,8 +404,10 @@ p {
 .articles-grid {
     display: grid;
     gap: 1.25rem;
-    align-items: stretch;
-    grid-auto-rows: 1fr;
+    align-items: start;
+}
+.articles-grid > * {
+    min-width: 0;
 }
 .articles-grid--7 {
     grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -427,6 +430,32 @@ p {
 @media (max-width: 600px) {
     .articles-grid--7,
     .articles-grid--6 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Фиксированный размер карточек: подборки, категории, объекты */
+.articles-grid--collections {
+    --collection-card-width: 200px;
+    grid-template-columns: repeat(auto-fill, var(--collection-card-width));
+    justify-content: start;
+    justify-items: start;
+}
+
+.articles-grid--collections > * {
+    width: var(--collection-card-width);
+    max-width: var(--collection-card-width);
+    min-width: var(--collection-card-width);
+}
+
+@media (max-width: 768px) {
+    .articles-grid--collections {
+        --collection-card-width: 168px;
+    }
+}
+
+@media (max-width: 600px) {
+    .articles-grid--collections {
+        grid-template-columns: repeat(auto-fill, var(--collection-card-width));
+    }
 }
 
 .article-content,
@@ -469,6 +498,7 @@ p {
     max-width: 100%;
     height: auto;
     box-sizing: border-box;
+    max-height: calc(280px * var(--image-scale, 1));
 }
 
 @media (max-width: 640px) {
@@ -595,14 +625,6 @@ p {
         max-width: 100% !important;
         margin: 0 0 1rem 0 !important;
     }
-}
-
-html[data-font-scale="large"] .article-content .content-image-figure,
-html[data-font-scale="large"] .article-content .content-image-float {
-    float: none !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    margin: 0 0 1rem 0 !important;
 }
 
 @media (max-width: 768px) {

@@ -20,28 +20,49 @@ import PageHead from '@/Components/PageHead.vue'
 
 <style>
 .landing {
+    --landing-header-h: 130px;
+    --landing-baseline-content-h: 950px;
+    --landing-h1-offset: 306px;
+    --landing-h1-left: 515px;
+    --landing-p-right: 558px;
+    --landing-wide-shift: 0.078125;
+    --content-bg: rgba(17, 0, 0);
     background-image: url('/public/Assets/landingBackground.png');
-    background-color: rgba(17, 0, 0);
+    background-color: var(--content-bg);
     position: relative;
     width: 100%;
     max-width: 100%;
     overflow: hidden;
     box-sizing: border-box;
-    min-height: 960px;
+    min-height: 100vh;
+    min-height: 100dvh;
     height: auto;
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center top;
 }
+
 [data-theme="light"] .landing,
 [data-theme="dark"] .landing {
+    --content-bg: rgba(17, 0, 0);
     background-image: url('/public/Assets/landingBackground.png');
-    background-color: rgba(17, 0, 0);
+    background-color: var(--content-bg);
+}
+
+body:has(.landing) {
+    background: rgba(17, 0, 0);
+}
+
+.landing-content {
+    position: relative;
+    z-index: 1;
+    min-height: calc(100dvh - var(--landing-header-h));
+    box-sizing: border-box;
 }
 
 .landing h1 {
-    padding-top: 271px;
-    padding-left: 510px;
+    padding-top: calc(var(--landing-h1-offset) / var(--landing-baseline-content-h) * (100dvh - var(--landing-header-h)));
+    padding-left: calc(var(--landing-h1-left) + max(0px, (100vw - 1920px) * var(--landing-wide-shift)));
     justify-self: start;
     color: white;
     margin: 0;
@@ -55,14 +76,29 @@ import PageHead from '@/Components/PageHead.vue'
     font-size: 58px;
     color: white;
     justify-self: end;
-    padding-right: 543px;
+    padding-right: calc(var(--landing-p-right) - max(0px, (100vw - 1920px) * var(--landing-wide-shift)));
     margin: 0;
     box-sizing: border-box;
 }
 
+@media (min-width: 769px) and (max-width: 1400px) {
+    .landing {
+        background-size: cover;
+        background-position: center center;
+    }
+}
+
+@media (min-width: 1401px) {
+    .landing {
+        background-size: cover;
+        background-position: center top;
+    }
+}
+
 @media (max-width: 768px) {
     .landing {
-        min-height: calc(100dvh - 72px);
+        --landing-header-h: 72px;
+        min-height: calc(100dvh - var(--landing-header-h));
         background-size: contain;
         background-position: center 50%;
     }
@@ -72,11 +108,9 @@ import PageHead from '@/Components/PageHead.vue'
         flex-direction: column;
         justify-content: space-between;
         gap: 1rem;
-        min-height: calc(100dvh - 72px);
+        min-height: calc(100dvh - var(--landing-header-h));
         padding: 1.25rem 1.25rem 2rem;
         box-sizing: border-box;
-        position: relative;
-        z-index: 1;
     }
 
     .landing p {

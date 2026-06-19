@@ -12,7 +12,10 @@ defineEmits(['close'])
         <div v-if="open" class="modal-panel" role="dialog" :aria-label="title">
             <div class="modal-header">
                 <h3>{{ title }}</h3>
-                <button type="button" class="modal-close" aria-label="Закрыть" @click="$emit('close')">×</button>
+                <div class="modal-header-actions">
+                    <slot name="header-actions" />
+                    <button type="button" class="modal-close" aria-label="Закрыть" @click="$emit('close')">×</button>
+                </div>
             </div>
             <div class="modal-body">
                 <slot />
@@ -49,10 +52,22 @@ defineEmits(['close'])
 .modal-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    gap: 0.75rem;
     margin-bottom: 1rem;
 }
-.modal-header h3 { margin: 0; font-size: 1.2rem; }
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    flex: 1;
+    min-width: 0;
+}
+.modal-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
 .modal-close {
     background: none;
     border: none;

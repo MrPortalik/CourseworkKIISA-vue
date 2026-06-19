@@ -5,6 +5,7 @@ import HeaderComponent from '@/Layouts/HeaderComponent.vue'
 import AdminNav from '@/Components/Admin/AdminNav.vue'
 import UserAvatar from '@/Components/User/UserAvatar.vue'
 import BlockUserModal from '@/Components/Admin/BlockUserModal.vue'
+import RoleAssignMenu from '@/Components/Admin/RoleAssignMenu.vue'
 import { ref } from 'vue'
 
 const props = defineProps({
@@ -12,6 +13,7 @@ const props = defineProps({
     articlesCount: Number,
     messages: Array,
     canManageRoles: Boolean,
+    canPromoteModerator: Boolean,
     canManageUser: Boolean,
 })
 
@@ -25,7 +27,6 @@ const sendMessage = () => {
     })
 }
 
-const promote = () => router.post(route('admin.users.promote', props.profileUser.id), {}, { preserveScroll: true })
 const promoteModerator = () => router.post(route('admin.users.promote-moderator', props.profileUser.id), {}, { preserveScroll: true })
 const demote = () => router.post(route('admin.users.demote', props.profileUser.id), {}, { preserveScroll: true })
 const demoteModerator = () => router.post(route('admin.users.demote-moderator', props.profileUser.id), {}, { preserveScroll: true })
@@ -93,14 +94,9 @@ const roleBadgeClass = (role) => {
                 </div>
             </div>
 
-            <div v-if="canManageUser || canManageRoles" class="actions">
+            <div v-if="canManageUser || canManageRoles || canPromoteModerator" class="actions">
                 <template v-if="canManageRoles">
-                    <button v-if="profileUser.role === 'user'" type="button" class="btn-action" @click="promote">
-                        Назначить администратором
-                    </button>
-                    <button v-if="profileUser.role === 'user'" type="button" class="btn-action btn-action--moderator" @click="promoteModerator">
-                        Назначить модератором
-                    </button>
+                    <RoleAssignMenu :user-id="profileUser.id" :user-role="profileUser.role" />
                     <button v-if="profileUser.role === 'admin'" type="button" class="btn-action btn-action--warn" @click="demote">
                         Снять права администратора
                     </button>
@@ -109,6 +105,11 @@ const roleBadgeClass = (role) => {
                     </button>
                     <button v-if="profileUser.role !== 'owner'" type="button" class="btn-action btn-action--danger" @click="destroy">
                         Удалить
+                    </button>
+                </template>
+                <template v-else-if="canPromoteModerator">
+                    <button v-if="profileUser.role === 'user'" type="button" class="btn-action btn-action--moderator" @click="promoteModerator">
+                        Назначить модератором
                     </button>
                 </template>
                 <template v-if="canManageUser">

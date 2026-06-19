@@ -1,36 +1,15 @@
 <script setup>
-import { ref } from 'vue'
-import ModalPanel from '@/Components/ModalPanel.vue'
-
-const open = ref(false)
+import { Link } from '@inertiajs/vue3'
 </script>
 
 <template>
     <div class="rules-banner">
         <p>
             Перед публикацией ознакомьтесь с
-            <button type="button" class="rules-link" @click="open = true">
+            <Link :href="route('publication-rules')" class="rules-link" target="_blank">
                 правилами платформы о публикации материалов
-            </button>.
+            </Link>.
         </p>
-
-        <ModalPanel
-            title="Правила платформы о публикации материалов"
-            :open="open"
-            @close="open = false"
-        >
-            <ul class="rules-list">
-                <li>Соблюдайте правила поведения и уважайте других участников портала.</li>
-                <li>Публикуйте серьёзные, осмысленные материалы, соответствующие тематике вселенной КИИСА.</li>
-                <li>Соблюдайте стилистику повествования: связный текст, грамотность, логичная структура.</li>
-                <li>Не размещайте оскорбительный, незаконный или вводящий в заблуждение контент.</li>
-                <li>Используйте только те изображения, на которые у вас есть права.</li>
-                <li>Материалы проходят модерацию: администрация может отклонить или запросить доработку.</li>
-            </ul>
-            <template #footer>
-                <button type="button" class="rules-close-btn" @click="open = false">Понятно</button>
-            </template>
-        </ModalPanel>
     </div>
 </template>
 
@@ -46,31 +25,9 @@ const open = ref(false)
 }
 
 .rules-link {
-    background: none;
-    border: none;
-    padding: 0;
     color: #0db7ff;
     font-weight: 700;
-    cursor: pointer;
     text-decoration: underline;
-}
-
-.rules-list {
-    margin: 0;
-    padding-left: 1.2rem;
-    display: grid;
-    gap: 0.65rem;
-    line-height: 1.55;
-}
-
-.rules-close-btn {
-    background: #0db7ff;
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    padding: 0.65rem 1.25rem;
-    font-weight: 700;
-    cursor: pointer;
 }
 
 [data-theme="dark"] .rules-banner {

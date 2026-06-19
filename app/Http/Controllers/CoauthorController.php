@@ -7,6 +7,7 @@ use App\Models\ArticleCoauthor;
 use App\Models\User;
 use App\Services\CoauthorInvitationService;
 use App\Support\NotificationState;
+use App\Support\UserEmailHash;
 use Illuminate\Http\Request;
 
 class CoauthorController extends Controller
@@ -24,11 +25,18 @@ class CoauthorController extends Controller
                 if (ctype_digit($q)) {
                     $query->where('id', (int) $q);
                 }
-                $query->orWhere('name', 'like', '%'.$q.'%')
-                    ->orWhere('email', 'like', '%'.$q.'%');
+                $query->orWhere('name', 'like', '%'.$q.'%');
+                if (filter_var($q, FILTER_VALIDATE_EMAIL)) {
+                    $query->orWhere('email', UserEmailHash::hash($q));
+                }
             })
             ->limit(15)
-            ->get(['id', 'name', 'email']);
+            ->get(['id', 'name', 'email'])
+            ->map(fn (User $user) => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => UserEmailHash::displayLabel($user->getAttributes()['email'] ?? null),
+            ]);
 
         return response()->json(['users' => $users]);
     }

@@ -7,6 +7,8 @@ import ArticleTaxonomyPickers from '@/Components/Articles/ArticleTaxonomyPickers
 import ArticleContentField from '@/Components/Articles/ArticleContentField.vue'
 import CoauthorInvitePanel from '@/Components/Articles/CoauthorInvitePanel.vue'
 import PublicationRulesBanner from '@/Components/Articles/PublicationRulesBanner.vue'
+import InputError from '@/Components/InputError.vue'
+import CatCheckbox from '@/Components/UI/CatCheckbox.vue'
 import { imageAccept, validateImageFile } from '@/lib/imageUpload'
 import { uploadArticleContentImage } from '@/lib/articleContentImage'
 import {
@@ -19,6 +21,7 @@ import {
 const props = defineProps({
     categories: Array,
     tags: Array,
+    isFirstPublication: { type: Boolean, default: false },
 })
 
 const page = usePage()
@@ -45,6 +48,7 @@ const form = useForm({
     coauthor_user_ids: [],
     banner: null,
     hero_banner: null,
+    accept_portal_rules: false,
 })
 
 const fileError = ref('')
@@ -161,22 +165,26 @@ const submit = () => form
             <p v-if="fileError" class="file-error">{{ fileError }}</p>
             <div class="form-group">
                 <label class="form-label">Заголовок</label>
-                <input v-model="form.title" type="text" class="form-input" required placeholder="Например: Объект 42" />
+                <input v-model="form.title" type="text" class="form-input" :class="{ 'form-input--invalid': form.errors.title }" required placeholder="Например: Объект 42" />
+                <InputError :message="form.errors.title" class="field-error" />
             </div>
 
             <div class="form-group">
                 <label class="form-label">Обложка (книжная ориентация)</label>
                 <input type="file" :accept="imageAccept" @change="onBannerChange" />
+                <InputError :message="form.errors.banner" class="field-error" />
                 <img v-if="bannerPreview" :src="bannerPreview" alt="" class="preview-book" />
             </div>
 
             <div class="form-group">
                 <label class="form-label">Баннер над заголовком (горизонтальный, необязательно)</label>
                 <input type="file" :accept="imageAccept" @change="onHeroChange" />
+                <InputError :message="form.errors.hero_banner" class="field-error" />
                 <img v-if="heroPreview" :src="heroPreview" alt="" class="preview-hero" />
             </div>
 
             <ArticleTaxonomyPickers
+                class="taxonomy-section"
                 :categories="categories"
                 :tags="tags"
                 :is-admin="isAdmin"
@@ -185,8 +193,9 @@ const submit = () => form
                 v-model:is-hit="form.is_hit"
                 v-model:is-editors-choice="form.is_editors_choice"
             />
+            <InputError :message="form.errors.category_ids || form.errors.tag_ids" class="field-error taxonomy-error" />
 
-            <div class="form-group">
+            <div class="form-group coauthors-section">
                 <label class="form-label">Со-авторы</label>
                 <CoauthorInvitePanel v-model:pending-user-ids="pendingCoauthorIds" />
             </div>
@@ -207,17 +216,25 @@ const submit = () => form
                     required
                     @insert-at-paragraph="onInsertAtParagraph"
                 />
+                <InputError :message="form.errors.content" class="field-error" />
             </div>
 
             <div class="form-group publish-options">
-                <label class="checkbox-label">
-                    <input v-model="form.is_publishable" type="checkbox" />
-                    <span>Предложить к публикации</span>
+                <CatCheckbox v-model="form.is_publishable">
+                    Предложить к публикации
+                </CatCheckbox>
+                <label v-if="isFirstPublication && form.is_publishable" class="portal-rules-check">
+                    <CatCheckbox v-model="form.accept_portal_rules" />
+                    <span>
+                        Подтверждаю согласие с
+                        <Link :href="route('publication-rules')" class="portal-rules-link" target="_blank">правилами портала</Link>
+                        при первой публикации
+                    </span>
                 </label>
-                <label v-if="isAdmin" class="checkbox-label">
-                    <input v-model="form.is_published" type="checkbox" />
-                    <span>Опубликовать <em class="admin-only">(Только для администрации)</em></span>
-                </label>
+                <InputError :message="form.errors.accept_portal_rules" />
+                <CatCheckbox v-if="isAdmin" v-model="form.is_published">
+                    Опубликовать <em class="admin-only">(Только для администрации)</em>
+                </CatCheckbox>
             </div>
 
             <div class="form-actions">
@@ -236,12 +253,31 @@ const submit = () => form
 .form-group { margin-bottom: 1.25rem; }
 .form-label { display: block; font-weight: 600; margin-bottom: 0.5rem; }
 .form-input { width: 100%; padding: 0.75rem; border: 1px solid #cbd5e0; border-radius: 6px; }
+.form-input--invalid { border-color: #fc8181; }
+.field-error :deep(p) { color: #c53030; margin: 0.35rem 0 0; font-size: 0.875rem; font-weight: 600; }
+.coauthors-section { margin-top: 1.25rem; }
+.taxonomy-error { margin-top: -0.5rem; margin-bottom: 0.75rem; }
 .preview-book { aspect-ratio: 9/16; max-width: 180px; object-fit: cover; margin-top: 0.75rem; border-radius: 4px; }
 .preview-hero { width: 100%; max-height: 200px; object-fit: cover; margin-top: 0.75rem; border-radius: 6px; }
 .publish-options { display: flex; flex-direction: column; gap: 0.65rem; }
-.checkbox-label { display: flex; gap: 0.5rem; align-items: flex-start; font-weight: 600; }
-.checkbox-label em.admin-only { font-style: normal; font-weight: 500; color: #718096; }
-[data-theme="dark"] .checkbox-label em.admin-only { color: #aaa; }
+.publish-options :deep(.cat-checkbox__label) { font-weight: 600; }
+.portal-rules-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    cursor: pointer;
+}
+.portal-rules-link {
+    color: #0db7ff;
+    font: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+}
+.publish-options em.admin-only { font-style: normal; font-weight: 500; color: #718096; }
+[data-theme="dark"] .publish-options em.admin-only { color: #aaa; }
+[data-theme="dark"] .portal-rules-link { color: #67e8f9; }
 .form-actions { display: flex; gap: 1rem; margin-top: 1.5rem; }
 .submit-button { background: #4299e1; color: #fff; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; }
 .cancel-button { padding: 0.75rem 1.5rem; text-decoration: none; color: #4a5568; }
