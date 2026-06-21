@@ -28,7 +28,9 @@ class NotificationState
         }
 
         if (! empty($data['article_slug'])) {
-            $data['article_available'] = Article::where('slug', $data['article_slug'])->exists();
+            $article = Article::with('user')->where('slug', $data['article_slug'])->first();
+
+            $data['article_available'] = $article !== null && ! ($article->user?->is_blocked ?? false);
         }
 
         if (! empty($data['author_id'])) {

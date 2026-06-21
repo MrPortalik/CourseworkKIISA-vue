@@ -43,6 +43,12 @@ const isAdminMessage = (n) => n.data?.type === 'admin_message'
 const isReportResponse = (n) => n.data?.type === 'report_response'
 const isAccountBlocked = (n) => n.data?.type === 'account_blocked'
 
+const isArticleUnavailable = (n) => (
+    !!n.data?.article_slug && n.data?.article_available === false
+)
+
+const articleUnavailableMessage = 'Статья, к которой относилось это уведомление, была удалена или аккаунт автора был заблокирован.'
+
 const formatBlockUntil = (iso) => {
     if (!iso) return ''
     return new Date(iso).toLocaleString('ru-RU', {
@@ -121,7 +127,10 @@ const submitReply = (notification) => {
                     v-for="notification in notifications.data"
                     :key="notification.id"
                     class="notification-item"
-                    :class="{ unread: !notification.read_at }"
+                    :class="{
+                        unread: !notification.read_at,
+                        'notification-item--article-unavailable': isArticleUnavailable(notification),
+                    }"
                 >
                     <button
                         type="button"
@@ -132,23 +141,34 @@ const submitReply = (notification) => {
                         ×
                     </button>
 
-                    <template v-if="isCoauthorInvite(notification)">
+                    <template v-if="isArticleUnavailable(notification)">
+                        <p class="notification-unavailable-text">{{ articleUnavailableMessage }}</p>
+                        <div class="notification-actions">
+                            <button
+                                type="button"
+                                class="read-btn"
+                                :disabled="hasReadAction(notification)"
+                                @click="markRead(notification.id)"
+                            >
+                                Прочитано
+                            </button>
+                            <span v-if="actionLabel(notification)" class="action-status">
+                                {{ actionLabel(notification) }}
+                            </span>
+                        </div>
+                    </template>
+
+                    <template v-else-if="isCoauthorInvite(notification)">
                         <p class="notification-text">{{ notification.data.message }}</p>
                         <div class="notification-actions">
                             <Link
-                                v-if="notification.data.article_slug && notification.data.article_available !== false"
+                                v-if="notification.data.article_slug"
                                 :href="route('articles.show', notification.data.article_slug)"
                                 class="link"
                                 @click="openArticle(notification)"
                             >
                                 Открыть статью
                             </Link>
-                            <span
-                                v-else-if="notification.data.article_slug && notification.data.article_available === false"
-                                class="unavailable-link"
-                            >
-                                Статья удалена
-                            </span>
                             <button
                                 type="button"
                                 class="accept-btn"
@@ -204,19 +224,13 @@ const submitReply = (notification) => {
                         </p>
                         <div class="notification-actions">
                             <Link
-                                v-if="notification.data.article_slug && notification.data.article_available !== false"
+                                v-if="notification.data.article_slug"
                                 :href="route('articles.show', notification.data.article_slug)"
                                 class="link"
                                 @click="openArticle(notification)"
                             >
                                 Открыть статью
                             </Link>
-                            <span
-                                v-else-if="notification.data.article_slug && notification.data.article_available === false"
-                                class="unavailable-link"
-                            >
-                                Статья удалена
-                            </span>
                             <button
                                 type="button"
                                 class="read-btn"
@@ -257,17 +271,12 @@ const submitReply = (notification) => {
                     <template v-else-if="notification.data.article_slug">
                         <div class="notification-body">
                             <Link
-                                v-if="notification.data.article_available !== false"
                                 :href="route('articles.show', notification.data.article_slug)"
                                 class="notification-link"
                                 @click="openArticle(notification)"
                             >
                                 {{ notification.data.message }}
                             </Link>
-                            <p v-else class="notification-text unavailable-link">
-                                {{ notification.data.message }}
-                                <span class="unavailable-note">(статья удалена)</span>
-                            </p>
                             <p
                                 v-if="notification.data.type === 'publication_rejected' && notification.data.reason"
                                 class="rejection-reason"
@@ -414,6 +423,25 @@ const submitReply = (notification) => {
 
 .notification-item.unread {
     border-left: 4px solid #4299e1;
+}
+
+.notification-item--article-unavailable {
+    border: 2px solid #fc8181;
+    background: #fff5f5;
+}
+
+.notification-item--article-unavailable.unread {
+    border-left-width: 4px;
+    border-color: #fc8181;
+    border-left-color: #e53e3e;
+}
+
+.notification-unavailable-text {
+    margin: 0 0 0.75rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    font-weight: 600;
+    color: #c53030;
 }
 
 .delete-btn {
@@ -621,6 +649,19 @@ const submitReply = (notification) => {
     background: var(--theme_black);
     border-color: #333;
     color: #f0f0f0;
+}
+
+[data-theme="dark"] .notification-item--article-unavailable {
+    background: #2a1515;
+    border-color: #fc8181;
+}
+
+[data-theme="dark"] .notification-item--article-unavailable.unread {
+    border-left-color: #fc8181;
+}
+
+[data-theme="dark"] .notification-unavailable-text {
+    color: #feb2b2;
 }
 
 [data-theme="dark"] .notification-link:hover {
