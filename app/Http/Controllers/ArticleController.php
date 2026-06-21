@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Comment;
 use App\Models\CommentVote;
 use App\Models\Tag;
+use App\Models\User;
 use App\Notifications\ArticlePublicationApprovedNotification;
 use App\Services\ArticleSearchService;
 use App\Services\CoauthorInvitationService;
@@ -155,6 +156,9 @@ class ArticleController extends Controller
 
         $canRate = $request->user() && $request->user()->id !== $article->user_id;
 
+        $isDraft = ! $article->is_published;
+        $viewer = $request->user();
+
         return Inertia::render('Articles/Show', [
             'article' => $article,
             'metaDescription' => Seo::articleDescription($article->content),
@@ -162,9 +166,14 @@ class ArticleController extends Controller
             'userRating' => $userRating,
             'userCommentVotes' => $userCommentVotes,
             'canRate' => $canRate,
-            'previousArticleSlug' => ArticleNavigation::previousSlug($article),
-            'nextArticleSlug' => ArticleNavigation::nextSlug($article),
-            'randomArticleSlug' => ArticleNavigation::randomSlug($article),
+            'isDraft' => $isDraft,
+            'previousArticleSlug' => $isDraft && $viewer
+                ? ArticleNavigation::previousDraftSlug($article, $viewer)
+                : ArticleNavigation::previousSlug($article),
+            'nextArticleSlug' => $isDraft && $viewer
+                ? ArticleNavigation::nextDraftSlug($article, $viewer)
+                : ArticleNavigation::nextSlug($article),
+            'randomArticleSlug' => $isDraft ? null : ArticleNavigation::randomSlug($article),
         ]);
     }
 
@@ -224,7 +233,7 @@ class ArticleController extends Controller
         $article->save();
         $this->syncPublicationTimestamp($article, false);
         $this->syncArticleCategories($article, $request);
-        $article->tags()->sync($request->input('tag_ids', []));
+        $article->tags()->sync($this->authorizedTagIdsForUser($request->input('tag_ids', []), $request->user()));
 
         app(CoauthorInvitationService::class)->inviteMany(
             $article,
@@ -335,7 +344,7 @@ class ArticleController extends Controller
         $article->save();
         $this->syncPublicationTimestamp($article, $wasPublished);
         $this->syncArticleCategories($article, $request);
-        $article->tags()->sync($request->input('tag_ids', []));
+        $article->tags()->sync($this->authorizedTagIdsForUser($request->input('tag_ids', []), $request->user(), $article));
 
         if ($contentChanged) {
             $article->load(['user', 'coauthors']);
@@ -771,6 +780,33 @@ class ArticleController extends Controller
             'category_id' => $categoryIds[0] ?? ($request->filled('category_id') ? $request->category_id : null),
             'tag_ids' => $request->input('tag_ids', []),
         ]);
+    }
+
+    private function authorizedTagIdsForUser(array $requestedIds, User $user, ?Article $article = null): array
+    {
+        $requestedIds = $this->normalizeIdList($requestedIds);
+        if ($requestedIds === []) {
+            return [];
+        }
+
+        $tags = Tag::whereIn('id', $requestedIds)->get()->keyBy('id');
+        $existingIds = $article
+            ? $article->tags()->pluck('tags.id')->all()
+            : [];
+
+        $allowed = [];
+        foreach ($requestedIds as $id) {
+            $tag = $tags->get($id);
+            if (! $tag) {
+                continue;
+            }
+
+            if ($tag->userCanAssign($user) || in_array($id, $existingIds, true)) {
+                $allowed[] = $id;
+            }
+        }
+
+        return $allowed;
     }
 
     private function normalizeIdList(mixed $value): array

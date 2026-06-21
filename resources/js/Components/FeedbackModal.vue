@@ -1,7 +1,8 @@
 <script setup>
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Link, useForm, usePage } from '@inertiajs/vue3'
 import ModalPanel from '@/Components/ModalPanel.vue'
+import { imageAccept, validateImageFiles } from '@/lib/imageUpload'
 
 const props = defineProps({
     open: { type: Boolean, default: false },
@@ -22,12 +23,26 @@ const selectableTypes = [
     { value: 'site_complaint', label: 'Жалоба на сайт' },
 ]
 
+const attachmentInput = ref(null)
+const selectedFiles = ref([])
+const attachmentError = ref('')
+
 const form = useForm({
     type: props.type,
     article_id: props.articleId,
     reported_user_id: props.reportedUserId,
     message: '',
+    attachments: [],
 })
+
+const resetAttachments = () => {
+    selectedFiles.value = []
+    attachmentError.value = ''
+    form.attachments = []
+    if (attachmentInput.value) {
+        attachmentInput.value.value = ''
+    }
+}
 
 watch(() => props.open, (isOpen) => {
     if (isOpen) {
@@ -37,6 +52,7 @@ watch(() => props.open, (isOpen) => {
     } else {
         form.reset()
         form.clearErrors()
+        resetAttachments()
     }
 })
 
@@ -49,15 +65,55 @@ const modalTitle = computed(() => {
 
 const showTypeSelect = computed(() => props.allowTypeSelect && !props.articleId && !props.reportedUserId)
 
+const formatFileSize = (bytes) => {
+    if (bytes < 1024) return `${bytes} Б`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} КБ`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`
+}
+
+const totalAttachmentSize = computed(() =>
+    selectedFiles.value.reduce((sum, file) => sum + file.size, 0),
+)
+
+const onAttachmentsChange = (event) => {
+    const files = [...(event.target.files || [])]
+    const error = validateImageFiles(files)
+    if (error) {
+        attachmentError.value = error
+        resetAttachments()
+        return
+    }
+
+    attachmentError.value = ''
+    selectedFiles.value = files
+    form.attachments = files
+}
+
+const removeAttachment = (index) => {
+    selectedFiles.value = selectedFiles.value.filter((_, i) => i !== index)
+    form.attachments = [...selectedFiles.value]
+    attachmentError.value = validateImageFiles(selectedFiles.value) || ''
+}
+
 const submit = () => {
+    const error = validateImageFiles(selectedFiles.value)
+    if (error) {
+        attachmentError.value = error
+        return
+    }
+
     form.type = showTypeSelect.value ? form.type : props.type
     form.article_id = props.articleId
     form.reported_user_id = props.reportedUserId
+    form.attachments = [...selectedFiles.value]
+
     form.post(route('reports.store'), {
         preserveScroll: true,
+        forceFormData: true,
         onSuccess: () => {
             form.reset()
             form.type = props.type
+            resetAttachments()
             emit('close')
         },
     })
@@ -92,6 +148,34 @@ const submit = () => {
                 placeholder="Опишите проблему или предложение"
             />
             <p v-if="form.errors.message" class="form-error">{{ form.errors.message }}</p>
+
+            <div class="attachments-block">
+                <label class="form-label" for="feedback-attachments">Изображения (необязательно)</label>
+                <input
+                    id="feedback-attachments"
+                    ref="attachmentInput"
+                    type="file"
+                    :accept="imageAccept"
+                    multiple
+                    class="file-input"
+                    @change="onAttachmentsChange"
+                />
+                <p class="attachments-hint">JPEG, PNG или WebP. Общий размер до 10 МБ.</p>
+                <p v-if="attachmentError" class="form-error">{{ attachmentError }}</p>
+                <p v-if="form.errors.attachments" class="form-error">{{ form.errors.attachments }}</p>
+                <p v-if="form.errors['attachments.0']" class="form-error">{{ form.errors['attachments.0'] }}</p>
+
+                <ul v-if="selectedFiles.length" class="attachment-list">
+                    <li v-for="(file, index) in selectedFiles" :key="`${file.name}-${index}`" class="attachment-item">
+                        <span class="attachment-name">{{ file.name }}</span>
+                        <span class="attachment-size">{{ formatFileSize(file.size) }}</span>
+                        <button type="button" class="attachment-remove" @click="removeAttachment(index)">×</button>
+                    </li>
+                </ul>
+                <p v-if="selectedFiles.length" class="attachments-total">
+                    Всего: {{ formatFileSize(totalAttachmentSize) }}
+                </p>
+            </div>
         </form>
 
         <template v-if="isLoggedIn" #footer>
@@ -129,7 +213,8 @@ const submit = () => {
 }
 
 .form-select,
-.form-textarea {
+.form-textarea,
+.file-input {
     width: 100%;
     padding: 0.75rem;
     border: 1px solid #cbd5e0;
@@ -137,6 +222,65 @@ const submit = () => {
     resize: vertical;
     font: inherit;
     box-sizing: border-box;
+}
+
+.file-input {
+    padding: 0.55rem 0.75rem;
+    background: #fff;
+}
+
+.attachments-block {
+    display: grid;
+    gap: 0.4rem;
+}
+
+.attachments-hint,
+.attachments-total {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #718096;
+}
+
+.attachment-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.35rem;
+}
+
+.attachment-item {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f8fafc;
+}
+
+.attachment-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.9rem;
+}
+
+.attachment-size {
+    font-size: 0.8rem;
+    color: #718096;
+    white-space: nowrap;
+}
+
+.attachment-remove {
+    border: none;
+    background: transparent;
+    color: #c53030;
+    font-size: 1.2rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
 }
 
 .form-error {
@@ -165,10 +309,22 @@ const submit = () => {
 }
 
 [data-theme="dark"] .form-textarea,
-[data-theme="dark"] .form-select {
+[data-theme="dark"] .form-select,
+[data-theme="dark"] .file-input {
     background: #141414;
     color: #f0f0f0;
     border-color: #404040;
+}
+
+[data-theme="dark"] .attachment-item {
+    background: #141414;
+    border-color: #404040;
+}
+
+[data-theme="dark"] .attachments-hint,
+[data-theme="dark"] .attachments-total,
+[data-theme="dark"] .attachment-size {
+    color: #aaa;
 }
 
 [data-theme="dark"] .btn-secondary {

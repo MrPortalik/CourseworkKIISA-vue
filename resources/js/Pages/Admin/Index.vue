@@ -3,6 +3,7 @@ import { Link, router, useForm } from '@inertiajs/vue3'
 import PageHead from '@/Components/PageHead.vue'
 import HeaderComponent from '@/Layouts/HeaderComponent.vue'
 import AdminNav from '@/Components/Admin/AdminNav.vue'
+import ArticleCoverThumb from '@/Components/Articles/ArticleCoverThumb.vue'
 import { ref } from 'vue'
 
 defineProps({
@@ -56,11 +57,9 @@ const approve = (article) => {
             <h2>Ожидают публикации</h2>
             <div v-if="pendingArticles.data.length" class="articles-list">
                 <article v-for="article in pendingArticles.data" :key="article.id" class="admin-card">
-                    <img
-                        :src="article.banner || '/Assets/noBanner.jpg'"
-                        alt=""
-                        class="cover-preview"
-                    />
+                    <div class="cover-preview">
+                        <ArticleCoverThumb :src="article.banner" alt="" />
+                    </div>
                     <div class="card-body">
                         <h3>{{ article.title }}</h3>
                         <p class="meta">{{ article.user?.name }} · {{ formatDate(article.created_at) }}</p>
@@ -80,7 +79,9 @@ const approve = (article) => {
             <h2>Все неопубликованные</h2>
             <div v-if="allDrafts.data.length" class="articles-list">
                 <article v-for="article in allDrafts.data" :key="article.id" class="admin-card">
-                    <img :src="article.banner || '/Assets/noBanner.jpg'" alt="" class="cover-preview" />
+                    <div class="cover-preview">
+                        <ArticleCoverThumb :src="article.banner" alt="" />
+                    </div>
                     <div class="card-body">
                         <h3>{{ article.title }}</h3>
                         <p class="meta">{{ article.user?.name }} · {{ formatDate(article.created_at) }}</p>
@@ -134,7 +135,14 @@ const approve = (article) => {
     border: 1px solid #e2e8f0;
     border-radius: 8px;
 }
-.cover-preview { width: 72px; aspect-ratio: 9/16; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
+.cover-preview {
+    width: 72px;
+    flex-shrink: 0;
+}
+.cover-preview :deep(.article-cover-thumb) {
+    width: 72px;
+    max-width: 72px;
+}
 .card-body { flex: 1; }
 .meta { color: #718096; font-size: 0.875rem; }
 .badge { font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 999px; font-weight: 600; }

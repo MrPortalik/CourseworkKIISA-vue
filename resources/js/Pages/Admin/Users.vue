@@ -4,6 +4,7 @@ import PageHead from '@/Components/PageHead.vue'
 import HeaderComponent from '@/Layouts/HeaderComponent.vue'
 import AdminNav from '@/Components/Admin/AdminNav.vue'
 import UserAvatar from '@/Components/User/UserAvatar.vue'
+import PaginationNav from '@/Components/UI/PaginationNav.vue'
 import { ref } from 'vue'
 
 const props = defineProps({
@@ -68,16 +69,7 @@ const roleBadgeClass = (role) => {
                 </li>
             </ul>
 
-            <nav v-if="users.links?.length > 3" class="pagination">
-                <Link
-                    v-for="(link, index) in users.links"
-                    :key="index"
-                    :href="link.url || '#'"
-                    class="page-link"
-                    :class="{ active: link.active, disabled: !link.url }"
-                    v-html="link.label"
-                />
-            </nav>
+            <PaginationNav :links="users.links" />
         </div>
     </section>
 </template>

@@ -4,6 +4,7 @@ import PageHead from '@/Components/PageHead.vue'
 import { ref } from 'vue'
 import HeaderComponent from '@/Layouts/HeaderComponent.vue'
 import UserAvatar from '@/Components/User/UserAvatar.vue'
+import PaginationNav from '@/Components/UI/PaginationNav.vue'
 
 const props = defineProps({
     notifications: Object,
@@ -322,16 +323,7 @@ const submitReply = (notification) => {
             </ul>
             <p v-else class="empty">Уведомлений пока нет</p>
 
-            <nav v-if="notifications.links?.length > 3" class="pagination">
-                <Link
-                    v-for="(link, index) in notifications.links"
-                    :key="index"
-                    :href="link.url || '#'"
-                    class="page-link"
-                    :class="{ active: link.active, disabled: !link.url }"
-                    v-html="link.label"
-                />
-            </nav>
+            <PaginationNav :links="notifications.links" />
         </template>
 
         <template v-else>

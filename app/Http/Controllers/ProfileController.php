@@ -29,13 +29,19 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $user->name = $request->validated('name');
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        $email = $request->input('email');
+        if (is_string($email) && trim($email) !== '') {
+            $user->email = $email;
+
+            if ($user->isDirty('email')) {
+                $user->email_verified_at = null;
+            }
         }
 
-        $request->user()->save();
+        $user->save();
 
         return Redirect::back();
     }
@@ -59,9 +65,5 @@ class ProfileController extends Controller
         $request->session()->regenerateToken();
 
         return Redirect::to('/');
-    }
-
-    public function isAdmin() {
-        return $this->role === 'admin';
     }
 }

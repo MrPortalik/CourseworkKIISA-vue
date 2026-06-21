@@ -1,6 +1,31 @@
 <script setup>
+import { onMounted, onUnmounted } from 'vue'
 import HeaderComponent from '@/Layouts/HeaderComponent.vue'
 import PageHead from '@/Components/PageHead.vue'
+
+const BROWSER_SIDEBAR_UA = /YaBrowser|OPR|Opera/i
+
+const applyLandingViewportCompensation = () => {
+    const root = document.documentElement
+    const hasBrowserSidebar = BROWSER_SIDEBAR_UA.test(navigator.userAgent)
+    const isDesktop = window.innerWidth >= 769
+
+    if (!hasBrowserSidebar && isDesktop) {
+        root.style.setProperty('--landing-effective-vw-scale', '1.25')
+    } else {
+        root.style.removeProperty('--landing-effective-vw-scale')
+    }
+}
+
+onMounted(() => {
+    applyLandingViewportCompensation()
+    window.addEventListener('resize', applyLandingViewportCompensation, { passive: true })
+})
+
+onUnmounted(() => {
+    window.removeEventListener('resize', applyLandingViewportCompensation)
+    document.documentElement.style.removeProperty('--landing-effective-vw-scale')
+})
 </script>
 
 <template>
@@ -26,6 +51,8 @@ import PageHead from '@/Components/PageHead.vue'
     --landing-h1-left: 515px;
     --landing-p-right: 558px;
     --landing-wide-shift: 0.1390625;
+    --landing-effective-vw-scale: 1;
+    --landing-vw: calc(100vw * var(--landing-effective-vw-scale));
     --content-bg: rgba(17, 0, 0);
     background-image: url('/public/Assets/landingBackground.png');
     background-color: var(--content-bg);
@@ -62,7 +89,7 @@ body:has(.landing) {
 
 .landing h1 {
     padding-top: calc(var(--landing-h1-offset) / var(--landing-baseline-content-h) * (100dvh - var(--landing-header-h)));
-    padding-left: calc(var(--landing-h1-left) + max(0px, (100vw - 1920px) * var(--landing-wide-shift)));
+    padding-left: calc(var(--landing-h1-left) + max(0px, (var(--landing-vw) - 1920px) * var(--landing-wide-shift)));
     justify-self: start;
     color: white;
     margin: 0;
@@ -76,7 +103,7 @@ body:has(.landing) {
     font-size: 58px;
     color: white;
     justify-self: end;
-    padding-right: calc(var(--landing-p-right) - max(0px, (100vw - 1920px) * var(--landing-wide-shift)));
+    padding-right: calc(var(--landing-p-right) - max(0px, (var(--landing-vw) - 1920px) * var(--landing-wide-shift)));
     margin: 0;
     box-sizing: border-box;
 }

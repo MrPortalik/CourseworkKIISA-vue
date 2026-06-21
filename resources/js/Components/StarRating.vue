@@ -12,6 +12,7 @@ const props = defineProps({
     previousArticleSlug: { type: String, default: null },
     nextArticleSlug: { type: String, default: null },
     randomArticleSlug: { type: String, default: null },
+    isDraft: { type: Boolean, default: false },
 })
 
 const page = usePage()
@@ -70,18 +71,18 @@ const showInteractiveStars = computed(() => isLoggedIn.value && props.canRate)
                     class="article-nav-link article-nav-link--prev content-link"
                 >
                     <span class="article-nav-arrow" aria-hidden="true">←</span>
-                    <span class="article-nav-text">Открыть прошлую статью</span>
+                    <span class="article-nav-text">{{ isDraft ? 'Открыть прошлый набросок' : 'Открыть прошлую статью' }}</span>
                 </Link>
                 <Link
                     v-if="nextArticleSlug"
                     :href="route('articles.show', nextArticleSlug)"
                     class="article-nav-link article-nav-link--next content-link"
                 >
-                    <span class="article-nav-text">Открыть следующую статью</span>
+                    <span class="article-nav-text">{{ isDraft ? 'Открыть следующий набросок' : 'Открыть следующую статью' }}</span>
                     <span class="article-nav-arrow" aria-hidden="true">→</span>
                 </Link>
                 <Link
-                    v-if="randomArticleSlug"
+                    v-if="randomArticleSlug && !isDraft"
                     :href="route('articles.show', randomArticleSlug)"
                     class="article-nav-link article-nav-link--random content-link"
                 >

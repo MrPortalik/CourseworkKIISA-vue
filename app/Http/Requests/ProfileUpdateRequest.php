@@ -16,7 +16,7 @@ class ProfileUpdateRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', new UniqueEmailHash($this->user()->id)],
+            'email' => ['nullable', 'string', 'lowercase', 'email', 'max:255', new UniqueEmailHash($this->user()->id)],
         ];
     }
 }

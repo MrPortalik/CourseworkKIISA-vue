@@ -3,6 +3,7 @@ import { Link, router } from '@inertiajs/vue3'
 import PageHead from '@/Components/PageHead.vue'
 import PageWithSidebar from '@/Layouts/PageWithSidebar.vue'
 import ArticleCard from '@/Components/Articles/ArticleCard.vue'
+import PaginationNav from '@/Components/UI/PaginationNav.vue'
 
 const props = defineProps({
     articles: Object,
@@ -73,17 +74,7 @@ const pageTitle = () => {
             <p>Черновиков пока нет</p>
         </div>
 
-        <nav v-if="articles.data.length && articles.links.length > 3" class="pagination">
-            <Link
-                v-for="(link, index) in articles.links"
-                :key="index"
-                :href="link.url || '#'"
-                class="page-link"
-                :class="{ active: link.active, disabled: !link.url }"
-                v-html="link.label"
-                :preserve-scroll="true"
-            />
-        </nav>
+        <PaginationNav v-if="articles.data.length" :links="articles.links" />
     </PageWithSidebar>
 </template>
 

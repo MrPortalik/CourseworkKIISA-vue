@@ -8,11 +8,32 @@ use Illuminate\Support\Str;
 
 class Tag extends Model
 {
-    protected $fillable = ['name', 'slug', 'description'];
+    public const ASSIGN_MODERATOR = 'moderator';
+
+    public const ASSIGN_ADMIN = 'admin';
+
+    protected $fillable = ['name', 'slug', 'description', 'assign_role'];
 
     public function articles(): BelongsToMany
     {
         return $this->belongsToMany(Article::class);
+    }
+
+    public function userCanAssign(User $user): bool
+    {
+        if (! $this->assign_role) {
+            return true;
+        }
+
+        if ($this->assign_role === self::ASSIGN_MODERATOR) {
+            return $user->canModerateArticles();
+        }
+
+        if ($this->assign_role === self::ASSIGN_ADMIN) {
+            return $user->isAdmin();
+        }
+
+        return true;
     }
 
     protected static function booted(): void

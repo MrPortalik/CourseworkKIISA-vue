@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\Article;
 use App\Models\Category;
+use App\Models\User;
 
 class ArticleNavigation
 {
@@ -29,6 +30,48 @@ class ArticleNavigation
         }
 
         return $query->inRandomOrder()->value('slug');
+    }
+
+    public static function nextDraftSlug(Article $article, User $viewer): ?string
+    {
+        return self::draftAdjacentSlug($article, $viewer, 1);
+    }
+
+    public static function previousDraftSlug(Article $article, User $viewer): ?string
+    {
+        return self::draftAdjacentSlug($article, $viewer, -1);
+    }
+
+    private static function draftAdjacentSlug(Article $article, User $viewer, int $direction): ?string
+    {
+        if ($article->is_published) {
+            return null;
+        }
+
+        $query = Article::unpublished()->latest();
+
+        if ($viewer->isAdmin()) {
+            // all drafts (admin default scope)
+        } elseif ($viewer->canModerateArticles() && $article->user_id !== $viewer->id) {
+            $query->publishable();
+        } else {
+            $query->where('user_id', $article->user_id);
+        }
+
+        $slugs = $query->pluck('slug')->all();
+        $index = array_search($article->slug, $slugs, true);
+
+        if ($index === false) {
+            return null;
+        }
+
+        $target = $index + $direction;
+
+        if ($target < 0 || $target >= count($slugs)) {
+            return null;
+        }
+
+        return $slugs[$target];
     }
 
     private static function adjacentSlug(Article $article, int $direction): ?string

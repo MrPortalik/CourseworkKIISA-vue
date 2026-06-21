@@ -1,6 +1,7 @@
 <script setup>
 import HeaderComponent from '@/Layouts/HeaderComponent.vue'
 import ArticleCard from '@/Components/Articles/ArticleCard.vue'
+import PaginationNav from '@/Components/UI/PaginationNav.vue'
 import EditPencilIcon from '@/Components/EditPencilIcon.vue'
 import UserAvatar from '@/Components/User/UserAvatar.vue'
 import UserRoleBadge from '@/Components/UI/UserRoleBadge.vue'
@@ -143,7 +144,7 @@ const showModeration = computed(() => props.canManageRoles || props.canPromoteMo
                     :disabled="profileForm.processing"
                     @click="avatarInput?.click()"
                 >
-                    <EditPencilIcon variant="light" />
+                    <EditPencilIcon variant="inherit" />
                 </button>
                 <input ref="avatarInput" type="file" :accept="imageAccept" hidden @change="onAvatar" />
             </figure>
@@ -270,16 +271,7 @@ const showModeration = computed(() => props.canManageRoles || props.canPromoteMo
             </div>
             <div v-else class="empty-state"><h3>Нет работ</h3></div>
 
-            <nav v-if="articles.data?.length && articles.links?.length > 3" class="pagination">
-                <Link
-                    v-for="(link, index) in articles.links"
-                    :key="index"
-                    :href="link.url || '#'"
-                    class="page-link"
-                    :class="{ active: link.active, disabled: !link.url }"
-                    v-html="link.label"
-                />
-            </nav>
+            <PaginationNav v-if="articles.data?.length" :links="articles.links" />
         </div>
     </section>
 
@@ -355,6 +347,11 @@ const showModeration = computed(() => props.canManageRoles || props.canPromoteMo
     justify-content: center;
 }
 .avatar-edit-btn:disabled { opacity: 0.6; cursor: wait; }
+[data-theme="dark"] .avatar-edit-btn {
+    background: #ffffff;
+    border-color: #ffffff;
+    color: #151515;
+}
 .right { margin-top: 76px; flex: 1; min-width: 0; }
 .userName {
     font-size: clamp(2rem, 5vw, 58px);

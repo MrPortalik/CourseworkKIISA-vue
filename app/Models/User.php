@@ -63,8 +63,24 @@ class User extends Authenticatable
         }
 
         $plain = mb_strtolower(trim($value));
-        $this->attributes['email'] = UserEmailHash::hash($plain);
-        $this->attributes['email_encrypted'] = encrypt($plain);
+        $newHash = UserEmailHash::hash($plain);
+
+        if (($this->attributes['email'] ?? null) === $newHash) {
+            if (
+                empty($this->attributes['email_encrypted'])
+                && \Illuminate\Support\Facades\Schema::hasColumn($this->getTable(), 'email_encrypted')
+            ) {
+                $this->attributes['email_encrypted'] = encrypt($plain);
+            }
+
+            return;
+        }
+
+        $this->attributes['email'] = $newHash;
+
+        if (\Illuminate\Support\Facades\Schema::hasColumn($this->getTable(), 'email_encrypted')) {
+            $this->attributes['email_encrypted'] = encrypt($plain);
+        }
     }
 
     public function getPlainEmail(): ?string

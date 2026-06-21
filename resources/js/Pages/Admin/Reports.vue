@@ -4,6 +4,7 @@ import PageHead from '@/Components/PageHead.vue'
 import HeaderComponent from '@/Layouts/HeaderComponent.vue'
 import AdminNav from '@/Components/Admin/AdminNav.vue'
 import UserAvatar from '@/Components/User/UserAvatar.vue'
+import PaginationNav from '@/Components/UI/PaginationNav.vue'
 import { ref } from 'vue'
 
 const props = defineProps({
@@ -125,6 +126,22 @@ const formatDate = (d) => (d ? new Date(d).toLocaleString('ru-RU') : '')
 
                             <p class="message">{{ report.message }}</p>
 
+                            <div v-if="report.attachments?.length" class="attachments-block">
+                                <p class="attachments-label">Вложения</p>
+                                <div class="attachments-grid">
+                                    <a
+                                        v-for="(file, index) in report.attachments"
+                                        :key="`${file.path}-${index}`"
+                                        :href="file.url"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="attachment-thumb"
+                                    >
+                                        <img :src="file.url" :alt="file.name || 'Вложение'" loading="lazy" />
+                                    </a>
+                                </div>
+                            </div>
+
                             <div v-if="report.admin_reply" class="reply-block">
                                 <p class="reply-label">Ответ ({{ report.responded_by?.name }})</p>
                                 <p>{{ report.admin_reply }}</p>
@@ -165,16 +182,7 @@ const formatDate = (d) => (d ? new Date(d).toLocaleString('ru-RU') : '')
             </div>
             <p v-else class="empty">Жалоб и предложений пока нет</p>
 
-            <nav v-if="reports.links?.length > 3" class="pagination">
-                <Link
-                    v-for="(link, index) in reports.links"
-                    :key="index"
-                    :href="link.url || '#'"
-                    class="page-link"
-                    :class="{ active: link.active, disabled: !link.url }"
-                    v-html="link.label"
-                />
-            </nav>
+            <PaginationNav :links="reports.links" />
         </div>
     </section>
 
@@ -262,6 +270,34 @@ const formatDate = (d) => (d ? new Date(d).toLocaleString('ru-RU') : '')
 }
 .reporter-link:hover { text-decoration: underline; }
 .message { margin: 0 0 0.5rem; white-space: pre-wrap; line-height: 1.5; font-size: 0.95rem; }
+.attachments-block { margin: 0.5rem 0 0.75rem; }
+.attachments-label {
+    margin: 0 0 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #718096;
+}
+.attachments-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.attachment-thumb {
+    display: block;
+    width: 88px;
+    height: 88px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+.attachment-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+[data-theme="dark"] .attachments-label { color: #aaa; }
+[data-theme="dark"] .attachment-thumb { border-color: #404040; }
 .reply-block {
     background: #f7fafc;
     border-radius: 8px;

@@ -1,6 +1,7 @@
 <script setup>
     import HeaderComponent from '@/Layouts/HeaderComponent.vue';
     import PageHead from '@/Components/PageHead.vue';
+    import PaginationNav from '@/Components/UI/PaginationNav.vue';
     import {Link} from "@inertiajs/vue3";
 
     const props = defineProps({
@@ -63,20 +64,7 @@
                 <h3>У пользователя нет созданных работ</h3>
             </div>
 
-            <nav v-if="articles.length > 3" class="pagination">
-                <Link
-                    v-for="(link, index) in articles.links"
-                    :key="index"
-                    :href="link.url || '#'"
-                    class="page-link"
-                    :class="{
-                    'active': link.active,
-                    'disabled': !link.url
-                    }"
-                    v-html="link.label"
-                    :preserve-scroll="true"
-                />
-            </nav>
+            <PaginationNav :links="articles.links" />
         </div>
     </section>
     <section class="actions">

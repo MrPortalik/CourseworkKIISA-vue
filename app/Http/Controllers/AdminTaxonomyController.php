@@ -64,12 +64,14 @@ class AdminTaxonomyController extends Controller
         $request->validate([
             'name' => 'required|string|max:255|unique:tags,name',
             'description' => 'nullable|string|max:1000',
+            'assign_role' => 'nullable|in:moderator,admin',
         ]);
 
         Tag::create([
             'name' => $request->name,
             'slug' => Str::slug($request->name),
             'description' => $request->description,
+            'assign_role' => $request->input('assign_role'),
         ]);
 
         return back();
@@ -80,12 +82,14 @@ class AdminTaxonomyController extends Controller
         $request->validate([
             'name' => 'required|string|max:255|unique:tags,name,'.$tag->id,
             'description' => 'nullable|string|max:1000',
+            'assign_role' => 'nullable|in:moderator,admin',
         ]);
 
         $tag->update([
             'name' => $request->name,
             'slug' => Str::slug($request->name),
             'description' => $request->description,
+            'assign_role' => $request->input('assign_role'),
         ]);
 
         return back();

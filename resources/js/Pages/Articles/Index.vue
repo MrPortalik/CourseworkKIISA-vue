@@ -6,6 +6,7 @@ import PageWithSidebar from '@/Layouts/PageWithSidebar.vue'
 import ArticleSearchBar from '@/Components/Articles/ArticleSearchBar.vue'
 import ArticleCard from '@/Components/Articles/ArticleCard.vue'
 import CategoryArticleSliders from '@/Components/Articles/CategoryArticleSliders.vue'
+import PaginationNav from '@/Components/UI/PaginationNav.vue'
 
 const props = defineProps({
     articles: Object,
@@ -64,21 +65,6 @@ const showArticlesGrid = computed(() =>
 )
 
 const showPagination = computed(() => (props.articles?.last_page ?? 1) > 1)
-
-const paginationLinks = computed(() => {
-    const links = props.articles?.links ?? []
-    const lastPage = props.articles?.last_page ?? 1
-
-    return links.filter((link) => {
-        if (!link.url && !link.active) return false
-        const match = String(link.label).match(/^\d+$/)
-        if (match) {
-            const pageNum = parseInt(match[0], 10)
-            return pageNum >= 1 && pageNum <= lastPage
-        }
-        return true
-    })
-})
 
 watch(() => props.filters?.q, (q) => {
     if (!q) previewOrder.value = []
@@ -193,17 +179,11 @@ const pageDescription = computed(() => {
                 </div>
                 <p v-else class="empty-state">Статей пока нет</p>
 
-                <nav v-if="showPagination && paginationLinks.length" class="pagination">
-                    <Link
-                        v-for="(link, index) in paginationLinks"
-                        :key="`${link.label}-${index}`"
-                        :href="link.url || '#'"
-                        class="page-link"
-                        :class="{ active: link.active, disabled: !link.url }"
-                        preserve-scroll
-                        v-html="link.label"
-                    />
-                </nav>
+                <PaginationNav
+                    v-if="showPagination"
+                    :links="articles?.links"
+                    :last-page="articles?.last_page"
+                />
             </div>
         </template>
     </PageWithSidebar>

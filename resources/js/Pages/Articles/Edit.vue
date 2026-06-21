@@ -202,6 +202,7 @@ const deleteArticle = () => {
                 :categories="categories"
                 :tags="tags"
                 :is-admin="isAdmin"
+                :can-moderate="canModerate"
                 v-model:category-ids="form.category_ids"
                 v-model:tag-ids="form.tag_ids"
                 v-model:is-hit="form.is_hit"

@@ -25,6 +25,7 @@ class PlatformReport extends Model
         'article_id',
         'reported_user_id',
         'message',
+        'attachments',
         'status',
         'admin_reply',
         'responded_by_id',
@@ -33,6 +34,7 @@ class PlatformReport extends Model
 
     protected $casts = [
         'responded_at' => 'datetime',
+        'attachments' => 'array',
     ];
 
     public function user(): BelongsTo

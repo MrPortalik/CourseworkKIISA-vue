@@ -6,6 +6,7 @@ const props = defineProps({
     value: { default: null },
     checked: { type: Boolean, default: undefined },
     variant: { type: String, default: 'default' },
+    disabled: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['update:modelValue', 'change'])
@@ -21,6 +22,10 @@ const isChecked = computed(() => {
 })
 
 const toggle = (event) => {
+    if (props.disabled) {
+        event.preventDefault()
+        return
+    }
     if (Array.isArray(props.modelValue)) {
         const set = new Set(props.modelValue)
         if (set.has(props.value)) {
@@ -37,12 +42,13 @@ const toggle = (event) => {
 </script>
 
 <template>
-    <label class="cat-checkbox" :class="{ 'cat-checkbox--theme': variant === 'theme' }">
+    <label class="cat-checkbox" :class="{ 'cat-checkbox--theme': variant === 'theme', 'cat-checkbox--disabled': disabled }">
         <input
             type="checkbox"
             class="cat-checkbox__native"
             :checked="isChecked"
             :value="value"
+            :disabled="disabled"
             @change="toggle"
         />
         <span class="cat-checkbox__face" aria-hidden="true">
@@ -123,6 +129,15 @@ const toggle = (event) => {
 .cat-checkbox__label {
     line-height: 1.45;
     font-size: inherit;
+}
+
+.cat-checkbox--disabled {
+    cursor: not-allowed;
+    opacity: 0.72;
+}
+
+.cat-checkbox--disabled .cat-checkbox__face {
+    cursor: not-allowed;
 }
 
 [data-theme="dark"] .cat-checkbox__face {

@@ -26,6 +26,7 @@ const props = defineProps({
 
 const page = usePage()
 const isAdmin = computed(() => ['admin', 'owner'].includes(page.props.auth?.user?.role))
+const canModerate = computed(() => ['admin', 'owner', 'moderator'].includes(page.props.auth?.user?.role))
 
 const bannerPreview = ref(null)
 const heroPreview = ref(null)
@@ -188,6 +189,7 @@ const submit = () => form
                 :categories="categories"
                 :tags="tags"
                 :is-admin="isAdmin"
+                :can-moderate="canModerate"
                 v-model:category-ids="form.category_ids"
                 v-model:tag-ids="form.tag_ids"
                 v-model:is-hit="form.is_hit"

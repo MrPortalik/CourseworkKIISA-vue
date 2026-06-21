@@ -20,6 +20,7 @@ const props = defineProps({
     previousArticleSlug: { type: String, default: null },
     nextArticleSlug: { type: String, default: null },
     randomArticleSlug: { type: String, default: null },
+    isDraft: { type: Boolean, default: false },
 })
 
 const page = usePage()
@@ -159,6 +160,7 @@ const scrollToRating = () => {
                 :previous-article-slug="previousArticleSlug"
                 :next-article-slug="nextArticleSlug"
                 :random-article-slug="randomArticleSlug"
+                :is-draft="isDraft"
             />
 
             <CommentThread

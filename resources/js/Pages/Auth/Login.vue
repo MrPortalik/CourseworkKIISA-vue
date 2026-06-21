@@ -1,6 +1,7 @@
 <script setup>
 import GuestLayout from '@/Layouts/GuestLayout.vue'
 import InputError from '@/Components/InputError.vue'
+import CatCheckbox from '@/Components/UI/CatCheckbox.vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import PageHead from '@/Components/PageHead.vue'
 
@@ -83,10 +84,9 @@ const submit = () => {
                 <InputError :message="form.errors.password" />
             </div>
 
-            <label class="remember-row">
-                <input v-model="form.remember" type="checkbox" />
-                <span>Запомнить меня</span>
-            </label>
+            <CatCheckbox v-model="form.remember" class="remember-row">
+                Запомнить меня
+            </CatCheckbox>
 
             <button type="submit" class="auth-submit" :disabled="form.processing">Войти</button>
 
@@ -157,9 +157,6 @@ const submit = () => {
     color: inherit;
 }
 .remember-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
     margin-bottom: 1rem;
     font-size: 0.9rem;
     color: #4a5568;

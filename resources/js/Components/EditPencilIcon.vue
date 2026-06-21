@@ -22,4 +22,5 @@ defineProps({
 }
 .edit-pencil--accent { color: #0db7ff; }
 .edit-pencil--light { color: #ffffff; }
+.edit-pencil--inherit { color: currentColor; }
 </style>

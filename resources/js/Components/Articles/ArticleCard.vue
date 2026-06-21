@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/vue3'
 import { computed } from 'vue'
 import { formatRating } from '@/lib/formatRating'
 import CoauthorsMore from '@/Components/UI/CoauthorsMore.vue'
+import ArticleCoverThumb from '@/Components/Articles/ArticleCoverThumb.vue'
 
 const props = defineProps({
     article: { type: Object, required: true },
@@ -22,18 +23,7 @@ const coauthors = computed(() => props.article.coauthors ?? [])
     <article class="article-card" :class="{ 'article-card--compact': compact }">
         <Link :href="route('articles.show', article.slug)" class="card-link">
             <div class="cover-wrap">
-                <img
-                    v-if="article.banner"
-                    :src="article.banner"
-                    alt="Обложка"
-                    class="book-cover"
-                />
-                <div v-else class="book-cover book-cover--empty" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M5 4h10a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2V4z" stroke="currentColor" stroke-width="1.5"/>
-                        <path d="M7 4v16M17 6h2a1 1 0 0 1 1 1v12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                    </svg>
-                </div>
+                <ArticleCoverThumb :src="article.banner" />
             </div>
 
             <h2 class="card-title">{{ article.title }}</h2>
@@ -84,8 +74,7 @@ const coauthors = computed(() => props.article.coauthors ?? [])
     min-height: 0;
     height: 100%;
 }
-.article-card--compact .book-cover,
-.article-card--compact .book-cover--empty {
+.article-card--compact .cover-wrap :deep(.article-cover-thumb) {
     width: 130px;
     max-width: 130px;
     flex-shrink: 0;
@@ -113,13 +102,21 @@ const coauthors = computed(() => props.article.coauthors ?? [])
     margin-bottom: 0.75rem;
     min-height: 0;
 }
-.book-cover {
+.cover-wrap :deep(.article-cover-thumb) {
     width: 100%;
     max-width: 130px;
     aspect-ratio: 9 / 16;
-    object-fit: cover;
     border-radius: 4px;
+    flex-shrink: 0;
+}
+.cover-wrap :deep(img.article-cover-thumb) {
     display: block;
+    object-fit: cover;
+}
+.cover-wrap :deep(.article-cover-thumb--empty) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .card-title {
     font-size: 1.1rem;
@@ -176,21 +173,6 @@ const coauthors = computed(() => props.article.coauthors ?? [])
 .date--unpublished {
     color: #a0aec0;
     font-style: italic;
-}
-.book-cover--empty {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #edf2f7;
-    color: #a0aec0;
-}
-.book-cover--empty svg {
-    width: 42%;
-    height: auto;
-}
-[data-theme="dark"] .book-cover--empty {
-    background: #1f1f1f;
-    color: #666;
 }
 .card-draft {
     position: absolute;
@@ -252,8 +234,7 @@ const coauthors = computed(() => props.article.coauthors ?? [])
         height: 320px;
     }
 
-    .article-card--compact .book-cover,
-    .article-card--compact .book-cover--empty {
+    .article-card--compact .cover-wrap :deep(.article-cover-thumb) {
         width: 96px;
         max-width: 96px;
     }

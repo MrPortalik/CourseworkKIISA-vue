@@ -140,7 +140,7 @@ watch([selectedTags, selectedCategories, tagMatchMode], onFiltersChange, { deep:
         <form class="search-form" @submit.prevent="submit">
             <div class="search-input-wrap">
                 <span v-show="!q" class="search-hint" aria-hidden="true">
-                    Введите запрос&nbsp;&nbsp;, например название статьи или <span class="hint-accent">Автор:Имя автора</span>
+                    Введите запрос, например название статьи или&nbsp;<span class="hint-accent">Автор:Имя автора</span>
                 </span>
                 <input
                     ref="searchInput"
@@ -205,7 +205,7 @@ watch([selectedTags, selectedCategories, tagMatchMode], onFiltersChange, { deep:
     background: var(--search-bg, #fff);
     border: 1px solid #dfe1e5;
     border-radius: 9999px;
-    padding: 0.35rem 0.5rem 0.35rem 0;
+    padding: 0.35rem 0.5rem 0.35rem 1.25rem;
     box-shadow: 0 1px 6px rgba(32, 33, 36, 0.12);
     overflow: hidden;
 }
@@ -214,7 +214,6 @@ watch([selectedTags, selectedCategories, tagMatchMode], onFiltersChange, { deep:
     flex: 1;
     min-width: 0;
     border-radius: 9999px 0 0 9999px;
-    padding-left: 1.25rem;
     background: var(--search-bg, #fff);
     overflow: hidden;
 }
@@ -230,8 +229,8 @@ watch([selectedTags, selectedCategories, tagMatchMode], onFiltersChange, { deep:
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding-right: 0.5rem;
-    padding-left: 2rem;
+    padding: 0 0.5rem 0 2rem;
+    box-sizing: border-box;
 }
 .hint-accent { color: #5f6368; font-style: italic; }
 .search-input {
@@ -372,14 +371,13 @@ watch([selectedTags, selectedCategories, tagMatchMode], onFiltersChange, { deep:
     .search-form {
         flex-wrap: wrap;
         border-radius: 16px;
-        padding: 0.5rem 0.75rem 0.5rem 0;
+        padding: 0.5rem 0.75rem 0.5rem 0.75rem;
     }
 
     .search-input-wrap {
         flex: 1 1 100%;
         order: 1;
         border-radius: 12px 0 0 12px;
-        padding-left: 0.75rem;
     }
 
     .filter-toggle {

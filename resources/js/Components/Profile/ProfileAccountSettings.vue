@@ -1,9 +1,9 @@
 <script setup>
 import ModalPanel from '@/Components/ModalPanel.vue'
 import { Link, useForm, usePage } from '@inertiajs/vue3'
-import { nextTick, ref } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 
-defineProps({
+const props = defineProps({
     open: { type: Boolean, default: false },
     mustVerifyEmail: { type: Boolean, default: false },
     status: { type: String, default: null },
@@ -29,6 +29,14 @@ const deleteForm = useForm({ password: '' })
 
 const showDeleteModal = ref(false)
 const deletePasswordInput = ref(null)
+
+watch(() => props.open, (isOpen) => {
+    if (isOpen) {
+        const current = page.props.auth.user
+        profileForm.name = current.name
+        profileForm.email = current.email || ''
+    }
+})
 
 const updateProfile = () => {
     profileForm.patch(route('profile.update'), { preserveScroll: true })
@@ -68,7 +76,7 @@ const deleteAccount = () => {
             <p v-if="profileForm.errors.name" class="settings-error">{{ profileForm.errors.name }}</p>
 
             <label class="settings-label" for="profile-email">Email</label>
-            <input id="profile-email" v-model="profileForm.email" type="email" class="settings-input" required autocomplete="username" />
+            <input id="profile-email" v-model="profileForm.email" type="email" class="settings-input" autocomplete="username" />
             <p v-if="profileForm.errors.email" class="settings-error">{{ profileForm.errors.email }}</p>
 
             <div v-if="mustVerifyEmail && user.email_verified_at === null" class="verify-note">
