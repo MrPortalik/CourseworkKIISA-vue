@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -19,6 +20,13 @@ class PlatformReport extends Model
 
     public const STATUS_RESOLVED = 'resolved';
 
+    protected static function booted(): void
+    {
+        static::addGlobalScope('notDeleted', function (Builder $query) {
+            $query->whereNull('deleted_at');
+        });
+    }
+
     protected $fillable = [
         'user_id',
         'type',
@@ -30,10 +38,14 @@ class PlatformReport extends Model
         'admin_reply',
         'responded_by_id',
         'responded_at',
+        'deletion_reason',
+        'deleted_by_id',
+        'deleted_at',
     ];
 
     protected $casts = [
         'responded_at' => 'datetime',
+        'deleted_at' => 'datetime',
         'attachments' => 'array',
     ];
 

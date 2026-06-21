@@ -192,7 +192,7 @@ const save = () => {
 
     justify-content: space-between;
 
-    align-items: flex-end;
+    align-items: center;
 
     flex-wrap: wrap;
 

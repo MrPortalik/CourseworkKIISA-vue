@@ -228,7 +228,7 @@ const deleteTag = (tag) => {
 .admin-top {
     display: flex;
     justify-content: space-between;
-    align-items: flex-end;
+    align-items: center;
     flex-wrap: wrap;
     gap: 0.5rem;
     margin-bottom: 2rem;

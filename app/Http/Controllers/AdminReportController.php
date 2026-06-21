@@ -42,4 +42,19 @@ class AdminReportController extends Controller
 
         return back()->with('status', 'Ответ отправлен пользователю.');
     }
+
+    public function destroy(Request $request, PlatformReport $report)
+    {
+        $validated = $request->validate([
+            'deletion_reason' => 'required|string|min:5|max:2000',
+        ]);
+
+        $report->update([
+            'deletion_reason' => $validated['deletion_reason'],
+            'deleted_by_id' => $request->user()->id,
+            'deleted_at' => now(),
+        ]);
+
+        return back()->with('status', 'Жалоба удалена.');
+    }
 }

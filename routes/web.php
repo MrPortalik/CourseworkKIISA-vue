@@ -129,6 +129,7 @@ Route::middleware(['auth', 'staff'])->group(function () {
     Route::put('/admin/moderator-settings', [AdminModeratorSettingsController::class, 'update'])->name('admin.moderator-settings.update');
     Route::get('/admin/reports', [AdminReportController::class, 'index'])->name('admin.reports.index');
     Route::post('/admin/reports/{report}/respond', [AdminReportController::class, 'respond'])->name('admin.reports.respond');
+    Route::delete('/admin/reports/{report}', [AdminReportController::class, 'destroy'])->name('admin.reports.destroy');
     Route::get('/admin/users', [AdminUserController::class, 'index'])->name('admin.users.index');
     Route::get('/admin/users/{user}', [AdminUserController::class, 'show'])->name('admin.users.show');
     Route::post('/admin/users/{user}/promote', [AdminUserController::class, 'promoteAdmin'])->name('admin.users.promote');

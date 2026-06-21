@@ -5,7 +5,11 @@ import HeaderComponent from '@/Layouts/HeaderComponent.vue'
 import AdminNav from '@/Components/Admin/AdminNav.vue'
 import UserAvatar from '@/Components/User/UserAvatar.vue'
 import PaginationNav from '@/Components/UI/PaginationNav.vue'
+import ModalPanel from '@/Components/ModalPanel.vue'
 import { ref } from 'vue'
+
+const MESSAGE_PREVIEW_MAX = 280
+const MESSAGE_LINE_CLAMP = 5
 
 const props = defineProps({
     reports: Object,
@@ -15,6 +19,9 @@ const props = defineProps({
 
 const respondTarget = ref(null)
 const respondForm = useForm({ admin_reply: '' })
+const deleteTarget = ref(null)
+const deleteForm = useForm({ deletion_reason: '' })
+const viewTarget = ref(null)
 const typeFilter = ref(props.filters?.type || '')
 
 const reportTypes = [
@@ -47,6 +54,46 @@ const submitRespond = () => {
         preserveScroll: true,
         onSuccess: closeRespond,
     })
+}
+
+const openDelete = (report) => {
+    deleteTarget.value = report
+    deleteForm.deletion_reason = ''
+}
+
+const closeDelete = () => {
+    deleteTarget.value = null
+    deleteForm.reset()
+}
+
+const submitDelete = () => {
+    if (!deleteTarget.value) return
+    deleteForm.delete(route('admin.reports.destroy', deleteTarget.value.id), {
+        preserveScroll: true,
+        onSuccess: closeDelete,
+    })
+}
+
+const openView = (report) => {
+    viewTarget.value = report
+}
+
+const closeView = () => {
+    viewTarget.value = null
+}
+
+const isLongMessage = (message) => {
+    if (!message) return false
+    if (message.length > MESSAGE_PREVIEW_MAX) return true
+    return message.split('\n').length > MESSAGE_LINE_CLAMP
+}
+
+const messagePreview = (message) => {
+    if (!isLongMessage(message)) return message
+    if (message.length > MESSAGE_PREVIEW_MAX) {
+        return `${message.slice(0, MESSAGE_PREVIEW_MAX).trimEnd()}…`
+    }
+    return message
 }
 
 const typeLabel = (type) => {
@@ -124,7 +171,22 @@ const formatDate = (d) => (d ? new Date(d).toLocaleString('ru-RU') : '')
                                 </span>
                             </div>
 
-                            <p class="message">{{ report.message }}</p>
+                            <div class="message-block">
+                                <p
+                                    class="message"
+                                    :class="{ 'message--clamped': isLongMessage(report.message) }"
+                                >
+                                    {{ messagePreview(report.message) }}
+                                </p>
+                                <button
+                                    v-if="isLongMessage(report.message)"
+                                    type="button"
+                                    class="expand-btn"
+                                    @click="openView(report)"
+                                >
+                                    Развернуть
+                                </button>
+                            </div>
 
                             <div v-if="report.attachments?.length" class="attachments-block">
                                 <p class="attachments-label">Вложения</p>
@@ -150,6 +212,9 @@ const formatDate = (d) => (d ? new Date(d).toLocaleString('ru-RU') : '')
                             <div class="report-footer">
                                 <button type="button" class="btn-row" @click="openRespond(report)">
                                     {{ report.admin_reply ? 'Изменить ответ' : 'Ответить' }}
+                                </button>
+                                <button type="button" class="btn-row btn-row--danger" @click="openDelete(report)">
+                                    Удалить
                                 </button>
                                 <Link
                                     v-if="report.article"
@@ -186,6 +251,62 @@ const formatDate = (d) => (d ? new Date(d).toLocaleString('ru-RU') : '')
         </div>
     </section>
 
+    <ModalPanel
+        :open="!!viewTarget"
+        title="Текст жалобы"
+        @close="closeView"
+    >
+        <template v-if="viewTarget">
+            <p class="view-meta">
+                {{ typeLabel(viewTarget.type) }}
+                <template v-if="viewTarget.user"> · {{ viewTarget.user.name }}</template>
+                · {{ formatDate(viewTarget.created_at) }}
+            </p>
+            <p class="view-message">{{ viewTarget.message }}</p>
+            <div v-if="viewTarget.attachments?.length" class="attachments-block">
+                <p class="attachments-label">Вложения</p>
+                <div class="attachments-grid">
+                    <a
+                        v-for="(file, index) in viewTarget.attachments"
+                        :key="`${file.path}-${index}`"
+                        :href="file.url"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="attachment-thumb"
+                    >
+                        <img :src="file.url" :alt="file.name || 'Вложение'" loading="lazy" />
+                    </a>
+                </div>
+            </div>
+        </template>
+    </ModalPanel>
+
+    <ModalPanel
+        :open="!!deleteTarget"
+        title="Удалить жалобу"
+        @close="closeDelete"
+    >
+        <form id="delete-report-form" @submit.prevent="submitDelete">
+            <label class="form-label" for="deletion-reason">Причина удаления</label>
+            <textarea
+                id="deletion-reason"
+                v-model="deleteForm.deletion_reason"
+                class="reply-input"
+                rows="5"
+                required
+                minlength="5"
+                placeholder="Укажите, почему жалоба удаляется"
+            />
+            <p v-if="deleteForm.errors.deletion_reason" class="error">{{ deleteForm.errors.deletion_reason }}</p>
+        </form>
+        <template #footer>
+            <button type="button" class="btn-close" @click="closeDelete">Отмена</button>
+            <button type="submit" form="delete-report-form" class="btn-delete" :disabled="deleteForm.processing">
+                Удалить
+            </button>
+        </template>
+    </ModalPanel>
+
     <div v-if="respondTarget" class="modal-overlay modal-overlay--nested" @click.self="closeRespond">
         <div class="modal-window modal-window--reply" role="dialog">
             <div class="modal-header">
@@ -210,9 +331,9 @@ const formatDate = (d) => (d ? new Date(d).toLocaleString('ru-RU') : '')
 .admin-top {
     display: flex;
     justify-content: space-between;
-    align-items: flex-end;
+    align-items: center;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.75rem 1rem;
     margin-bottom: 2rem;
 }
 .section { margin-bottom: 2.5rem; }
@@ -269,7 +390,48 @@ const formatDate = (d) => (d ? new Date(d).toLocaleString('ru-RU') : '')
     text-decoration: none;
 }
 .reporter-link:hover { text-decoration: underline; }
-.message { margin: 0 0 0.5rem; white-space: pre-wrap; line-height: 1.5; font-size: 0.95rem; }
+.message-block { margin: 0 0 0.5rem; }
+.message {
+    margin: 0;
+    white-space: pre-wrap;
+    line-height: 1.5;
+    font-size: 0.95rem;
+}
+.message--clamped {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 5;
+    overflow: hidden;
+}
+.expand-btn {
+    margin-top: 0.35rem;
+    padding: 0;
+    border: none;
+    background: none;
+    color: #0db7ff;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    text-decoration: underline;
+}
+.expand-btn:hover { color: #0a9ad9; }
+.view-meta {
+    margin: 0 0 0.75rem;
+    color: #718096;
+    font-size: 0.85rem;
+}
+.view-message {
+    margin: 0;
+    white-space: pre-wrap;
+    line-height: 1.55;
+    font-size: 0.95rem;
+}
+.form-label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
 .attachments-block { margin: 0.5rem 0 0.75rem; }
 .attachments-label {
     margin: 0 0 0.5rem;
@@ -360,6 +522,23 @@ const formatDate = (d) => (d ? new Date(d).toLocaleString('ru-RU') : '')
     font-size: 0.85rem;
     cursor: pointer;
 }
+.btn-row--danger {
+    background: #fff;
+    color: #c53030;
+    border: 1px solid #fc8181;
+}
+.btn-row--danger:hover {
+    background: #fff5f5;
+}
+.btn-delete {
+    background: #e53e3e;
+    color: #fff;
+    border: none;
+    padding: 0.65rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
 .empty { text-align: center; color: #718096; padding: 2rem; background: #f7fafc; border-radius: 8px; }
 .modal-overlay {
     position: fixed;
@@ -430,6 +609,13 @@ const formatDate = (d) => (d ? new Date(d).toLocaleString('ru-RU') : '')
 [data-theme="dark"] .reply-block,
 [data-theme="dark"] .reported-user-card { background: #1f1f1f; border-color: #333; }
 [data-theme="dark"] .reply-label { color: #ccc; }
+[data-theme="dark"] .expand-btn { color: #90cdf4; }
+[data-theme="dark"] .btn-row--danger {
+    background: #2a1515;
+    border-color: #fc8181;
+    color: #feb2b2;
+}
+[data-theme="dark"] .btn-row--danger:hover { background: #3d1f1f; }
 [data-theme="dark"] .reporter-link,
 [data-theme="dark"] .subject-link,
 [data-theme="dark"] .reported-user-name { color: #90cdf4; }

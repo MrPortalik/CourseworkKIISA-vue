@@ -79,26 +79,35 @@ const isActive = (patterns) => {
     margin-left: auto;
 }
 .admin-tab {
+    position: relative;
     text-decoration: none;
     font-weight: 600;
     color: #4a5568;
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.admin-tab:has(.admin-badge) {
+    padding-right: 1.85rem;
 }
 .admin-tab--active {
     box-shadow: 0 0 0 2px #0db7ff;
 }
 .admin-badge {
+    position: absolute;
+    top: -0.35rem;
+    right: -0.15rem;
     background: #e53e3e;
     color: #fff;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 700;
-    padding: 0.1rem 0.45rem;
+    padding: 0.1rem 0.4rem;
     border-radius: 999px;
-    min-width: 1.25rem;
+    min-width: 1.1rem;
     text-align: center;
     line-height: 1.3;
+    pointer-events: none;
 }
 [data-theme="dark"] .admin-tab.btn-accent {
     color: #0a0a0a;
